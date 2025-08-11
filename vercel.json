@@ -10,16 +10,41 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/api/(.*)",
+      "destination": "https://backend.axiontrust.com/api/$1"
+    },
+    { 
+      "source": "/auth/(.*)", 
+      "destination": "https://backend.axiontrust.com/auth/$1" 
+    },
+    { 
+      "source": "/prices/(.*)", 
+      "destination": "https://backend.axiontrust.com/prices/$1" 
+    },
+    { 
+      "source": "/analysis/(.*)", 
+      "destination": "https://backend.axiontrust.com/analysis/$1" 
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
+    }
   ],
   "headers": [
     {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
         {
           "key": "X-Frame-Options",
           "value": "DENY"
