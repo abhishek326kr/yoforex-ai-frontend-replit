@@ -24,13 +24,13 @@ const devProxy = {
     target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true,
-    rewrite: (path) => path.replace(/^\/api/, '')
+    rewrite: (path: string) => path.replace(/^\/api/, '')
   },
   '/auth': {
     target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true,
-    rewrite: (path) => path.replace(/^\/auth/, '')
+    rewrite: (path: string) => path.replace(/^\/auth/, '')
   },
   '/prices': {
     target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
