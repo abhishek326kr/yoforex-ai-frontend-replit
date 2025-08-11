@@ -17,7 +17,7 @@ export interface CandleData {
 }
 
 // Analysis response structure
-interface AnalysisResponse {
+export interface AnalysisResponse {
   pair: string;
   granularity: string;
   candles: CandleData[];
@@ -41,7 +41,7 @@ interface AnalysisResponse {
 
 interface AnalysisParams {
   pair: string;          // e.g., 'EUR_USD', 'XAU_USD'
-  timeframe: Timeframe;   // e.g., 'M15', 'H1', 'H4'
+  timeframe: string;   // e.g., 'M15', 'H1', 'H4'
   strategy: TradingStrategy;
   count?: number;         // Default: 100
 }
@@ -79,47 +79,50 @@ const formatStrategyForApi = (strategy: string): string => {
   }
 };
 
+const formattedTimeframe = ((timeframe: string) => {
+  switch (timeframe) {
+    case '1M': return 'M1';
+    case '5M': return 'M5';
+    case '15M': return 'M15';
+    case '30M': return 'M30';
+    case '1H': return 'H1';
+    case '4H': return 'H4';
+    case '8H': return 'H8';
+    case '1D': return 'D1';
+    case '1W': return 'W1';
+    case '1MO': return 'M';
+    default: return 'H1'; // Default to 1 hour if unknown
+  }
+});
+
 export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3): Promise<AnalysisResponse> => {
   const { pair, timeframe, strategy, count = 100 } = params;
-  
+  const newTimeFrame = formattedTimeframe(timeframe)
+
   // Try multiple backend URLs if available
   const backendUrls = [
     'https://backend.axiontrust.com',
     // Add backup URLs here if available
     // 'https://api-backup.axiontrust.com',
   ];
-  
+
   for (const baseUrl of backendUrls) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         // Format parameters for API
         const formattedPair = mapToOandaInstrument(pair);
-        console.log('formattedPair', formattedPair);
+
         const formattedStrategy = formatStrategyForApi(strategy);
-        
+
         // Format timeframe to match backend expected format (e.g., '1H', '4H', '1D')
-        const formattedTimeframe = (() => {
-          const match = timeframe.match(/(\d+)([mhdwM])/i);
-          if (!match) return 'H1'; // Default to 1 hour if format is invalid
-          
-          const value = match[1];
-          const unit = match[2].toUpperCase();
-          
-          // Ensure valid timeframes (e.g., '1H', '4H', '1D')
-          if (unit === 'M') return `${value}M`;
-          if (unit === 'H') return `${value}H`;
-          if (unit === 'D') return `${value}D`;
-          if (unit === 'W') return `${value}W`;
-          
-          return 'H1'; // Default fallback
-        })();
-        
-        console.log('Formatted timeframe:', formattedTimeframe);
-        
-        const url = `${baseUrl}/analysis/strategy?strategy=${formattedStrategy}&pair=${formattedPair}&granularity=${formattedTimeframe}&count=${count}`;
-        
-        console.log(`Making API request to ${baseUrl} (attempt ${attempt}/${retries}):`, url);
-        
+
+
+
+
+        const url = `${baseUrl}/analysis/strategy?strategy=${formattedStrategy}&pair=${formattedPair}&granularity=${newTimeFrame}&count=${count}`;
+
+
+
         const response = await axios.post<AnalysisResponse>(url, {}, {
           timeout: 400000, // Increased to 60 seconds
           headers: {
@@ -130,22 +133,22 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
           // Add retry configuration
           validateStatus: (status) => status < 500, // Don't retry on client errors
         });
-        
+
         console.log('Analysis response received:', response.data);
         return response.data;
-        
+
       } catch (error: any) {
         console.error(`API request to ${baseUrl} failed (attempt ${attempt}/${retries}):`, error);
-        
+
         // Check if it's a timeout or network error
-        const isTimeoutError = error.code === 'ECONNABORTED' || 
-                             error.message?.includes('timeout') ||
-                             error.message?.includes('ERR_CONNECTION_TIMED_OUT');
-        
-        const isNetworkError = error.code === 'ENOTFOUND' || 
-                             error.code === 'ECONNREFUSED' ||
-                             error.message?.includes('Network Error');
-        
+        const isTimeoutError = error.code === 'ECONNABORTED' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('ERR_CONNECTION_TIMED_OUT');
+
+        const isNetworkError = error.code === 'ENOTFOUND' ||
+          error.code === 'ECONNREFUSED' ||
+          error.message?.includes('Network Error');
+
         // If it's the last attempt for this URL, continue to next URL
         if (attempt === retries) {
           if (baseUrl === backendUrls[backendUrls.length - 1]) {
@@ -161,12 +164,12 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
           // Try next URL
           break;
         }
-        
+
         // If not a retryable error, try next URL
         if (!isTimeoutError && !isNetworkError) {
           break;
         }
-        
+
         // Wait before retrying (exponential backoff)
         const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
         console.log(`Retrying in ${delay}ms...`);
@@ -174,36 +177,11 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
       }
     }
   }
-  
+
   throw new Error('All backend URLs and retry attempts failed');
 };
 
-/**
- * Converts a standard timeframe string to the API's expected format
- * @param timeframe Standard timeframe string (e.g., '1m', '15m', '1h', '4h')
- * @returns Formatted timeframe string (e.g., 'M1', 'M15', 'H1', 'H4')
- */
-export const formatTimeframe = (timeframe: string): Timeframe => {
-  const match = timeframe.match(/^(\d+)([mhdwM])/);
-  if (!match) return 'H1'; // Default to 1 hour if format is unrecognized
-  
-  const [value, unit] = match;
-  
-  switch (unit) {
-    case 'm': // minutes
-      return `M${value}` as Timeframe;
-    case 'h': // hours
-      return `H${value}` as Timeframe;
-    case 'd': // days
-      return 'D1' as Timeframe;
-    case 'w': // weeks
-      return 'W1' as Timeframe;
-    case 'M': // months
-      return 'M' as Timeframe;
-    default:
-      return 'H1' as Timeframe;
-  }
-};
+
 
 
 
