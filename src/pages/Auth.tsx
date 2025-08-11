@@ -63,7 +63,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/signup", {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_BASE_URL}/api/auth/signup`, {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -127,7 +127,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/verify-signup-otp", {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_BASE_URL}/api/auth/verify-signup-otp`, {
         phone: formData.phone,
         otp: formData.otp,
       }, {
@@ -177,7 +177,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/login/request-otp", {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_BASE_URL}/api/auth/login/request-otp`, {
         phone: formData.phone,
       });
 
@@ -221,7 +221,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/login/verify-otp", {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_BASE_URL}/api/auth/login/verify-otp`, {
         phone: formData.phone,
         otp: formData.otp,
       });
@@ -270,7 +270,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/auth/login/email", {
+      const response = await axios.post(`${process.env.VITE_PUBLIC_API_BASE_URL}/api/auth/login/email`, {
         email: formData.email,
         password: formData.password,
       });
