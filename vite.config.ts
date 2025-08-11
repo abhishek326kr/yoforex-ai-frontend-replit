@@ -76,7 +76,7 @@ export default defineConfig(({ command, mode }) => {
             'https://backend.axiontrust.com'
           ],
           methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization'],
+          allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Credentials'],
           credentials: true
         }
       }
