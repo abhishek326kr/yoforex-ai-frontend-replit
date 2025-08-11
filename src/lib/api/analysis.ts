@@ -96,12 +96,25 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
         const formattedPair = mapToOandaInstrument(pair);
         console.log('formattedPair', formattedPair);
         const formattedStrategy = formatStrategyForApi(strategy);
-        const formattedTimeframe = timeframe.replace(/(\d+)([mhdwM])/i, (_, num, unit) => 
-          unit.toLowerCase() === 'm' ? `M${num}` : 
-          unit.toLowerCase() === 'h' ? `H${num}` : 
-          unit.toLowerCase() === 'd' ? 'D1' : 
-          unit.toLowerCase() === 'w' ? 'W1' : 'H1'
-        );
+        
+        // Format timeframe to match backend expected format (e.g., '1H', '4H', '1D')
+        const formattedTimeframe = (() => {
+          const match = timeframe.match(/(\d+)([mhdwM])/i);
+          if (!match) return 'H1'; // Default to 1 hour if format is invalid
+          
+          const value = match[1];
+          const unit = match[2].toUpperCase();
+          
+          // Ensure valid timeframes (e.g., '1H', '4H', '1D')
+          if (unit === 'M') return `${value}M`;
+          if (unit === 'H') return `${value}H`;
+          if (unit === 'D') return `${value}D`;
+          if (unit === 'W') return `${value}W`;
+          
+          return 'H1'; // Default fallback
+        })();
+        
+        console.log('Formatted timeframe:', formattedTimeframe);
         
         const url = `${baseUrl}/analysis/strategy?strategy=${formattedStrategy}&pair=${formattedPair}&granularity=${formattedTimeframe}&count=${count}`;
         
