@@ -24,18 +24,30 @@ export default defineConfig(({ mode }) => {
         '/auth': {
           target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
           changeOrigin: true,
-          secure: false,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/auth/, ''),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.error('Proxy error:', err);
+            });
+          },
         },
         '/prices': {
           target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
           changeOrigin: true,
-          secure: false,
+          secure: true,
         },
         '/api': {
           target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
           changeOrigin: true,
-          secure: false,
+          secure: true,
         },
+      },
+      cors: {
+        origin: ['https://app.yoforex.co.in', 'https://backend.axiontrust.com', 'https://yoforex-ai.vercel.app'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers'],
+        credentials: true,
       },
     },
     // For production build
