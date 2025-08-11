@@ -99,12 +99,7 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
   const { pair, timeframe, strategy, count = 100 } = params;
   const newTimeFrame = formattedTimeframe(timeframe)
 
-  // Try multiple backend URLs if available
-  const backendUrls = [
-    'https://backend.axiontrust.com',
-    // Add backup URLs here if available
-    // 'https://api-backup.axiontrust.com',
-  ];
+  const backendUrls = [process.env.VITE_PUBLIC_API_BASE_URL]
 
   for (const baseUrl of backendUrls) {
     for (let attempt = 1; attempt <= retries; attempt++) {
