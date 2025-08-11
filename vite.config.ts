@@ -5,52 +5,100 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ mode }) => {
+// Base configuration
+const baseConfig = {
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+  define: {
+    'process.env': {}
+  },
+};
+
+// Proxy configuration for development
+const devProxy = {
+  '/api': {
+    target: 'https://backend.axiontrust.com',
+    changeOrigin: true,
+    secure: true,
+    rewrite: (path) => path.replace(/^\/api/, '')
+  },
+  '/auth': {
+    target: 'https://backend.axiontrust.com',
+    changeOrigin: true,
+    secure: true,
+    rewrite: (path) => path.replace(/^\/auth/, '')
+  },
+  '/prices': {
+    target: 'https://backend.axiontrust.com',
+    changeOrigin: true,
+    secure: true
+  },
+  '/analysis': {
+    target: 'https://backend.axiontrust.com',
+    changeOrigin: true,
+    secure: true
+  }
+};
+
+export default defineConfig(({ command, mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '');
+  const isProduction = mode === 'production';
+
+  // Base URL for API requests - use env variable or default to backend.axiontrust.com
+  const apiBaseUrl = env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com';
   
-  return {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "src"),
+  // Production configuration
+  if (isProduction) {
+    return {
+      ...baseConfig,
+      define: {
+        'process.env': {
+          VITE_PUBLIC_API_BASE_URL: JSON.stringify(apiBaseUrl)
+        }
       },
-    },
+      build: {
+        target: 'esnext',
+        outDir: 'dist',
+        assetsDir: 'assets',
+        sourcemap: true,
+      },
+      server: {
+        proxy: devProxy,
+        cors: {
+          origin: [
+            'https://app.yoforex.co.in',
+            'https://yoforex-ai.vercel.app',
+            'https://backend.axiontrust.com'
+          ],
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+          allowedHeaders: ['Content-Type', 'Authorization'],
+          credentials: true
+        }
+      }
+    };
+  }
+
+  // Development configuration
+  return {
+    ...baseConfig,
     define: {
-      'process.env': env,
+      'process.env': {
+        VITE_PUBLIC_API_BASE_URL: JSON.stringify('/api')
+      }
     },
     server: {
-      proxy: {
-        '/auth': {
-          target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
-          changeOrigin: true,
-          secure: true,
-          rewrite: (path) => path.replace(/^\/auth/, ''),
-          configure: (proxy, _options) => {
-            proxy.on('error', (err, _req, _res) => {
-              console.error('Proxy error:', err);
-            });
-          },
-        },
-        '/prices': {
-          target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
-          changeOrigin: true,
-          secure: true,
-        },
-        '/api': {
-          target: env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com',
-          changeOrigin: true,
-          secure: true,
-        },
-      },
-      cors: {
-        origin: ['https://app.yoforex.co.in', 'https://backend.axiontrust.com', 'https://yoforex-ai.vercel.app'],
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers'],
-        credentials: true,
-      },
+      proxy: devProxy,
+      cors: true
     },
-    // For production build
+    preview: {
+      proxy: devProxy,
+      cors: true
+    },
     build: {
       target: 'esnext',
       outDir: 'dist',
