@@ -99,7 +99,7 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
   const { pair, timeframe, strategy, count = 100 } = params;
   const newTimeFrame = formattedTimeframe(timeframe)
 
-  const backendUrls = [process.env.VITE_PUBLIC_API_BASE_URL]
+  const backendUrls = [import.meta.env.VITE_PUBLIC_API_BASE_URL]
 
   for (const baseUrl of backendUrls) {
     for (let attempt = 1; attempt <= retries; attempt++) {
