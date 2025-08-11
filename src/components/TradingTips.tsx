@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 
 type NewsItem = {
   headline: string;
@@ -72,10 +73,11 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
       setIsAnimating(true);
       setError(null);
       
-      const response = await fetch(`https://backend.axiontrust.com/news/news/?page=${pageNum}&limit=${PAGE_SIZE}`);
-      if (!response.ok) throw new Error('Failed to fetch news');
+      const response = await axios.get(`${import.meta.env.VITE_PUBLIC_API_BASE_URL}/news/news/?page=${pageNum}&limit=${PAGE_SIZE}`);
+      if (!response) throw new Error('Failed to fetch news');
       
-      const data = await response.json();
+      const data = response.data;
+      console.log(response.data)
       if (Array.isArray(data)) {
         setNews(data);
       } else if (Array.isArray(data?.results)) {
@@ -169,9 +171,10 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
                                 {item.sentiment}
                               </span>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-3">
-                              {item.summary}
-                            </p>
+                            <div 
+                              className="text-sm text-muted-foreground line-clamp-3 prose prose-sm prose-invert"
+                              dangerouslySetInnerHTML={{ __html: item.summary }}
+                            />
                             <div className="flex items-center justify-between mt-2">
                               <span className="text-xs text-muted-foreground">{item.source}</span>
                               <span className="text-xs text-muted-foreground">{item.time}</span>
