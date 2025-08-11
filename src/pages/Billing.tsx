@@ -27,14 +27,13 @@ import {
   Calendar,
   DollarSign,
   TrendingUp,
-  AlertCircle,
   CheckCircle,
-  Clock,
+  Loader2,
+  AlertTriangle,
   Plus,
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
-  Filter,
   Search
 } from "lucide-react";
 
@@ -120,14 +119,7 @@ export function Billing() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed": return <Badge className="bg-gradient-profit">Completed</Badge>;
-      case "processing": return <Badge className="bg-yellow-500/20 text-yellow-500">Processing</Badge>;
-      case "failed": return <Badge variant="destructive">Failed</Badge>;
-      default: return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
+
 
   return (
     <TradingLayout>
@@ -344,7 +336,12 @@ export function Billing() {
                         }`}>
                           {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
                         </p>
-                        {getStatusBadge(transaction.status)}
+                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
+                          {transaction.status === 'completed' && <CheckCircle className="h-3 w-3" />}
+                          {transaction.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {transaction.status === 'failed' && <AlertTriangle className="h-3 w-3" />}
+                          <span className="text-sm font-medium capitalize">{transaction.status}</span>
+                        </div>
                       </div>
                     </div>
                   ))}

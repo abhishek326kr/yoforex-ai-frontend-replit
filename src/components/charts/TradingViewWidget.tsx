@@ -84,7 +84,7 @@ const TradingViewWidget = ({
     }
 
     let script: HTMLScriptElement | null = null;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const initialize = () => {
       // Check if TradingView script is already loaded

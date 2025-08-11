@@ -100,9 +100,84 @@ export function ActiveTrades() {
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
 
+  // Find the selected trade data
+  const selectedTradeData = activeTrades.find(trade => trade.id === selectedTrade);
+
   return (
     <TradingLayout>
       <div className="space-y-6">
+        {/* Trade Details Dialog */}
+        <Dialog open={!!selectedTrade} onOpenChange={(open) => !open && setSelectedTrade(null)}>
+          <DialogContent className="sm:max-w-2xl">
+            {selectedTradeData && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle>Trade Details - {selectedTradeData.pair}</DialogTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setSelectedTrade(null)}
+                      className="h-8 w-8"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <DialogDescription>
+                    {selectedTradeData.strategy} • {selectedTradeData.id}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Direction</p>
+                      <p className="font-medium">{selectedTradeData.direction}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Entry Price</p>
+                      <p className="font-medium">{selectedTradeData.entryPrice}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Price</p>
+                      <p className="font-medium">{selectedTradeData.currentPrice}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Unrealized P&L</p>
+                      <p className={`font-medium ${selectedTradeData.profitable ? 'text-green-500' : 'text-destructive'}`}>
+                        {selectedTradeData.unrealizedPL}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Stop Loss</p>
+                      <p className="font-medium">{selectedTradeData.stopLoss}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Take Profit</p>
+                      <p className="font-medium">{selectedTradeData.takeProfit}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">Notes</p>
+                    <p className="text-sm">{selectedTradeData.notes}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setSelectedTrade(null)}>
+                    Close
+                  </Button>
+                  <Button variant="destructive" onClick={() => {
+                    // Handle close position
+                    setShowCloseDialog(true);
+                    setSelectedTrade(null);
+                  }}>
+                    Close Position
+                  </Button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -172,7 +247,11 @@ export function ActiveTrades() {
               <TabsContent value="all">
                 <div className="space-y-4">
                   {activeTrades.map((trade) => (
-                    <Card key={trade.id} className="p-6 bg-gradient-dark border border-border/20 hover:border-border/40 transition-colors">
+                    <Card 
+                      key={trade.id} 
+                      className="p-6 bg-gradient-dark border border-border/20 hover:border-border/40 transition-colors cursor-pointer"
+                      onClick={() => setSelectedTrade(trade.id)}
+                    >
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         {/* Position Info */}
                         <div className="lg:col-span-3">
@@ -185,6 +264,9 @@ export function ActiveTrades() {
                                 {trade.direction}
                               </Badge>
                               <span className="text-lg font-bold text-foreground">{trade.pair}</span>
+                              {!trade.profitable && (
+                                <TrendingDown className="h-4 w-4 text-destructive" />
+                              )}
                             </div>
                             <Badge variant="outline" className="text-xs">
                               {trade.id}

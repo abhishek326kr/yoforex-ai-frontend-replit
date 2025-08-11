@@ -12,9 +12,7 @@ interface AnalysisDisplayProps {
     take_profit: number;
     risk_reward_ratio: string;
     timeframe: string;
-    technical_analysis: {
-      [key: string]: any; // Make it flexible to handle varying parameter names
-    };
+    technical_analysis: Record<string, unknown>; // Flexible type for varying parameter names
     recommendation: string;
   };
   onRefresh?: () => void; // Optional callback for refreshing the analysis

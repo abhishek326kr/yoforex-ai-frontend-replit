@@ -79,7 +79,7 @@ const formatStrategyForApi = (strategy: string): string => {
   }
 };
 
-const formattedTimeframe = ((timeframe: string) => {
+export default function formattedTimeframe (timeframe: string) {
   switch (timeframe) {
     case '1M': return 'M1';
     case '5M': return 'M5';
@@ -93,7 +93,7 @@ const formattedTimeframe = ((timeframe: string) => {
     case '1MO': return 'M';
     default: return 'H1'; // Default to 1 hour if unknown
   }
-});
+}
 
 export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3): Promise<AnalysisResponse> => {
   const { pair, timeframe, strategy, count = 100 } = params;

@@ -24,14 +24,9 @@ import {
   Search,
   Filter,
   Download,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   Clock,
-  DollarSign,
-  BarChart3,
-  Target,
-  Activity
+  BarChart3
 } from "lucide-react";
 
 const tradeHistory = [

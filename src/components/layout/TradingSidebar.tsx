@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  BarChart3,
   TrendingUp,
   History,
   Target,

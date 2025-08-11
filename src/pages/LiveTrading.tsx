@@ -123,7 +123,7 @@ export function LiveTrading() {
   const [selectedStrategy, setSelectedStrategy] = useState<string>("");
   const [candleData, setCandleData] = useState<any[]>([]);
   const [analysisText, setAnalysisText] = useState("");
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  // const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<{
     loading: boolean;
     error: string | null;

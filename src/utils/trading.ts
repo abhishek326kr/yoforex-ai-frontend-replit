@@ -143,7 +143,7 @@ export const getTradingPairs = () => ({
 });
 
 // OANDA mapping function
-export const mapToOandaInstrument = (pair: string): string | undefined => {
+export const mapToOandaInstrument = (pair: string): string => {
   const cleanPair = pair.trim().toUpperCase();
 
   // Special case for COPPER/USD - return XCU_USD for OANDA
@@ -191,6 +191,6 @@ export const mapToOandaInstrument = (pair: string): string | undefined => {
     return cleanPair.replace('/', '_');
   }
 
-  return;
+  return "EUR_USD"
 };
 

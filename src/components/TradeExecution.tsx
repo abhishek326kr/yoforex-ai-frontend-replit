@@ -2,11 +2,13 @@ import { FC, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
-import { fetchTradingAnalysis, formatTimeframe, formatPairForApi, CandleData } from "@/lib/api/analysis";
+import { fetchTradingAnalysis, CandleData } from "@/lib/api/analysis";
+import formattedTimeframe from "@/lib/api/analysis";
+import { mapToOandaInstrument } from "@/utils/trading";
 
 interface TechnicalAnalysis {
   Support_Level: number;
@@ -43,6 +45,7 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [candleData] = useState<any[]>([]);
 
   const analyzeMarket = async () => {
 
@@ -54,8 +57,8 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
       const count = calculateCandleCount(selectedTimeframe);
       
       const analysisData = await fetchTradingAnalysis({
-        pair: formatPairForApi(selectedPair),
-        timeframe: formatTimeframe(selectedTimeframe),
+        pair: mapToOandaInstrument(selectedPair),
+        timeframe: formattedTimeframe(selectedTimeframe),
         strategy: selectedStrategy as any, // We know this is a valid strategy
         count,
         

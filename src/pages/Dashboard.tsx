@@ -1,5 +1,5 @@
 import { TradingLayout } from "@/components/layout/TradingLayout";
-import { Brain, Zap, ArrowUpRight, ChevronDown, TrendingUp, TrendingDown, Clock, AlertCircle, DollarSign, Target, Activity, BarChart3, ArrowRight } from "lucide-react";
+import { Brain, Zap, TrendingUp, TrendingDown, DollarSign, Target, Activity, BarChart3, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";

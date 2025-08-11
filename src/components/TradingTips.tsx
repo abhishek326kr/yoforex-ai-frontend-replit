@@ -39,21 +39,32 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
 
   // Handle page changes
   const handlePageChange = useCallback((pageNum: number) => {
+    // Prevent page changes during animation
+    if (isAnimating) return;
+    
+    // Don't go beyond page limits
+    if (pageNum < 1 || pageNum > totalPages) return;
+    
+    // Set animation state
+    setIsAnimating(true);
+    
+    // Update page and fetch news
     setPage(pageNum);
-    fetchNews(pageNum);    
+    fetchNews(pageNum);
+    
     // Adjust window start if needed
     if (pageNum >= windowStart + PAGINATION_WINDOW) {
       setWindowStart(pageNum - 1);
     } else if (pageNum < windowStart) {
       setWindowStart(Math.max(1, pageNum));
     }
-  }, [windowStart]);
+  }, [windowStart, isAnimating, totalPages]);
 
   // Navigation handlers
   const handleNextPage = useCallback(() => handlePageChange(page + 1), [handlePageChange, page]);
   const handlePrevPage = useCallback(() => handlePageChange(page - 1), [handlePageChange, page]);
-  const handleNextWindow = useCallback(() => handlePageChange(windowStart + 1), [handlePageChange, windowStart]);
-  const handlePrevWindow = useCallback(() => handlePageChange(Math.max(1, windowStart - 1)), [handlePageChange, windowStart]);
+  // const handleNextWindow = useCallback(() => handlePageChange(windowStart + 1), [handlePageChange, windowStart]);
+  // const handlePrevWindow = useCallback(() => handlePageChange(Math.max(1, windowStart - 1)), [handlePageChange, windowStart]);
 
   const fetchNews = async (pageNum: number) => {
     try {
