@@ -21,24 +21,24 @@ const baseConfig = {
 // Proxy configuration for development
 const devProxy = {
   '/api': {
-    target: 'https://backend.axiontrust.com',
+    target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true,
     rewrite: (path) => path.replace(/^\/api/, '')
   },
   '/auth': {
-    target: 'https://backend.axiontrust.com',
+    target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true,
     rewrite: (path) => path.replace(/^\/auth/, '')
   },
   '/prices': {
-    target: 'https://backend.axiontrust.com',
+    target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true
   },
   '/analysis': {
-    target: 'https://backend.axiontrust.com',
+    target: process.env.NODE_ENV === 'production' ? 'https://backend.axiontrust.com' : 'http://localhost:8000',
     changeOrigin: true,
     secure: true
   }
