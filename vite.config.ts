@@ -16,6 +16,11 @@ const baseConfig = {
   define: {
     'process.env': {}
   },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+  publicDir: 'public',
 };
 
 // Proxy configuration for development

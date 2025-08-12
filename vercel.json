@@ -1,7 +1,18 @@
 {
-  "buildCommand": "npm install && npm run build",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev",
-  "framework": "vite",
-  "outputDirectory": "dist"
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
