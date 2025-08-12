@@ -66,17 +66,66 @@ export default defineConfig(({ command, mode }) => {
         outDir: 'dist',
         assetsDir: 'assets',
         sourcemap: true,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom', 'react-router-dom'],
+              ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu']
+            }
+          }
+        }
       },
       server: {
-        proxy: devProxy,
+        port: 3000,
+        strictPort: true,
+        proxy: {
+          '/api': {
+            target: apiBaseUrl,
+            changeOrigin: true,
+            secure: true,
+            rewrite: (path) => path.replace(/^\/api/, '')
+          },
+          '/auth': {
+            target: apiBaseUrl,
+            changeOrigin: true,
+            secure: true,
+            rewrite: (path) => path.replace(/^\/auth/, '')
+          },
+          '/prices': {
+            target: apiBaseUrl,
+            changeOrigin: true,
+            secure: true
+          },
+          '/analysis': {
+            target: apiBaseUrl,
+            changeOrigin: true,
+            secure: true
+          }
+        },
         cors: {
           origin: [
             'https://app.yoforex.co.in',
             'https://yoforex-ai.vercel.app',
-            'https://backend.axiontrust.com'
+            'https://backend.axiontrust.com',
           ],
-          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Methods', 'Access-Control-Allow-Headers', 'Access-Control-Allow-Credentials'],
+          methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+          allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'X-Requested-With',
+            'Accept',
+            'Origin',
+            'Access-Control-Allow-Origin'
+          ],
+          credentials: true,
+          maxAge: 86400
+        }
+      },
+      preview: {
+        port: 3000,
+        strictPort: true,
+        cors: {
+          origin: true,
           credentials: true
         }
       }
