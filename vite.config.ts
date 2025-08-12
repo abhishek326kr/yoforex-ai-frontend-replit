@@ -7,7 +7,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Base configuration
 const baseConfig = {
-  base: '/',  // Explicitly set base URL
   plugins: [react()],
   resolve: {
     alias: {
@@ -20,25 +19,8 @@ const baseConfig = {
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,  // Enable source maps for debugging
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-        },
-      },
-    },
   },
   publicDir: 'public',
-  server: {
-    port: 3000,
-    strictPort: true,
-    open: true,
-  },
-  preview: {
-    port: 3000,
-    strictPort: true,
-  },
 };
 
 // Proxy configuration for development

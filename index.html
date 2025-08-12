@@ -6,46 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YoForex AI - Professional Trading Platform</title>
     <meta name="description" content="Advanced AI-powered forex trading platform with real-time market analysis, trading signals, and portfolio management tools." />
-    <style>
-      #root {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #0f172a;
-        color: white;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      }
-      .loading {
-        text-align: center;
-        padding: 2rem;
-      }
-      .error {
-        color: #ef4444;
-        text-align: center;
-        padding: 2rem;
-      }
-    </style>
   </head>
   <body>
-    <div id="root">
-      <div class="loading">Loading YoForex AI...</div>
-    </div>
-    <script type="module">
-      window.addEventListener('error', (event) => {
-        console.error('Global error:', event.error);
-        const root = document.getElementById('root');
-        if (root) {
-          root.innerHTML = `
-            <div class="error">
-              <h2>Application Error</h2>
-              <p>${event.message || 'An unknown error occurred'}</p>
-              <p>Please try refreshing the page or contact support if the problem persists.</p>
-            </div>
-          `;
-        }
-      });
-    </script>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -19,7 +19,7 @@ export function TradingHeader() {
   const { logout } = useAuth();
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-60 z-30 bg-card/90 backdrop-blur-md border-b border-border/20">
+    <div className="fixed top-0 right-0 left-0 md:left-60 bg-card/90 backdrop-blur-md border-b border-border/20">
       <div className="h-[75px] flex items-center px-4 md:px-6 gap-4">
         {/* Live Price Tracker - Takes remaining space */}
         <div className="flex-1 min-w-0">
@@ -89,7 +89,8 @@ export function TradingHeader() {
           </DropdownMenu>
         </div>
       </div>
-    </header>
+      </div>
+    
     
   );
 }
