@@ -226,53 +226,97 @@ export function Auth() {
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         }
       });
 
-      // Check if response contains access_token or token
-      const token = response.data?.access_token || response.data?.token;
+      // Log full response for debugging
+      console.log('OTP Verification Response:', response);
+
+      // Check for token in various possible locations in the response
+      const responseData = response?.data || {};
+      const token = responseData?.access_token || 
+                   responseData?.token || 
+                   responseData?.data?.access_token || 
+                   responseData?.data?.token;
       
       if (!token) {
-        throw new Error('No authentication token received from server');
+        console.error('No token found in response:', responseData);
+        throw new Error('Authentication failed: No token received from server');
       }
 
       // Store the token and update auth state
       login(token);
       
+      // Show success message
       toast({
         title: "Login Successful",
         description: "Welcome back to YoForex AI!",
       });
       
+      // Clear sensitive data from state
+      setFormData(prev => ({
+        ...prev,
+        otp: '',
+        password: ''
+      }));
+      
       // Redirect to dashboard after a short delay to allow the toast to be seen
+      const redirectUrl = sessionStorage.getItem('redirect_after_login') || '/dashboard';
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = redirectUrl;
       }, 1000);
       
     } catch (error: any) {
       console.error('OTP Verification Error:', error);
       
+      // Clear sensitive data on error
+      setFormData(prev => ({
+        ...prev,
+        otp: '',
+        password: ''
+      }));
+      
       if (!error.response) {
         // Network error or no response from server
         toast({
           title: "Network Error",
-          description: "Unable to connect to the server. Please check your internet connection.",
+          description: "Unable to connect to the server. Please check your internet connection and try again.",
           variant: "destructive",
         });
       } else if (error.response.status === 422) {
         // Validation error
         const errorData = error.response.data;
+        const errorMessage = errorData.detail?.[0]?.msg || 
+                           errorData.message || 
+                           "Invalid OTP. Please try again.";
+        
         toast({
           title: "Verification Failed",
-          description: errorData.detail?.[0]?.msg || "Invalid OTP. Please try again.",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else if (error.response.status === 401) {
+        // Unauthorized - invalid credentials
+        toast({
+          title: "Authentication Failed",
+          description: "The verification code is invalid or has expired. Please request a new one.",
+          variant: "destructive",
+        });
+      } else if (error.response.status >= 500) {
+        // Server error
+        toast({
+          title: "Server Error",
+          description: "We're experiencing technical difficulties. Please try again later.",
           variant: "destructive",
         });
       } else {
-        // Other server errors
+        // Other errors
         const errorMessage = error.response?.data?.detail || 
-                            error.response?.data?.message || 
-                            "An unexpected error occurred";
+                           error.response?.data?.message || 
+                           "An unexpected error occurred. Please try again.";
+        
         toast({
           title: `Error ${error.response?.status || ''}`.trim(),
           description: errorMessage,
