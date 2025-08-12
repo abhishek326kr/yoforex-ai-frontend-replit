@@ -52,10 +52,14 @@ export default defineConfig(({ command, mode }) => {
   // Base URL for API requests - use env variable or default to backend.axiontrust.com
   const apiBaseUrl = env.VITE_PUBLIC_API_BASE_URL || 'https://backend.axiontrust.com';
   
+  // Base URL for the application
+  const base = isProduction ? '/' : '/';
+  
   // Production configuration
   if (isProduction) {
     return {
       ...baseConfig,
+      base: base,
       define: {
         'process.env': {
           VITE_PUBLIC_API_BASE_URL: JSON.stringify(apiBaseUrl)
@@ -135,14 +139,21 @@ export default defineConfig(({ command, mode }) => {
   // Development configuration
   return {
     ...baseConfig,
+    base: base,
     define: {
       'process.env': {
         VITE_PUBLIC_API_BASE_URL: JSON.stringify('/api')
       }
     },
     server: {
+      port: 3000,
+      strictPort: true,
       proxy: devProxy,
-      cors: true
+      open: true,
+      historyApiFallback: {
+        disableDotRule: true,
+        index: '/',
+      }
     },
     preview: {
       proxy: devProxy,

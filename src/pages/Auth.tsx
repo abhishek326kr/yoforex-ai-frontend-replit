@@ -23,8 +23,7 @@ import {
   Brain,
   TrendingUp
 } from "lucide-react";
-import axios from "axios";
-
+import apiClient from "@/lib/api/client";
 import 'react-phone-input-2/lib/style.css'
 
 interface AuthFormData {
@@ -63,7 +62,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`/auth/signup`, {
+      const response = await apiClient.post(`/auth/signup`, {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -127,14 +126,9 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`/auth/verify-signup-otp`, {
+      const response = await apiClient.post(`/auth/verify-signup-otp`, {
         phone: formData.phone,
         otp: formData.otp,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
       });
 
       // API returns 200 for successful verification
@@ -177,8 +171,13 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`/auth/login/request-otp`, {
+      const response = await apiClient.post(`/auth/login/request-otp`, {
         phone: formData.phone,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
       // API returns 200 for successful OTP request
@@ -221,7 +220,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`/auth/login/verify-otp`, {
+      const response = await apiClient.post(`/auth/login/verify-otp`, {
         phone: formData.phone,
         otp: formData.otp,
       });
@@ -273,7 +272,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`/auth/login/email`, {
+      const response = await apiClient.post(`/auth/login/email`, {
         email: formData.email,
         password: formData.password,
       });
