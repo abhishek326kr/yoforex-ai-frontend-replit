@@ -248,8 +248,8 @@ export function Auth() {
       } else {
         console.log(error.response)
         toast({
-          title: `Error: ${error.response.data.status}`,
-          description: `${error.response.data.detail}`,
+          title: `Error: ${error.response.status}`,
+          description: `${error.response.detail}`,
           variant: "destructive",
         });
       }
