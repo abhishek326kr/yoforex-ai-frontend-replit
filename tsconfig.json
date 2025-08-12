@@ -21,8 +21,9 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "node"],
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src", "src/**/*"],
+  "include": ["src", "src/**/*", "vite.config.ts", "vite-env.d.ts"],
   "exclude": ["node_modules"]
 }

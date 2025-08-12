@@ -23,8 +23,7 @@ import {
   Brain,
   TrendingUp
 } from "lucide-react";
-import axios from "axios";
-
+import apiClient from "@/lib/api/client";
 import 'react-phone-input-2/lib/style.css'
 
 interface AuthFormData {
@@ -63,7 +62,7 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/auth/signup", {
+      const response = await apiClient.post(`/auth/signup`, {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -127,14 +126,9 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/auth/verify-signup-otp", {
+      const response = await apiClient.post(`/auth/verify-signup-otp`, {
         phone: formData.phone,
         otp: formData.otp,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
       });
 
       // API returns 200 for successful verification
@@ -177,8 +171,13 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/auth/login/request-otp", {
+      const response = await apiClient.post(`/auth/login/request-otp`, {
         phone: formData.phone,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
       // API returns 200 for successful OTP request
@@ -221,14 +220,17 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/auth/login/verify-otp", {
+      const response = await apiClient.post(`/auth/login/verify-otp`, {
         phone: formData.phone,
         otp: formData.otp,
       });
 
       // API returns 200 for successful login
       if (response.status === 200) {
-        const token = response.data; // Store the token
+        const { token } = response.data; // Extract token from response data object
+        if (!token) {
+          throw new Error('No token received from server');
+        }
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
@@ -241,14 +243,16 @@ export function Auth() {
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
+        console.log(errorData)
         toast({
           title: "Login Failed",
           description: errorData.detail?.[0]?.msg || "Invalid credentials. Please try again.",
           variant: "destructive",
         });
       } else {
+        console.log(error.response)
         toast({
-          title: `Error: ${error.response.status}`,
+          title: `Error: ${error.response.data.status}`,
           description: `${error.response.data.detail}`,
           variant: "destructive",
         });
@@ -270,14 +274,17 @@ export function Auth() {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/auth/login/email", {
+      const response = await apiClient.post(`/auth/login/email`, {
         email: formData.email,
         password: formData.password,
       });
 
       // API returns 200 for successful login
       if (response.status === 200) {
-        const token = response.data; // Store the token
+        const { token } = response.data; // Extract token from response data object
+        if (!token) {
+          throw new Error('No token received from server');
+        }
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",

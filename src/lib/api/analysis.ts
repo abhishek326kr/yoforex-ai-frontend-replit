@@ -99,84 +99,70 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
   const { pair, timeframe, strategy, count = 100 } = params;
   const newTimeFrame = formattedTimeframe(timeframe)
 
-  const backendUrls = [import.meta.env.VITE_PUBLIC_API_BASE_URL]
+  // In production, we use relative URLs that will be proxied by Vite
+  // In development, Vite will proxy the requests to the backend
+  const baseUrl = import.meta.env.PROD ? '' : '/api';
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // Format parameters for API
+      const formattedPair = mapToOandaInstrument(pair);
+      const formattedStrategy = formatStrategyForApi(strategy);
+      
+      // Build URL with proper encoding for query parameters
+      const url = new URL(`${baseUrl}/analysis/strategy`, window.location.origin);
+      url.searchParams.append('strategy', formattedStrategy);
+      url.searchParams.append('pair', formattedPair);
+      url.searchParams.append('granularity', newTimeFrame);
+      url.searchParams.append('count', count.toString());
+      
+      console.log('API Request URL:', url.toString());
 
-  for (const baseUrl of backendUrls) {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        // Format parameters for API
-        const formattedPair = mapToOandaInstrument(pair);
-
-        const formattedStrategy = formatStrategyForApi(strategy);
-
-        // Format timeframe to match backend expected format (e.g., '1H', '4H', '1D')
-
-
-
-
-        const url = `${baseUrl}/analysis/strategy?strategy=${formattedStrategy}&pair=${formattedPair}&granularity=${newTimeFrame}&count=${count}`;
-
-
-
-        const response = await axios.post<AnalysisResponse>(url, {}, {
-          timeout: 400000, // Increased to 60 seconds
+      const response = await axios.post<AnalysisResponse>(
+        url.toString(),
+        {},
+        {
+          timeout: 400000, // 60 seconds timeout
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'User-Agent': 'YoForex-Frontend/1.0'
           },
-          // Add retry configuration
-          validateStatus: (status) => status < 500, // Don't retry on client errors
-        });
-
-        console.log('Analysis response received:', response.data);
-        return response.data;
-
-      } catch (error: any) {
-        console.error(`API request to ${baseUrl} failed (attempt ${attempt}/${retries}):`, error);
-
-        // Check if it's a timeout or network error
-        const isTimeoutError = error.code === 'ECONNABORTED' ||
-          error.message?.includes('timeout') ||
-          error.message?.includes('ERR_CONNECTION_TIMED_OUT');
-
-        const isNetworkError = error.code === 'ENOTFOUND' ||
-          error.code === 'ECONNREFUSED' ||
-          error.message?.includes('Network Error');
-
-        // If it's the last attempt for this URL, continue to next URL
-        if (attempt === retries) {
-          if (baseUrl === backendUrls[backendUrls.length - 1]) {
-            // This is the last URL and last attempt
-            if (isTimeoutError) {
-              throw new Error(`Backend server is taking too long to respond. The analysis request timed out after 60 seconds. Please try again later or contact support.`);
-            } else if (isNetworkError) {
-              throw new Error('Unable to connect to the backend server. Please check your internet connection and try again.');
-            } else {
-              throw error;
-            }
-          }
-          // Try next URL
-          break;
+          validateStatus: (status) => status < 500 // Don't retry on client errors
         }
+      );
 
-        // If not a retryable error, try next URL
-        if (!isTimeoutError && !isNetworkError) {
-          break;
-        }
+      console.log('Analysis response received:', response.data);
+      return response.data;
 
-        // Wait before retrying (exponential backoff)
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+    } catch (error: any) {
+      lastError = error;
+      console.error(`API request failed (attempt ${attempt}/${retries}):`, error);
+
+      // Check if it's a timeout or network error
+      const isTimeoutError = error.code === 'ECONNABORTED' ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('ERR_CONNECTION_TIMED_OUT');
+
+      const isNetworkError = !error.response && error.request;
+
+      // If it's the last attempt, throw the error
+      if (attempt === retries) {
+        throw new Error(`Failed to fetch analysis after ${retries} attempts: ${error.message}`);
       }
+
+      // If not a retryable error, throw the error
+      if (!isTimeoutError && !isNetworkError) {
+        throw error;
+      }
+
+      // Wait before retrying (exponential backoff)
+      const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+      console.log(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  throw new Error('All backend URLs and retry attempts failed');
+  throw lastError || new Error('All retry attempts failed');
 };
-
-
-
-
-

@@ -41,7 +41,7 @@ export function TradingSidebar() {
 
   const SidebarContent = () => (
 
-    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border ">
+    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border z-auto absolute">
       {/* Logo Section */}
       <div className="flex h-16 justify-start items-center border-b border-sidebar-border py-2">
         <img src="/logo.png" alt="Yoforex AI logo" className="ml-[0px]"/>
