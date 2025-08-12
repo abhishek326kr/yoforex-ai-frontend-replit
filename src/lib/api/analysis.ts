@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './client';
 import { mapToOandaInstrument } from '@/utils/trading';
 // Supported timeframes in the format expected by the API
 export type Timeframe = 'M1' | 'M5' | 'M15' | 'M30' | 'H1' | 'H4' | 'H8' | 'D1' | 'W1' | 'M';
@@ -99,35 +99,35 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
   const { pair, timeframe, strategy, count = 100 } = params;
   const newTimeFrame = formattedTimeframe(timeframe)
 
-  // In production, we use relative URLs that will be proxied by Vite
-  // In development, Vite will proxy the requests to the backend
-  const baseUrl = import.meta.env.PROD ? '' : '/api';
   let lastError: Error | null = null;
-  
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       // Format parameters for API
       const formattedPair = mapToOandaInstrument(pair);
       const formattedStrategy = formatStrategyForApi(strategy);
-      
-      // Build URL with proper encoding for query parameters
-      const url = new URL(`${baseUrl}/analysis/strategy`, window.location.origin);
-      url.searchParams.append('strategy', formattedStrategy);
-      url.searchParams.append('pair', formattedPair);
-      url.searchParams.append('granularity', newTimeFrame);
-      url.searchParams.append('count', count.toString());
-      
-      console.log('API Request URL:', url.toString());
 
-      const response = await axios.post<AnalysisResponse>(
-        url.toString(),
+      // Use relative path, let apiClient handle baseURL
+      const endpoint = '/analysis/strategy';
+      const queryParams = new URLSearchParams({
+        strategy: formattedStrategy,
+        pair: formattedPair,
+        granularity: newTimeFrame,
+        count: count.toString(),
+      });
+
+      const url = `${endpoint}?${queryParams.toString()}`;
+
+      console.log('API Request URL:', url);
+
+      const response = await apiClient.post<AnalysisResponse>(
+        url,
         {},
         {
           timeout: 400000, // 60 seconds timeout
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'User-Agent': 'YoForex-Frontend/1.0'
+            'User-Agent': 'YoForex-Frontend/1.0',
           },
           validateStatus: (status) => status < 500 // Don't retry on client errors
         }
