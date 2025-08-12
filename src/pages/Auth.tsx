@@ -228,7 +228,10 @@ export function Auth() {
 
       // API returns 200 for successful login
       if (response.status === 200) {
-        const token = response.data; // Store the token
+        const { token } = response.data; // Extract token from response data object
+        if (!token) {
+          throw new Error('No token received from server');
+        }
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
@@ -277,7 +280,10 @@ export function Auth() {
 
       // API returns 200 for successful login
       if (response.status === 200) {
-        const token = response.data; // Store the token
+        const { token } = response.data; // Extract token from response data object
+        if (!token) {
+          throw new Error('No token received from server');
+        }
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
