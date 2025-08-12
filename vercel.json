@@ -10,29 +10,7 @@
     }
   ],
   "routes": [
-    {
-      "src": "/_next/static/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "dest": "/_next/static/$1"
-    },
-    {
-      "src": "/static/(.*)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*).(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "dest": "/$1.$2"
-    },
-    {
-      "src": "^/(assets|images|favicon.ico|robots.txt|sitemap.xml|manifest.json)",
-      "dest": "/$1"
-    },
-    {
-      "src": "^/(.*)",
-      "dest": "/index.html"
-    },
+    
     {
        "rewrites": [{ "source": "/(.*)", "destination": "/" }]
     }
