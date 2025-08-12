@@ -250,7 +250,7 @@ export function Auth() {
         });
       } else {
         toast({
-          title: `Error: ${error.response.status}`,
+          title: `Error: ${error.response.data.status}`,
           description: `${error.response.data.detail}`,
           variant: "destructive",
         });
