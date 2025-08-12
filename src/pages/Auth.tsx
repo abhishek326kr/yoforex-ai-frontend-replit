@@ -243,12 +243,14 @@ export function Auth() {
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
+        console.log(errorData)
         toast({
           title: "Login Failed",
           description: errorData.detail?.[0]?.msg || "Invalid credentials. Please try again.",
           variant: "destructive",
         });
       } else {
+        console.log(error.response)
         toast({
           title: `Error: ${error.response.data.status}`,
           description: `${error.response.data.detail}`,
