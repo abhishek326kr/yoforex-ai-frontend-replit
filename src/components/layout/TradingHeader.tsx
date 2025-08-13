@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import LivePriceTracker from "@/components/LivePriceTracker";
+import { UserProfileDropdown } from "../user/UserProfileDropdown";
 
 export function TradingHeader() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,32 +62,7 @@ export function TradingHeader() {
           </Button>
 
           {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-foreground">John Trader</p>
-                  <p className="text-xs text-muted-foreground">Pro Plan</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-              <DropdownMenuItem>Account Balance</DropdownMenuItem>
-              <DropdownMenuItem>Subscription</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserProfileDropdown />
         </div>
       </div>
       </div>
