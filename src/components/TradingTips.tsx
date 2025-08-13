@@ -77,7 +77,7 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
       if (!response) throw new Error('Failed to fetch news');
       
       const data = response.data;
-      console.log(response.data)
+      
       if (Array.isArray(data)) {
         setNews(data);
       } else if (Array.isArray(data?.results)) {
