@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import TradingTips from "@/components/TradingTips";
+import { userInfo } from "os";
 
 const portfolioStats = [
   {
@@ -84,7 +85,7 @@ export function Dashboard() {
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Welcome back, John.</h1>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back.</h1>
             <p className="text-muted-foreground mt-1">
               Here's your AI-powered trading overview.
             </p>

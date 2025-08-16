@@ -1,5 +1,5 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Router, Route, Switch } from "wouter";
@@ -10,6 +10,7 @@ import { ActiveTrades } from "@/pages/ActiveTrades";
 import { Settings } from "@/pages/Settings";
 import { Pricing } from "@/pages/Pricing";
 import { Billing } from "@/pages/Billing";
+import { Profile } from "@/pages/Profile";
 import { Auth } from "@/pages/Auth";
 // import { Landing } from "@/pages/Landing";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -23,13 +24,25 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Router>
         <AuthProvider>
           <Switch>
             {/* Public routes */}
-            <Route path="/auth" component={Auth} />
+            <Route path="/auth">
+              <Auth />
+            </Route>
 
             {/* Protected routes */}
             <Route path="/dashboard" component={Dashboard} />
@@ -37,6 +50,7 @@ const App = () => (
             <Route path="/history" component={History} />
             <Route path="/active" component={ActiveTrades} />
             <Route path="/settings" component={Settings} />
+            <Route path="/profile" component={Profile} />
             <Route path="/pricing" component={Pricing} />
             <Route path="/billing" component={Billing} />
             <Route path="/help" component={HelpSupport} />

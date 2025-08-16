@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -189,17 +189,33 @@ export function Auth() {
         setActiveTab("verify-login");
       }
     } catch (error: any) {
-      if (error.response?.status === 422) {
+      toast.error({
+        title: "Error!",
+        description: `${error}`,
+      });
+      
+      if (!error.response) {
+        toast({
+          title: "Error!",
+          description: "Network error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (error.response.status === 422) {
         const errorData = error.response.data;
+        const errorMessage = errorData.detail?.[0]?.msg || "Failed to send OTP. Please try again.";
         toast({
           title: "Request Failed",
-          description: errorData.detail?.[0]?.msg || "Failed to send OTP. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
+        const errorMessage = error.response.data?.detail || "An unexpected error occurred";
         toast({
           title: `Error: ${error.response.status}`,
-          description: `${error.response.data.detail}`,
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -311,17 +327,17 @@ export function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo and Brand */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-2">
-            <div className="p-3 bg-gradient-primary rounded-xl">
+            <div className="p-3 bg-blue-600 rounded-xl">
               <Zap className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">YoForex AI</h1>
-              <p className="text-muted-foreground">Advanced Trading Platform</p>
+              <p className="text-gray-400">Advanced Trading Platform</p>
             </div>
           </div>
           <div className="flex items-center justify-center space-x-2">

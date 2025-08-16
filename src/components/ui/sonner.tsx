@@ -1,29 +1,13 @@
-import { useTheme } from "next-themes"
-import { Toaster as Sonner, toast } from "sonner"
+// This component is deprecated in favor of react-toastify
+// The ToastContainer from react-toastify is now used in App.tsx
+// This file is kept for backward compatibility but should not be used
 
-type ToasterProps = React.ComponentProps<typeof Sonner>
-
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
-  return (
-    <Sonner
-      theme={theme as ToasterProps["theme"]}
-      className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-        },
-      }}
-      {...props}
-    />
-  )
+export function Toaster() {
+  // This component is no longer used - react-toastify ToastContainer is used instead
+  return null;
 }
 
-export { Toaster, toast }
+// Deprecated toast function - use the one from @/hooks/use-toast instead
+export const toast = () => {
+  console.warn('Sonner toast is deprecated. Use toast from @/hooks/use-toast instead.');
+};

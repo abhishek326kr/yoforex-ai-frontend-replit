@@ -38,8 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // For now, we'll just check if token exists
       if (token) {
         setIsAuthenticated(true);
-        // You can decode the token to get user info
-        // setUser(decodedUser);
+        // Set basic user data - you can enhance this with actual token decoding
+        setUser({
+          name: 'User',
+          email: 'user@example.com'
+        });
       }
     } catch (error) {
       // Token is invalid, remove it
@@ -54,8 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (token: string) => {
     localStorage.setItem('authToken', token);
     setIsAuthenticated(true);
-    // You can decode the token to get user info
-    // setUser(decodedUser);
+    // Set basic user data - you can enhance this with actual token decoding
+    setUser({
+      name: 'User',
+      email: 'user@example.com'
+    });
   };
 
   const logout = () => {

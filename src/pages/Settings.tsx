@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 
 export function Settings() {
+  const { toast } = useToast();
   const [riskLevel, setRiskLevel] = useState([2]);
   const [maxPositions, setMaxPositions] = useState([5]);
   const [notifications, setNotifications] = useState({
@@ -41,6 +43,37 @@ export function Settings() {
     push: false,
     sms: true
   });
+
+  const handleSaveSettings = () => {
+    toast({
+      title: "Settings Saved",
+      description: "Your trading preferences have been updated successfully.",
+    });
+  };
+
+  const handleResetDefaults = () => {
+    setRiskLevel([2]);
+    setMaxPositions([5]);
+    setNotifications({
+      trades: true,
+      signals: true,
+      news: false,
+      email: true,
+      push: false,
+      sms: true
+    });
+    toast({
+      title: "Settings Reset",
+      description: "All settings have been reset to default values.",
+    });
+  };
+
+  const handleUpdatePassword = () => {
+    toast({
+      title: "Password Updated",
+      description: "Your password has been changed successfully.",
+    });
+  };
 
   return (
     <TradingLayout>
@@ -54,11 +87,11 @@ export function Settings() {
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleResetDefaults}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Reset to Defaults
             </Button>
-            <Button className="btn-trading-primary">
+            <Button className="btn-trading-primary" onClick={handleSaveSettings}>
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>
@@ -371,7 +404,7 @@ export function Settings() {
                     <Input id="confirmPassword" type="password" className="mt-1" />
                   </div>
 
-                  <Button className="w-full btn-trading-primary">
+                  <Button className="w-full btn-trading-primary" onClick={handleUpdatePassword}>
                     Update Password
                   </Button>
                 </div>
