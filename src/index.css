@@ -88,27 +88,72 @@
     --sidebar-ring: 217 91% 60%;
   }
 
-  /* Light mode fallback - not primary focus for trading platform */
+  /* Light Theme - Clean Professional Trading Interface */
   .light {
     --background: 0 0% 100%;
     --foreground: 222 84% 4.9%;
+    
+    /* Trading Cards - Light Glass Effect */
     --card: 0 0% 100%;
     --card-foreground: 222 84% 4.9%;
+    --card-glass: 210 20% 98%;
+    
     --popover: 0 0% 100%;
     --popover-foreground: 222 84% 4.9%;
+    
+    /* Trading Primary - Consistent Blue */
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 55%;
+    
+    /* Light Secondary */
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
+    
+    /* Light Muted */
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
+    
+    /* Light Accent */
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
+    
+    /* Destructive - Same Red */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
+    
+    /* Light UI Elements */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 217 91% 60%;
+    
+    /* Trading Colors - Consistent */
+    --trading-profit: 142 76% 36%;
+    --trading-loss: 0 84% 60%;
+    --trading-pending: 45 93% 47%;
+    --trading-neutral: 215 16% 47%;
+    
+    /* Light Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(210 40% 96%), hsl(210 40% 94%));
+    --gradient-profit: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 41%));
+    --gradient-loss: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 65%));
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.8), hsl(210 20% 98% / 0.6));
+    
+    /* Light Shadows */
+    --shadow-trading: 0 8px 32px hsl(0 0% 0% / 0.08);
+    --shadow-glass: 0 8px 32px hsl(0 0% 0% / 0.05);
+    --shadow-glow: 0 0 40px hsl(217 91% 60% / 0.15);
+    
+    /* Light Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 84% 4.9%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -118,7 +163,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
   }
 
   html {

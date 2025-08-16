@@ -11,12 +11,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { profileStorage } from "@/utils/profileStorage";
+import { useState, useEffect } from "react";
 
 export function UserProfileDropdown() {
   const { user, logout, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const [userProfile, setUserProfile] = useState<any>(null);
   
-  // Debug logging
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user?.email) {
+        try {
+          // First try to get from profile storage
+          const profile = await profileStorage.getProfile(user.email);
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            // If no profile in storage, use the user data from auth context
+            setUserProfile(user);
+          }
+        } catch (error) {
+          console.error('Failed to load user profile in dropdown:', error);
+          // Fallback to auth context user data
+          setUserProfile(user);
+        }
+      } else {
+        setUserProfile(null);
+      }
+    };
+    
+    loadUserProfile();
+  }, [user]);
+  
+  // Prioritize fetched profile data over auth context data
+  const displayName = userProfile?.name || user?.name || 'User';
+  const displayEmail = userProfile?.email || user?.email || 'user@example.com';
   
   return (
     <DropdownMenu>
@@ -32,11 +62,16 @@ export function UserProfileDropdown() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user?.name || 'User'}
+              {displayName}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email || 'user@example.com'}
+              {displayEmail}
             </p>
+            {userProfile?.location && (
+              <p className="text-xs leading-none text-primary">
+                📍 {userProfile.location}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

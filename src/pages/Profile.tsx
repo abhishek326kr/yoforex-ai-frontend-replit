@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,10 +33,54 @@ import {
   Settings as SettingsIcon
 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
+import { profileStorage, ProfileData, UserPreferences, SecuritySettings } from "@/utils/profileStorage";
 
 export function Profile() {
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Load profile data from PostgreSQL on component mount
+  useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        if (user?.email) {
+          await profileStorage.initializeTables();
+          const profile = await profileStorage.getProfile(user.email);
+          
+          if (profile) {
+            setProfileData({
+              name: profile.name,
+              email: profile.email,
+              phone: profile.phone || '+1 (555) 123-4567',
+              bio: profile.bio || 'Professional forex trader with 5+ years of experience in AI-powered trading.',
+              location: profile.location || 'New York, USA',
+              timezone: profile.timezone || 'America/New_York',
+              language: profile.language || 'English',
+              currency: profile.currency || 'USD'
+            });
+            
+            if (profile.id) {
+              // Load preferences
+              const userPrefs = await profileStorage.getPreferences(profile.id);
+              if (userPrefs) {
+                setPreferences(userPrefs);
+              }
+              
+              // Load security settings
+              const secSettings = await profileStorage.getSecuritySettings(profile.id);
+              if (secSettings) {
+                setSecuritySettings(secSettings);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load profile data:', error);
+      }
+    };
+    
+    loadProfileData();
+  }, [user]);
   
   const [profileData, setProfileData] = useState({
     name: user?.name || 'John Doe',
@@ -68,26 +112,71 @@ export function Profile() {
     allowApiAccess: false
   });
 
-  const handleSaveProfile = () => {
-    // Here you would typically make an API call to update the profile
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved successfully.",
-    });
+  const handleSaveProfile = async () => {
+    try {
+      await profileStorage.initializeTables();
+      const savedProfile = await profileStorage.saveProfile({
+        ...profileData,
+        first_name: profileData.name.split(' ')[0],
+        last_name: profileData.name.split(' ').slice(1).join(' ')
+      });
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully to PostgreSQL.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+      console.error('Profile save error:', error);
+    }
   };
 
-  const handleSavePreferences = () => {
-    toast({
-      title: "Preferences Saved",
-      description: "Your preferences have been updated successfully.",
-    });
+  const handleSavePreferences = async () => {
+    try {
+      if (user?.email) {
+        const profile = await profileStorage.getProfile(user.email);
+        if (profile?.id) {
+          await profileStorage.savePreferences(profile.id, preferences);
+          toast({
+            title: "Preferences Saved",
+            description: "Your preferences have been updated successfully in PostgreSQL.",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive"
+      });
+      console.error('Preferences save error:', error);
+    }
   };
 
-  const handleSaveSecurity = () => {
-    toast({
-      title: "Security Settings Updated",
-      description: "Your security settings have been saved successfully.",
-    });
+  const handleSaveSecurity = async () => {
+    try {
+      if (user?.email) {
+        const profile = await profileStorage.getProfile(user.email);
+        if (profile?.id) {
+          await profileStorage.saveSecuritySettings(profile.id, securitySettings);
+          toast({
+            title: "Security Settings Updated",
+            description: "Your security settings have been saved successfully in PostgreSQL.",
+          });
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save security settings. Please try again.",
+        variant: "destructive"
+      });
+      console.error('Security save error:', error);
+    }
   };
 
   const handleAvatarUpload = () => {

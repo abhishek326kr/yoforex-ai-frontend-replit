@@ -15,6 +15,7 @@ import { Auth } from "@/pages/Auth";
 // import { Landing } from "@/pages/Landing";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import NotFound from "@/pages/NotFound";
 import HelpSupport from "./components/HelpSupport";
 import { Journal } from "./components/Journal";
@@ -23,21 +24,22 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-      <Router>
-        <AuthProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="yoforex-ui-theme">
+      <TooltipProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+        <Router>
+          <AuthProvider>
           <Switch>
             {/* Public routes */}
             <Route path="/auth">
@@ -64,9 +66,10 @@ const App = () => (
             </Route>
             <Route component={NotFound} />
           </Switch>
-        </AuthProvider>
-      </Router>
-    </TooltipProvider>
+          </AuthProvider>
+        </Router>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

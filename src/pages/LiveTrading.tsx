@@ -7,7 +7,8 @@ import {
   Zap,
   Mic,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 
 // Type definitions for Technical Analysis Card props
@@ -268,7 +269,7 @@ export function LiveTrading() {
               {/* Right Panel - Live Signals & Positions */}
               <div className="col-span-12 lg:col-span-3 flex flex-col space-y-4">
                 <LiveSignals />
-                <ActivePositions/>
+                {/* <ActivePositions/> */}
                 <TradingTips/>
               </div>
             </div>
@@ -276,163 +277,135 @@ export function LiveTrading() {
 
           {/* Manual AI Confirmation Tab */}
           <TabsContent value="manual" className='flex-1 min-h-0 flex flex-col'>
-            <div className="grid grid-cols-12 gap-4 min-h-[800px]">
+            <div className="grid grid-cols-12 gap-6 min-h-[800px]">
               {/* Left Panel - Analysis Input */}
               <div className="col-span-12 lg:col-span-3 space-y-6">
-                <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20">
-                  <h3 className="text-lg font-semibold text-foreground mb-4">Analysis Input</h3>
-                  {/* Upload Section */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-foreground mb-2">Upload Chart</h4>
-                    <div className="border-2 border-dashed border-border/40 rounded-lg p-6 text-center hover:border-border/60 transition-colors cursor-pointer">
-                      <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-foreground">Drop chart screenshot here</p>
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WebP up to 10MB</p>
+                <Card className="p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Activity className="h-5 w-5 text-primary" />
                     </div>
-                  </div>
-                  {/* Technical Analysis */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-foreground mb-3">Technical Analysis</h4>
-                    {analysis.loading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        <span>Analyzing market data...</span>
-                      </div>
-                    ) : analysis.error ? (
-                      <div className="flex items-center gap-2 text-destructive p-3 rounded-md bg-destructive/10 text-sm">
-                        <AlertCircle className="h-4 w-4" />
-                        {analysis.error}
-                      </div>
-                    ) : !analysis.hasRun ? (
-                      <div className="text-sm text-muted-foreground p-3 text-center">
-                        <p>Click "Run AI Analysis" to analyze the market</p>
-                        <Button 
-                          onClick={handleAnalysis}
-                          className="mt-2 bg-gradient-primary hover:bg-primary-hover"
-                          disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
-                        >
-                          <Zap className="h-4 w-4 mr-2" />
-                          Run AI Analysis
-                        </Button>
-                      </div>
-                    ) : analysis.data?.analysis?.technical_analysis ? (
-                      <div className="space-y-3 text-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="p-2 bg-muted/20 rounded">
-                            <p className="text-muted-foreground text-xs">Support</p>
-                            <p className="font-medium">{analysis.data.analysis.technical_analysis.Support_Level?.toFixed(5) || 'N/A'}</p>
-                          </div>
-                          <div className="p-2 bg-muted/20 rounded">
-                            <p className="text-muted-foreground text-xs">Resistance</p>
-                            <p className="font-medium">{analysis.data.analysis.technical_analysis.Resistance_Level?.toFixed(5) || 'N/A'}</p>
-                          </div>
-                        </div>
-                        <div className="p-2 bg-muted/10 rounded">
-                          <p className="text-muted-foreground text-xs">Volume Confirmation</p>
-                          <p className="font-medium">{analysis.data.analysis.technical_analysis.Volume_Confirmation || 'N/A'}</p>
-                        </div>
-                        <div className="p-2 bg-muted/10 rounded">
-                          <p className="text-muted-foreground text-xs">Breakout Direction</p>
-                          <p className="font-medium">{analysis.data.analysis.technical_analysis.Breakout_Direction || 'N/A'}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground p-3 text-center">
-                        <p>No analysis data available. Try running the analysis again.</p>
-                        <Button 
-                          onClick={handleAnalysis}
-                          className="mt-2 bg-gradient-primary hover:bg-primary-hover"
-                          disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
-                        >
-                          <Zap className="h-4 w-4 mr-2" />
-                          Retry Analysis
-                        </Button>
-                      </div>
-                    )}
+                    <h3 className="text-lg font-semibold text-foreground">Analysis Input</h3>
                   </div>
                   
-                  {/* Text Analysis */}
+                  {/* Upload Chart Section */}
                   <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium text-foreground">Text Analysis</h4>
-                      <Button size="sm" variant="outline">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                        <h4 className="text-sm font-medium text-foreground">Upload Chart</h4>
+                      </div>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10">
+                        <Lock className="h-3 w-3 text-primary" />
+                        <span className="text-xs text-primary font-medium">Pro</span>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border-2 border-dashed border-border/40 bg-muted/20 p-6 text-center opacity-60">
+                      <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">Drop chart screenshot here</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, WebP up to 10MB</p>
+                    </div>
+                  </div>
+
+                  {/* Text Analysis Section */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-foreground" />
+                        <h4 className="text-sm font-medium text-foreground">Text Analysis</h4>
+                      </div>
+                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
                         <Mic className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Textarea
-                      placeholder="Describe the market situation, ask specific questions, or paste trading analysis..."
-                      className="min-h-[120px] resize-none"
-                      value={analysisText}
-                      onChange={(e) => setAnalysisText(e.target.value)}
-                    />
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs text-muted-foreground">{analysisText.length}/2000</span>
-                      <Select>
-                        <SelectTrigger className="w-[140px] h-8">
-                          <SelectValue placeholder="Template" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="technical">Technical Analysis</SelectItem>
-                          <SelectItem value="sentiment">Market Sentiment</SelectItem>
-                          <SelectItem value="risk">Risk Management</SelectItem>
-                          <SelectItem value="multi">Multi-timeframe</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-3">
+                      <Textarea
+                        placeholder="Describe the market situation, ask specific questions, or paste trading analysis..."
+                          className="min-h-[120px] resize-none rounded-xl border-border/30 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                        value={analysisText}
+                        onChange={(e) => setAnalysisText(e.target.value)}
+                      />
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">{analysisText.length}/2000</span>
+                        <Select>
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue placeholder="Template" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="technical">Technical Analysis</SelectItem>
+                            <SelectItem value="sentiment">Market Sentiment</SelectItem>
+                            <SelectItem value="risk">Risk Management</SelectItem>
+                            <SelectItem value="multi">Multi-timeframe</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
-                  {/* Input Type Selection */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-foreground mb-2">Analysis Type</h4>
-                    <div className="grid grid-cols-1 gap-2">
-                      <Button variant="outline" className="justify-start h-auto p-3">
+
+                  {/* Analysis Type Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-foreground" />
+                        <h4 className="text-sm font-medium text-foreground">Analysis Type</h4>
+                      </div>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10">
+                        <Lock className="h-3 w-3 text-primary" />
+                        <span className="text-xs text-primary font-medium">Pro</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 opacity-60">
+                      <Button variant="outline" className="justify-start h-auto p-3 pointer-events-none">
                         <div className="text-left">
                           <p className="text-sm font-medium">Text Only</p>
                           <p className="text-xs text-muted-foreground">Standard text analysis</p>
                         </div>
                       </Button>
-                      <Button variant="outline" className="justify-start h-auto p-3">
+                      <Button variant="outline" className="justify-start h-auto p-3 pointer-events-none">
                         <div className="text-left">
                           <p className="text-sm font-medium">Image Only</p>
                           <p className="text-xs text-muted-foreground">Chart screenshot analysis</p>
                         </div>
                       </Button>
-                      <Button className="justify-start h-auto p-3 bg-gradient-primary">
+                      <Button className="justify-start h-auto p-3 bg-primary pointer-events-none">
                         <div className="text-left">
-                          <p className="text-sm font-medium">Text + Image</p>
-                          <p className="text-xs opacity-90">Combined analysis</p>
+                          <p className="text-sm font-medium text-white">Text + Image</p>
+                          <p className="text-xs text-white/90">Combined analysis</p>
                         </div>
                       </Button>
                     </div>
                   </div>
-                  {/* AI Model Selection */}
-                  <AiModelsSelection />
                 </Card>
               </div>
 
               {/* Center Panel - Interactive Chart */}
               <div className="col-span-12 lg:col-span-6">
-                <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">Interactive Chart</h3>
-                      <p className="text-sm text-muted-foreground">Annotate and analyze with drawing tools</p>
+                <Card className="h-full p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Activity className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Interactive Chart</h3>
+                        <p className="text-sm text-muted-foreground">Annotate and analyze with drawing tools</p>
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button size="sm" variant="outline">Screenshot</Button>
                       <Button size="sm" variant="outline">Annotate</Button>
                     </div>
                   </div>
-                  {/* Chart Placeholder */}
-                  <div className="h-[600px] bg-gradient-dark rounded-lg border border-border/20 overflow-hidden">
-                    <div className="h-full w-full">
-                      <TradingViewWidget
-                        symbol={selectedPair}
-                        interval={selectedTimeframe.replace('M', '')}
-                        theme="dark"
-                        autosize={true}
-                        hideSideToolbar={false}
-                      />
-                    </div>
+                  
+                  {/* Chart Container */}
+                  <div className="h-[600px] rounded-lg overflow-hidden border border-border/20">
+                    <TradingViewWidget
+                      symbol={selectedPair}
+                      interval={selectedTimeframe.replace('M', '')}
+                      theme="dark"
+                      autosize={true}
+                      hideSideToolbar={false}
+                    />
                   </div>
                 </Card>
               </div>
@@ -440,26 +413,38 @@ export function LiveTrading() {
               {/* Right Panel - AI Analysis Results and News */}
               <div className="col-span-12 lg:col-span-3 space-y-6">
                 {/* Market News */}
-                <Card className="bg-gradient-glass backdrop-blur-sm border-border/20 overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Market News</CardTitle>
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-accent/10">
+                        <Activity className="h-4 w-4 text-accent" />
+                      </div>
+                      <CardTitle className="text-lg font-semibold text-foreground">Market News</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-0">
                     <TradingTips horizontalLayout={false} showPagination={true} />
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden bg-gradient-glass backdrop-blur-sm border-border/20">
+                
+                {/* AI Analysis Results */}
+                <Card className="overflow-hidden">
                   <Accordion type="single" collapsible defaultValue="ai-analysis" className="w-full">
                     <AccordionItem value="ai-analysis" className="border-0">
-                      <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 py-3">
+                      <div className="px-6 py-4">
                         <AccordionTrigger className="hover:no-underline p-0">
-                          <h3 className="text-lg font-semibold text-foreground">AI Analysis Results</h3>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Zap className="h-4 w-4 text-primary" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground">AI Analysis Results</h3>
+                          </div>
                         </AccordionTrigger>
                       </div>
-                      <AccordionContent className="px-4 pb-4 pt-2">
+                      <AccordionContent className="px-6 pb-6 pt-2">
                         {/* Individual Model Responses */}
                         <div className="space-y-4 mb-6">
-                          <div className="p-4 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm font-medium text-foreground">GPT-4 Omni</span>
                               <div className="flex items-center space-x-1">
@@ -470,9 +455,9 @@ export function LiveTrading() {
                             <p className="text-xs text-foreground/80 mb-2">
                               Strong bullish momentum identified with breakout above key resistance. RSI divergence suggests continuation.
                             </p>
-                            <Badge className="bg-gradient-profit text-xs">BUY Signal</Badge>
+                            <Badge className="bg-green-500 text-white text-xs">BUY Signal</Badge>
                           </div>
-                          <div className="p-4 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm font-medium text-foreground">Claude 3.5 Sonnet</span>
                               <div className="flex items-center space-x-1">
@@ -483,15 +468,16 @@ export function LiveTrading() {
                             <p className="text-xs text-foreground/80 mb-2">
                               Market structure supports bullish bias. Clean break of previous high with strong volume confirmation.
                             </p>
-                            <Badge className="bg-gradient-profit text-xs">BUY Signal</Badge>
+                            <Badge className="bg-green-500 text-white text-xs">BUY Signal</Badge>
                           </div>
                         </div>
+                        
                         {/* Consensus Recommendation */}
-                        <div className="p-4 rounded-lg bg-gradient-profit/20 border border-accent/30">
+                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                           <div className="text-center mb-4">
-                            <Badge className="bg-gradient-profit text-lg px-4 py-2 mb-2">BUY</Badge>
+                            <Badge className="bg-green-500 text-white text-lg px-4 py-2 mb-2">BUY</Badge>
                             <div className="flex items-center justify-center space-x-1">
-                              <div className="h-3 w-3 rounded-full bg-accent" />
+                              <div className="h-3 w-3 rounded-full bg-green-500" />
                               <span className="text-sm font-medium text-foreground">89% Confidence</span>
                             </div>
                           </div>
@@ -502,11 +488,11 @@ export function LiveTrading() {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-foreground/80">Stop Loss:</span>
-                              <span className="font-medium text-trading-loss">1.0820</span>
+                              <span className="font-medium text-red-500">1.0820</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-foreground/80">Take Profit:</span>
-                              <span className="font-medium text-trading-profit">1.0875</span>
+                              <span className="font-medium text-green-500">1.0875</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-foreground/80">Risk/Reward:</span>
@@ -517,7 +503,7 @@ export function LiveTrading() {
                               <span className="font-medium text-foreground">2% of account</span>
                             </div>
                           </div>
-                          <Button className="w-full mt-4 bg-gradient-profit hover:bg-accent/90">
+                          <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
                             <Target className="h-4 w-4 mr-2" />
                             Execute Trade
                           </Button>
@@ -530,8 +516,6 @@ export function LiveTrading() {
             </div>
           </TabsContent>
 
-
-          
         </Tabs>
 
         {/* Execution Results Component */}

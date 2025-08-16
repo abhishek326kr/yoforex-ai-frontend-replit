@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import TradingTips from "@/components/TradingTips";
-import { userInfo } from "os";
+import { useAuth } from "@/hooks/useAuth";
+import { profileStorage } from "@/utils/profileStorage";
+import { useState, useEffect } from "react";
 
 const portfolioStats = [
   {
@@ -79,18 +81,76 @@ const aiModels = [
 ];
 
 export function Dashboard() {
+  const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user?.email) {
+        try {
+          await profileStorage.initializeTables();
+          const profile = await profileStorage.getProfile(user.email);
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            // If no profile in storage, use the user data from auth context
+            setUserProfile(user);
+          }
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+          // Fallback to auth context user data
+          setUserProfile(user);
+        }
+      } else {
+        setUserProfile(null);
+      }
+      setLoading(false);
+    };
+
+    loadUserProfile();
+  }, [user]);
+
+  // Prioritize fetched profile data over auth context data
+  const displayName = userProfile?.name || user?.name || 'Trader';
+  const firstName = displayName.split(' ')[0];
+
   return (
     <TradingLayout>
       <div className="space-y-6">
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Welcome back.</h1>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back, {firstName}!</h1>
             <p className="text-muted-foreground mt-1">
-              Here's your AI-powered trading overview.
+              {userProfile ? (
+                <span>
+                  Here's your AI-powered trading overview.
+                  {userProfile.trading_experience && (
+                    <span className="ml-2 text-primary font-medium">
+                      Experience: {userProfile.trading_experience}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                "Here's your AI-powered trading overview."
+              )}
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            {userProfile && (
+              <div className="flex flex-col items-end mr-3">
+                <span className="text-sm font-medium text-foreground">{userProfile.name}</span>
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                  {userProfile.location && <span>{userProfile.location}</span>}
+                  {userProfile.preferred_pairs && (
+                    <span className="text-primary">
+                      {userProfile.preferred_pairs.split(',')[0]?.trim()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             <Badge variant="secondary" className="bg-gradient-profit text-white">
               <div className="h-2 w-2 rounded-full bg-white mr-2 animate-pulse" />
               Live Trading Active

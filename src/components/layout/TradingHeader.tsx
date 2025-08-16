@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import LivePriceTracker from "@/components/LivePriceTracker";
 import { UserProfileDropdown } from "../user/UserProfileDropdown";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function TradingHeader() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,6 +50,9 @@ export function TradingHeader() {
             <span className="text-sm font-medium text-foreground">2,153</span>
             <span className="text-xs text-muted-foreground">credits</span>
           </div>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative">

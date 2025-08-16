@@ -41,7 +41,7 @@ export function TradingSidebar() {
 
   const SidebarContent = () => (
 
-    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border z-auto absolute">
+    <div className="flex h-full flex-col bg-sidebar-background border-r border-sidebar-border z-auto absolute transition-colors duration-300">
       {/* Logo Section */}
       <div className="flex h-16 justify-start items-center border-b border-sidebar-border py-2">
         <img src="/logo.png" alt="Yoforex AI logo" className="ml-[0px]"/>
@@ -79,7 +79,7 @@ export function TradingSidebar() {
 
       {/* Credit Counter */}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="bg-gradient-glass backdrop-blur-sm rounded-lg p-4 border border-border/20">
+        <div className="bg-gradient-glass backdrop-blur-sm rounded-lg p-4 border border-border/20 transition-colors duration-300">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-sidebar-foreground">Credits</span>
             <span className="text-xs text-sidebar-foreground/60">Pro Plan</span>

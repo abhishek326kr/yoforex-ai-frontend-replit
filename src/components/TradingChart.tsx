@@ -113,7 +113,7 @@ export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartPr
                 </div>
 
                 {/* Chart Controls */}
-                <div className="p-3 border-t border-border/20 bg-card/30">
+                {/* <div className="p-3 border-t border-border/20 bg-card/30">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-1">
                             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
@@ -134,7 +134,7 @@ export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartPr
                             <span className="font-medium">AI Analysis</span>
                         </Button>
                     </div>
-                </div>
+                </div> */}
             </Card>
         </div>
     );
