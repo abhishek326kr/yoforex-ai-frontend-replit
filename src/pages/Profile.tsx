@@ -242,13 +242,8 @@ export function Profile() {
       // Update UI state immediately
       setProfileData(prev => ({ ...prev, avatar_url: url }));
 
-      // Persist avatar_url to backend
-      await profileStorage.saveProfile({
-        ...profileData,
-        avatar_url: url,
-        first_name: profileData.name.split(' ')[0],
-        last_name: profileData.name.split(' ').slice(1).join(' ')
-      });
+      // Persist avatar_url to backend only (PATCH)
+      await profileStorage.updateAvatar(url);
 
       toast({
         title: "Avatar Updated",
@@ -303,7 +298,7 @@ export function Profile() {
               <Card className="trading-card p-6">
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profileData.avatar_url || "/placeholder-avatar.jpg"} />
+                    <AvatarImage src={profileData.avatar_url || "/placeholder.svg"} />
                     <AvatarFallback className="text-lg font-semibold bg-gradient-primary text-white">
                       {profileData.name.split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>

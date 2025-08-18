@@ -129,11 +129,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchAndStoreProfile();
   };
 
-  const logout = () => {
-    localStorage.removeItem('authToken');
-    setIsAuthenticated(false);
-    setUser(null);
-    window.location.href = '/';
+  const logout = async () => {
+    try {
+      // Attempt to clear server-side session cookie
+      const token =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
+          : null;
+      await axios.post(
+        `${API_BASE_URL}/auth/logout`,
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+    } catch (e) {
+      // Ignore network errors here; we'll still clear local state
+      console.warn('Logout request failed, proceeding to clear local state');
+    } finally {
+      // Clear local auth and cached profile data
+      try {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userPreferences');
+        localStorage.removeItem('userSecurity');
+      } catch {}
+      setIsAuthenticated(false);
+      setUser(null);
+      // Redirect to landing/login
+      window.location.href = '/';
+    }
   };
 
   return (

@@ -89,6 +89,17 @@ class ProfileStorageService {
     return response;
   }
 
+  // Build a payload with only defined, non-empty values to avoid overwriting with blanks
+  private buildPayload(data: Record<string, any>): Record<string, any> {
+    const payload: Record<string, any> = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (typeof value === 'string' && value.trim() === '') return;
+      payload[key] = value;
+    });
+    return payload;
+  }
+
   private async checkUserVerification(): Promise<boolean> {
     try {
       const response = await this.makeRequest('/auth/profile', {
@@ -113,23 +124,25 @@ class ProfileStorageService {
 
   async saveProfile(profileData: ProfileData): Promise<ProfileData> {
     try {
+      const payload = this.buildPayload({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        bio: profileData.bio,
+        location: profileData.location,
+        timezone: profileData.timezone,
+        language: profileData.language,
+        currency: profileData.currency,
+        avatar_url: profileData.avatar_url,
+        website: profileData.website,
+        trading_experience: profileData.trading_experience,
+        preferred_pairs: profileData.preferred_pairs,
+        risk_tolerance: profileData.risk_tolerance
+      });
+
       const response = await this.makeRequest('/auth/profile', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: profileData.name,
-          email: profileData.email,
-          phone: profileData.phone,
-          bio: profileData.bio,
-          location: profileData.location,
-          timezone: profileData.timezone,
-          language: profileData.language,
-          currency: profileData.currency,
-          avatar_url: profileData.avatar_url,
-          website: profileData.website,
-          trading_experience: profileData.trading_experience,
-          preferred_pairs: profileData.preferred_pairs,
-          risk_tolerance: profileData.risk_tolerance
-        })
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       });
       
       const updatedProfile = await response.json();
@@ -163,6 +176,29 @@ class ProfileStorageService {
     } catch (error:any) {
       console.error('Failed to save profile:', error.message);
       toast.error(error.message)
+      throw error;
+    }
+  }
+
+  // Update only the avatar URL without touching other fields
+  async updateAvatar(avatarUrl: string): Promise<void> {
+    try {
+      await this.makeRequest('/auth/profile/avatar', {
+        method: 'PATCH',
+        body: JSON.stringify({ avatar_url: avatarUrl })
+      });
+      // Update local cache avatar_url if present
+      try {
+        const cached = localStorage.getItem('userProfile');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          parsed.avatar_url = avatarUrl;
+          localStorage.setItem('userProfile', JSON.stringify(parsed));
+        }
+      } catch {}
+    } catch (error:any) {
+      console.error('Failed to update avatar:', error.message);
+      toast.error(error.message);
       throw error;
     }
   }
