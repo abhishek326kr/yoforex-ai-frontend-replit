@@ -11,9 +11,11 @@ const IDEMPOTENT_METHODS = ['get', 'head', 'options', 'delete', 'put'];
 // List of status codes that should trigger a retry
 const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
+import { API_BASE_URL } from '../../config/api';
+
 // Backend URLs - add more if available
 const BACKEND_URLS = [
-  import.meta.env.VITE_PUBLIC_API_BASE_URL || '/api',
+  API_BASE_URL,
   'https://backup-api.example.com/api' // Add your backup API URL here
 ].filter(Boolean);
 

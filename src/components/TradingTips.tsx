@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from "luci
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
+import { API_BASE_URL } from "../config/api";
 
 type NewsItem = {
   headline: string;
@@ -73,7 +74,7 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
       setIsAnimating(true);
       setError(null);
       
-      const response = await axios.get(`${import.meta.env.VITE_PUBLIC_API_BASE_URL}/news/news/?page=${pageNum}&limit=${PAGE_SIZE}`);
+      const response = await axios.get(`${API_BASE_URL}/news/news/?page=${pageNum}&limit=${PAGE_SIZE}`);
       if (!response) throw new Error('Failed to fetch news');
       
       const data = response.data;

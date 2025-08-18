@@ -76,8 +76,8 @@ export function Auth() {
 
       console.log("Signup response:", response);
 
-      // API returns 201 for successful signup
-      if (response.status === 201) {
+      // Backend returns JSON { status: 'otp_sent' }
+      if (response.data?.status === 'otp_sent') {
         toast({
           title: "Signup Successful",
           description: "Please check your phone for OTP verification.",
@@ -131,13 +131,33 @@ export function Auth() {
         otp: formData.otp,
       });
 
-      // API returns 200 for successful verification
-      if (response.status === 200) {
-        toast({
-          title: "Verification Successful",
-          description: "Your account has been verified successfully!",
-        });
-        setActiveTab("login");
+      // Backend returns JSON { status: 'verified', access_token, user_data }
+      if (response.data?.status === "verified") {
+        const { access_token, user_data } = response.data;
+        
+        // Store user data in localStorage for immediate use
+        if (user_data && access_token) {
+          localStorage.setItem('userProfile', JSON.stringify(user_data.profile));
+          localStorage.setItem('userPreferences', JSON.stringify(user_data.preferences));
+          localStorage.setItem('userSecurity', JSON.stringify(user_data.security));
+          
+          // Store token and login user
+          login(access_token);
+          
+          toast({
+            title: "Verification Successful",
+            description: "Welcome to YoForex AI! Your account is now verified.",
+          });
+          
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
+        } else {
+          toast({
+            title: "Verification Successful",
+            description: "Your account has been verified successfully!",
+          });
+          setActiveTab("login");
+        }
       }
     } catch (error: any) {
       if (error.response?.status === 422) {
@@ -180,8 +200,8 @@ export function Auth() {
         }
       });
 
-      // API returns 200 for successful OTP request
-      if (response.status === 200) {
+      // Backend returns JSON { status: 'success' }
+      if (response.data?.status === "success") {
         toast({
           title: "OTP Sent",
           description: "Please check your phone for the login OTP.",
@@ -189,9 +209,10 @@ export function Auth() {
         setActiveTab("verify-login");
       }
     } catch (error: any) {
-      toast.error({
+      toast({
         title: "Error!",
         description: `${error}`,
+        variant: "destructive",
       });
       
       if (!error.response) {
@@ -203,7 +224,7 @@ export function Auth() {
         return;
       }
 
-      if (error.response.status === 422) {
+      if (error?.response?.status === 422) {
         const errorData = error.response.data;
         const errorMessage = errorData.detail?.[0]?.msg || "Failed to send OTP. Please try again.";
         toast({
@@ -241,14 +262,18 @@ export function Auth() {
         otp: formData.otp,
       });
 
-      // API returns 200 for successful login
-      if (response.status === 200) {
+      // Backend returns JSON { status: 'login_successful', access_token }
+      if (response.data?.status === "login_successful") {
         
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
         });
-        // Handle successful login (store token, redirect, etc.)
+        const token = response.data.access_token;
+        // Persist via auth context (stores authToken and fetches profile)
+        await login(token);
+        // Also keep access_token for any consumers checking that key
+        localStorage.setItem('access_token', token);
         // Redirect to dashboard
         window.location.href = '/dashboard';
       }
@@ -293,16 +318,24 @@ export function Auth() {
 
       // API returns 200 for successful login
       if (response.status === 200) {
-        const { token } = response.data; // Extract token from response data object
-        if (!token) {
-          throw new Error('No token received from server');
+        const { access_token, user_data } = response.data; // Extract access_token and user_data from response
+        if (!access_token) {
+          throw new Error('No access token received from server');
         }
+        
+        // Store user data in localStorage for immediate use
+        if (user_data) {
+          localStorage.setItem('userProfile', JSON.stringify(user_data.profile));
+          localStorage.setItem('userPreferences', JSON.stringify(user_data.preferences));
+          localStorage.setItem('userSecurity', JSON.stringify(user_data.security));
+        }
+        
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
         });
         // Handle successful login (store token, redirect, etc.)
-        login(token);
+        login(access_token);
         // Redirect to dashboard
         window.location.href = '/dashboard';
       }

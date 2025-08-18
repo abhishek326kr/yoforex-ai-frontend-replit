@@ -1,6 +1,7 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import React, { createContext, useContext, useState, useEffect} from 'react';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 import { profileStorage } from "@/utils/profileStorage";
-import axios from "axios";
 // import { useLocation } from "wouter";
 
 interface AuthContextType {
@@ -21,76 +22,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on app load
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // Validate token with backend (optional)
-      validateToken(token);
-    } else {
-      setLoading(false);
-    }
+    // Check for existing session on app load using cookie-based auth
+    validateSession();
   }, []);
 
-  const fetchAndStoreProfile = async () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
+  const validateSession = async () => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      const token =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
+          : null;
+      // Try to fetch profile using cookie-based authentication
       const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
+        withCredentials: true,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
+      });
+      
+      if (response.data) {
+        setIsAuthenticated(true);
+        setUser(response.data);
+        // Fetch and store complete profile data
+        await fetchAndStoreProfile();
+      }
+    } catch (error) {
+      // No valid session, clear any stale auth state
+      localStorage.removeItem('authToken');
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAndStoreProfile = async () => {
+    try {
+      const token =
+        typeof window !== 'undefined'
+          ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
+          : null;
+      const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
+        withCredentials: true, // Use cookie-based authentication
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
       });
 
       if (response.data) {
         const profileData = response.data;
         
-        // Store in profile management system
+        // Initialize storage and cache locally without writing back to API
         await profileStorage.initializeTables();
-        await profileStorage.saveProfile({
-          name: profileData.name || 'User',
-          email: profileData.email || 'user@example.com',
-          phone: profileData.phone || '',
-          bio: profileData.bio || '',
-          location: profileData.location || '',
-          timezone: profileData.timezone || 'America/New_York',
-          language: profileData.language || 'English',
-          currency: profileData.currency || 'USD',
-          first_name: profileData.first_name || profileData.name?.split(' ')[0] || '',
-          last_name: profileData.last_name || profileData.name?.split(' ').slice(1).join(' ') || '',
-          avatar_url: profileData.avatar_url || '',
-          website: profileData.website || '',
-          trading_experience: profileData.trading_experience || '',
-          preferred_pairs: profileData.preferred_pairs || '',
-          risk_tolerance: profileData.risk_tolerance || ''
-        });
+        localStorage.setItem('userProfile', JSON.stringify(profileData));
 
         // Update user state
         setUser(profileData);
-        console.log('Profile data fetched and stored successfully');
+        console.log('Profile data fetched and cached successfully');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
+      // If we get 401, user is not authenticated
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        setIsAuthenticated(false);
+        setUser(null);
+        localStorage.removeItem('authToken');
+      }
     }
   };
 
   const validateToken = async (token: string) => {
     try {
-      // You can add a token validation endpoint here
-      // const response = await axios.get('/auth/validate', {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
+      // Try to fetch profile using cookie-based authentication
+      // This will validate if the user session is still valid
+      const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
+      });
       
-      // For now, we'll just check if token exists
-      if (token) {
+      if (response.data) {
         setIsAuthenticated(true);
-        // Fetch and store profile data after successful authentication
+        setUser(response.data);
+        // Fetch and store complete profile data
         await fetchAndStoreProfile();
       }
     } catch (error) {
-      // Token is invalid, remove it
+      // Session is invalid, clear auth state
       localStorage.removeItem('authToken');
       setIsAuthenticated(false);
       setUser(null);

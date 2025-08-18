@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { profileStorage } from "@/utils/profileStorage";
 import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function UserProfileDropdown() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -24,7 +25,7 @@ export function UserProfileDropdown() {
       if (user?.email) {
         try {
           // First try to get from profile storage
-          const profile = await profileStorage.getProfile(user.email);
+          const profile = await profileStorage.getProfile();
           if (profile) {
             setUserProfile(profile);
           } else {
@@ -53,9 +54,19 @@ export function UserProfileDropdown() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-8 w-8 rounded-full border border-border/30"
+          className="relative h-8 w-8 rounded-full border border-border/30 p-0 overflow-hidden"
         >
-          <User className="h-4 w-4" />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={userProfile?.avatar_url || user?.avatar_url || undefined} alt={displayName} />
+            <AvatarFallback className="text-xs">
+              {(displayName || 'U')
+                .split(' ')
+                .map((n: string) => n[0])
+                .join('')
+                .slice(0,2)
+              }
+            </AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

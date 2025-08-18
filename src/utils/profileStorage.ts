@@ -1,7 +1,8 @@
-// Browser-compatible profile storage using REST API approach
-// Since pg library doesn't work in browsers, we'll use fetch API to communicate with a serverless function
+// Profile storage service that communicates with the backend API
+// Handles profile data, preferences, and security settings
 
-const POSTGRES_URL = import.meta.env.VITE_POSTGRES_URL || 'postgres://3281df3e88ae226e981142c771c78bd21841173823c036ae4367b6cbabfe3232:sk_zLNaVCo36sVFxg1ouSESV@db.prisma.io:5432/?sslmode=require'
+import { toast } from 'react-toastify';
+import { API_BASE_URL } from '../config/api';
 
 export interface ProfileData {
   id?: number;
@@ -20,20 +21,22 @@ export interface ProfileData {
   trading_experience?: string;
   preferred_pairs?: string;
   risk_tolerance?: string;
+  is_verified?: boolean;
+  attempts?: number;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface UserPreferences {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  smsAlerts: boolean;
-  marketUpdates: boolean;
-  tradingAlerts: boolean;
-  newsDigest: boolean;
-  darkMode: boolean;
-  compactView: boolean;
-  autoSave: boolean;
+  email_notifications: boolean;
+  push_notifications: boolean;
+  sms_alerts: boolean;
+  market_updates: boolean;
+  trading_alerts: boolean;
+  news_digest: boolean;
+  dark_mode: boolean;
+  compact_view: boolean;
+  auto_save: boolean;
 }
 
 export interface SecuritySettings {
@@ -44,116 +47,241 @@ export interface SecuritySettings {
 }
 
 class ProfileStorageService {
-  private baseUrl = '/api/profile'; // This would be your API endpoint
+  private baseUrl = `${API_BASE_URL}`;
   
-  // For now, we'll use localStorage as a fallback until proper API is set up
-  private getStorageKey(email: string, type: string = 'profile'): string {
-    return `yoforex_${type}_${email}`;
+  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    const token =
+      typeof window !== 'undefined'
+        ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
+        : null;
+
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      ...options,
+      credentials: 'include', // Always include cookies for HTTP-only cookie authentication
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Clear any stale auth state and redirect to login
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userPreferences');
+        localStorage.removeItem('userSecurity');
+        throw new Error('Not authenticated');
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  }
+
+  private async checkUserVerification(): Promise<boolean> {
+    try {
+      const response = await this.makeRequest('/auth/profile', {
+        method: 'GET'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.is_verified === true;
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
   }
 
   async initializeTables(): Promise<void> {
-    // For browser compatibility, we'll initialize localStorage structure
-    // In a real implementation, this would call your backend API
-    console.log('Profile storage initialized for browser environment');
+    // No initialization needed for API-based storage
+    console.log('Profile storage initialized for API communication');
   }
 
   async saveProfile(profileData: ProfileData): Promise<ProfileData> {
     try {
-      // For now, save to localStorage (in production, this would be an API call)
-      const profileWithTimestamp = {
-        ...profileData,
-        id: Date.now(), // Simple ID generation
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      const response = await this.makeRequest('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          bio: profileData.bio,
+          location: profileData.location,
+          timezone: profileData.timezone,
+          language: profileData.language,
+          currency: profileData.currency,
+          avatar_url: profileData.avatar_url,
+          website: profileData.website,
+          trading_experience: profileData.trading_experience,
+          preferred_pairs: profileData.preferred_pairs,
+          risk_tolerance: profileData.risk_tolerance
+        })
+      });
+      
+      const updatedProfile = await response.json();
+      const normalized = {
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        bio: updatedProfile.bio,
+        location: updatedProfile.location,
+        timezone: updatedProfile.timezone,
+        language: updatedProfile.language,
+        currency: updatedProfile.currency,
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        avatar_url: updatedProfile.avatar_url,
+        website: updatedProfile.website,
+        trading_experience: updatedProfile.trading_experience,
+        preferred_pairs: updatedProfile.preferred_pairs,
+        risk_tolerance: updatedProfile.risk_tolerance
       };
-      
-      localStorage.setItem(
-        this.getStorageKey(profileData.email, 'profile'),
-        JSON.stringify(profileWithTimestamp)
-      );
-      
-      // In production, you would make an API call like:
-      // const response = await fetch('/api/profile', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(profileData)
-      // });
-      // return response.json();
-      
-      return profileWithTimestamp;
-    } catch (error) {
-      console.error('Failed to save profile:', error);
+      // Update local cache so future loads reflect latest data
+      try {
+        localStorage.setItem('userProfile', JSON.stringify({
+          ...updatedProfile,
+          ...normalized,
+        }));
+      } catch {}
+      return normalized;
+    } catch (error:any) {
+      console.error('Failed to save profile:', error.message);
+      toast.error(error.message)
       throw error;
     }
   }
 
-  async getProfile(email: string): Promise<ProfileData | null> {
+  async getProfile(): Promise<ProfileData | null> {
     try {
-      // For now, get from localStorage (in production, this would be an API call)
-      const stored = localStorage.getItem(this.getStorageKey(email, 'profile'));
-      
-      if (stored) {
-        return JSON.parse(stored);
+      // First try to get cached data from localStorage
+      const cachedProfile = localStorage.getItem('userProfile');
+      if (cachedProfile) {
+        console.log('Using cached profile data from localStorage');
+        return JSON.parse(cachedProfile);
       }
       
-      // In production, you would make an API call like:
-      // const response = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
-      // return response.ok ? response.json() : null;
+      // Fallback to API call if no cached data
+      console.log('No cached data, getting profile from backend API...');
+      const response = await this.makeRequest('/auth/profile', {
+        credentials: 'include',
+        method: 'GET'
+      });
       
-      return null;
+      const data = await response.json();
+      
+      // Cache the response for future use
+      localStorage.setItem('userProfile', JSON.stringify(data));
+      
+      return data;
     } catch (error) {
       console.error('Failed to get profile:', error);
       return null;
     }
   }
 
-  async savePreferences(userId: number, preferences: UserPreferences): Promise<void> {
+  async savePreferences(preferences: UserPreferences): Promise<void> {
     try {
-      // For now, save to localStorage using userId as key
-      localStorage.setItem(
-        `yoforex_preferences_${userId}`,
-        JSON.stringify({
-          ...preferences,
-          updated_at: new Date().toISOString()
-        })
-      );
-      
-      // In production: API call to save preferences
+      await this.makeRequest('/auth/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(preferences)
+      });
     } catch (error) {
       console.error('Failed to save preferences:', error);
       throw error;
     }
   }
 
-  async getPreferences(userId: number): Promise<UserPreferences | null> {
+  async getPreferences(): Promise<UserPreferences | null> {
     try {
-      const stored = localStorage.getItem(`yoforex_preferences_${userId}`);
-      return stored ? JSON.parse(stored) : null;
+      // First try to get cached data from localStorage
+      const cachedPreferences = localStorage.getItem('userPreferences');
+      if (cachedPreferences) {
+        console.log('Using cached preferences data from localStorage');
+        return JSON.parse(cachedPreferences);
+      }
+      
+      // Fallback to API call if no cached data
+      console.log('No cached preferences, getting from backend API...');
+      const response = await this.makeRequest('/auth/preferences', {
+        method: 'GET'
+      });
+      
+      const data = await response.json();
+      
+      // Cache the response for future use
+      localStorage.setItem('userPreferences', JSON.stringify(data));
+      
+      return data;
     } catch (error) {
       console.error('Failed to get preferences:', error);
       return null;
     }
   }
 
-  async saveSecuritySettings(userId: number, settings: SecuritySettings): Promise<void> {
+  async saveSecuritySettings(settings: SecuritySettings): Promise<void> {
     try {
-      localStorage.setItem(
-        `yoforex_security_${userId}`,
-        JSON.stringify({
-          ...settings,
-          updated_at: new Date().toISOString()
+      await this.makeRequest('/auth/security', {
+        method: 'PUT',
+        body: JSON.stringify({
+          two_factor_enabled: settings.twoFactorEnabled,
+          login_alerts: settings.loginAlerts,
+          session_timeout: settings.sessionTimeout,
+          allow_api_access: settings.allowApiAccess
         })
-      );
+      });
     } catch (error) {
       console.error('Failed to save security settings:', error);
       throw error;
     }
   }
 
-  async getSecuritySettings(userId: number): Promise<SecuritySettings | null> {
+  async getSecuritySettings(): Promise<SecuritySettings | null> {
     try {
-      const stored = localStorage.getItem(`yoforex_security_${userId}`);
-      return stored ? JSON.parse(stored) : null;
+      // First try to get cached data from localStorage
+      const cachedSecurity = localStorage.getItem('userSecurity');
+      if (cachedSecurity) {
+        console.log('Using cached security data from localStorage');
+        const data = JSON.parse(cachedSecurity);
+        return {
+          twoFactorEnabled: data.two_factor_enabled,
+          loginAlerts: data.login_alerts,
+          sessionTimeout: data.session_timeout,
+          allowApiAccess: data.allow_api_access
+        };
+      }
+      
+      // Fallback to API call if no cached data
+      console.log('No cached security settings, getting from backend API...');
+      const response = await this.makeRequest('/auth/security', {
+        method: 'GET'
+      });
+      
+      const data = await response.json();
+      
+      // Cache the response for future use
+      localStorage.setItem('userSecurity', JSON.stringify(data));
+      
+      // Transform backend response to frontend format
+      return {
+        twoFactorEnabled: data.two_factor_enabled,
+        loginAlerts: data.login_alerts,
+        sessionTimeout: data.session_timeout,
+        allowApiAccess: data.allow_api_access
+      };
     } catch (error) {
       console.error('Failed to get security settings:', error);
       return null;

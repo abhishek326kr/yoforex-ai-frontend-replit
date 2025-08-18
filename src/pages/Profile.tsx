@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,53 +35,90 @@ import {
 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
 import { profileStorage, ProfileData, UserPreferences, SecuritySettings } from "@/utils/profileStorage";
+import { uploadImageToCloudinary } from "@/lib/cloudinary";
 
 export function Profile() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
-  // Load profile data from PostgreSQL on component mount
+  // Load profile data from backend API on component mount
   useEffect(() => {
     const loadProfileData = async () => {
       try {
-        if (user?.email) {
-          await profileStorage.initializeTables();
-          const profile = await profileStorage.getProfile(user.email);
-          
-          if (profile) {
-            setProfileData({
-              name: profile.name,
-              email: profile.email,
-              phone: profile.phone || '+1 (555) 123-4567',
-              bio: profile.bio || 'Professional forex trader with 5+ years of experience in AI-powered trading.',
-              location: profile.location || 'New York, USA',
-              timezone: profile.timezone || 'America/New_York',
-              language: profile.language || 'English',
-              currency: profile.currency || 'USD'
-            });
-            
-            if (profile.id) {
-              // Load preferences
-              const userPrefs = await profileStorage.getPreferences(profile.id);
-              if (userPrefs) {
-                setPreferences(userPrefs);
-              }
-              
-              // Load security settings
-              const secSettings = await profileStorage.getSecuritySettings(profile.id);
-              if (secSettings) {
-                setSecuritySettings(secSettings);
-              }
-            }
-          }
+        // Load profile data
+        const profile = await profileStorage.getProfile();
+        if (profile) {
+          setProfileData({
+            name: profile.name || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            bio: profile.bio || '',
+            location: profile.location || '',
+            timezone: profile.timezone || 'America/New_York',
+            language: profile.language || 'English',
+            currency: profile.currency || 'USD',
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            avatar_url: profile.avatar_url || '',
+            website: profile.website || '',
+            trading_experience: profile.trading_experience || '',
+            preferred_pairs: profile.preferred_pairs || '',
+            risk_tolerance: profile.risk_tolerance || ''
+          });
         }
-      } catch (error) {
-        console.error('Failed to load profile data:', error);
+        
+        // Load preferences
+        const userPrefs = await profileStorage.getPreferences();
+        if (userPrefs) {
+          setPreferences({
+            emailNotifications: userPrefs.email_notifications,
+            pushNotifications: userPrefs.push_notifications,
+            smsAlerts: userPrefs.sms_alerts,
+            marketUpdates: userPrefs.market_updates,
+            tradingAlerts: userPrefs.trading_alerts,
+            newsDigest: userPrefs.news_digest,
+            darkMode: userPrefs.dark_mode,
+            compactView: userPrefs.compact_view,
+            autoSave: userPrefs.auto_save
+          });
+        }
+        
+        // Load security settings
+        const secSettings = await profileStorage.getSecuritySettings();
+        if (secSettings) {
+          setSecuritySettings({
+            twoFactorEnabled: secSettings.twoFactorEnabled,
+            loginAlerts: secSettings.loginAlerts,
+            sessionTimeout: secSettings.sessionTimeout,
+            allowApiAccess: secSettings.allowApiAccess
+          });
+        }
+      } catch (error: any) {
+        if (error?.message === 'User not verified' || error?.message === 'Not authenticated') {
+          // Show message and redirect to auth page
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to access your profile settings.",
+            variant: "destructive"
+          });
+          setTimeout(() => setLocation('/auth'), 1500);
+          return;
+        } else {
+          console.error('Failed to load profile data:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load profile data. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
     };
     
     loadProfileData();
-  }, [user]);
+  }, [user, toast]);
   
   const [profileData, setProfileData] = useState({
     name: user?.name || 'John Doe',
@@ -90,7 +128,14 @@ export function Profile() {
     location: 'New York, USA',
     timezone: 'America/New_York',
     language: 'English',
-    currency: 'USD'
+    currency: 'USD',
+    first_name: '',
+    last_name: '',
+    avatar_url: '',
+    website: '',
+    trading_experience: '',
+    preferred_pairs: '',
+    risk_tolerance: ''
   });
 
   const [preferences, setPreferences] = useState({
@@ -123,7 +168,7 @@ export function Profile() {
       
       toast({
         title: "Profile Updated",
-        description: "Your profile information has been saved successfully to PostgreSQL.",
+        description: "Your profile information has been saved successfully.",
       });
     } catch (error) {
       toast({
@@ -137,16 +182,23 @@ export function Profile() {
 
   const handleSavePreferences = async () => {
     try {
-      if (user?.email) {
-        const profile = await profileStorage.getProfile(user.email);
-        if (profile?.id) {
-          await profileStorage.savePreferences(profile.id, preferences);
-          toast({
-            title: "Preferences Saved",
-            description: "Your preferences have been updated successfully in PostgreSQL.",
-          });
-        }
-      }
+      const preferencesData = {
+        email_notifications: preferences.emailNotifications,
+        push_notifications: preferences.pushNotifications,
+        sms_alerts: preferences.smsAlerts,
+        market_updates: preferences.marketUpdates,
+        trading_alerts: preferences.tradingAlerts,
+        news_digest: preferences.newsDigest,
+        dark_mode: preferences.darkMode,
+        compact_view: preferences.compactView,
+        auto_save: preferences.autoSave
+      };
+      
+      await profileStorage.savePreferences(preferencesData);
+      toast({
+        title: "Preferences Saved",
+        description: "Your preferences have been updated successfully.",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -159,16 +211,11 @@ export function Profile() {
 
   const handleSaveSecurity = async () => {
     try {
-      if (user?.email) {
-        const profile = await profileStorage.getProfile(user.email);
-        if (profile?.id) {
-          await profileStorage.saveSecuritySettings(profile.id, securitySettings);
-          toast({
-            title: "Security Settings Updated",
-            description: "Your security settings have been saved successfully in PostgreSQL.",
-          });
-        }
-      }
+      await profileStorage.saveSecuritySettings(securitySettings);
+      toast({
+        title: "Security Settings Updated",
+        description: "Your security settings have been saved successfully.",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -180,10 +227,45 @@ export function Profile() {
   };
 
   const handleAvatarUpload = () => {
-    toast({
-      title: "Avatar Upload",
-      description: "Avatar upload functionality will be implemented soon.",
-    });
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingAvatar(true);
+      const result = await uploadImageToCloudinary(file);
+      const url = result.secure_url || result.url;
+      if (!url) throw new Error("No URL returned from Cloudinary");
+
+      // Update UI state immediately
+      setProfileData(prev => ({ ...prev, avatar_url: url }));
+
+      // Persist avatar_url to backend
+      await profileStorage.saveProfile({
+        ...profileData,
+        avatar_url: url,
+        first_name: profileData.name.split(' ')[0],
+        last_name: profileData.name.split(' ').slice(1).join(' ')
+      });
+
+      toast({
+        title: "Avatar Updated",
+        description: "Your profile picture has been updated successfully.",
+      });
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      toast({
+        title: "Upload Failed",
+        description: err?.message || "Could not upload avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+      // reset input value to allow same file re-selection
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -221,7 +303,7 @@ export function Profile() {
               <Card className="trading-card p-6">
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src="/placeholder-avatar.jpg" />
+                    <AvatarImage src={profileData.avatar_url || "/placeholder-avatar.jpg"} />
                     <AvatarFallback className="text-lg font-semibold bg-gradient-primary text-white">
                       {profileData.name.split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>
@@ -233,8 +315,15 @@ export function Profile() {
                     className="w-full"
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    Change Photo
+                    {uploadingAvatar ? 'Uploading...' : 'Change Photo'}
                   </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
                   <div className="text-center">
                     <p className="font-medium text-foreground">{profileData.name}</p>
                     <p className="text-sm text-muted-foreground">{profileData.email}</p>
