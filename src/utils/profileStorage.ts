@@ -156,7 +156,9 @@ class ProfileStorageService {
           ...updatedProfile,
           ...normalized,
         }));
-      } catch {}
+      } catch {
+        toast.error('Failed to update local cache after saving profile');
+      }
       return normalized;
     } catch (error:any) {
       console.error('Failed to save profile:', error.message);
