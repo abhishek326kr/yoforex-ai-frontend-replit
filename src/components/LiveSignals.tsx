@@ -62,7 +62,7 @@ function LiveSignals() {
     const loadUserProfile = async () => {
       if (user?.email) {
         try {
-          const profile = await profileStorage.getProfile(user.email);
+          const profile = await profileStorage.getProfile();
           setUserProfile(profile);
         } catch (error) {
           console.error('Failed to load user profile:', error);
@@ -161,8 +161,7 @@ function LiveSignals() {
             <div className="text-xs md:text-sm text-muted-foreground mb-2">
               {popupUser.name} just made a profit using <span className="font-bold text-primary">{popupUser.strategy}</span> ({getRandomTradeType()}) with our <span className="font-bold text-trading-profit">Pro Strategy</span>!
               {userProfile && (
-                <div className="mt-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                  <div className="text-xs text-primary font-medium">Your Profile: {userProfile.name}</div>
+                <div className="hidden mt-2 p-2 bg-primary/10 rounded-lg border border-primary/20">
                   <div className="text-xs text-muted-foreground">
                     {userProfile.trading_experience && `Experience: ${userProfile.trading_experience}`}
                     {userProfile.preferred_pairs && ` • Pairs: ${userProfile.preferred_pairs.split(',').slice(0, 2).join(', ')}`}
@@ -213,7 +212,7 @@ function LiveSignals() {
       </div>
 
       {/* 24h Profit Users Chart */}
-      <div>
+      {/* <div>
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp className="w-5 h-5 text-green-500" />
           <span className="text-lg font-semibold">24h Profit Users' Chart</span>
@@ -223,7 +222,7 @@ function LiveSignals() {
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
-      </div>
+      </div> */}
 
       <style>
         {`
