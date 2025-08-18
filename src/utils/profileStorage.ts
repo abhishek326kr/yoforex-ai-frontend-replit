@@ -141,7 +141,7 @@ class ProfileStorageService {
       });
 
       const response = await this.makeRequest('/auth/profile', {
-        method: 'PATCH',
+        method: 'PUT',
         body: JSON.stringify(payload)
       });
       

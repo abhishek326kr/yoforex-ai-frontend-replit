@@ -33,7 +33,6 @@ import {
   Activity,
   Settings as SettingsIcon
 } from "lucide-react";
-import { navigate } from "wouter/use-browser-location";
 import { profileStorage, ProfileData, UserPreferences, SecuritySettings } from "@/utils/profileStorage";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 
@@ -699,7 +698,7 @@ export function Profile() {
                 <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
                   Billing information and subscription management will be integrated with the existing billing page.
                 </p>
-                <Button variant="outline" onClick={()=>navigate("/billing")}>
+                <Button variant="outline" onClick={() => setLocation('/billing')}>
                   Go to Billing Page
                 </Button>
               </div>

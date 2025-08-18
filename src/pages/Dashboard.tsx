@@ -139,7 +139,7 @@ export function Dashboard() {
           </div>
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             {userProfile && (
-              <div className="flex flex-col items-end mr-3">
+              <div className="hidden flex-col items-end mr-3">
                 <span className="text-sm font-medium text-foreground">{userProfile.name}</span>
                 <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                   {userProfile.location && <span>{userProfile.location}</span>}
