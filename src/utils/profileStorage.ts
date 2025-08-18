@@ -195,7 +195,9 @@ class ProfileStorageService {
           parsed.avatar_url = avatarUrl;
           localStorage.setItem('userProfile', JSON.stringify(parsed));
         }
-      } catch {}
+      } catch (e) {
+        // ignore localStorage caching errors (quota, privacy mode, etc.)
+      }
     } catch (error:any) {
       console.error('Failed to update avatar:', error.message);
       toast.error(error.message);

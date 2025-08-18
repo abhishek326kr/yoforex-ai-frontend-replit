@@ -158,7 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('userProfile');
         localStorage.removeItem('userPreferences');
         localStorage.removeItem('userSecurity');
-      } catch {}
+      } catch (e) {
+        // ignore localStorage clearing errors (e.g., browser restrictions or quotas)
+      }
       setIsAuthenticated(false);
       setUser(null);
       // Redirect to landing/login
