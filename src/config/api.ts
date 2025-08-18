@@ -13,12 +13,14 @@ const getApiBaseUrl = (): string => {
   
   // In production, use environment variable or fallback
   if (isProduction) {
-    const prodUrl = import.meta.env.VITE_PUBLIC_API_BASE_URL;
+    const prodUrl =
+      // Prefer VITE_API_BASE_URL (matches .env.example), fallback to VITE_PUBLIC_API_BASE_URL
+      import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_PUBLIC_API_BASE_URL;
     if (!prodUrl) {
-      console.warn('VITE_API_BASE_URL not set in production environment');
+      console.warn('API base URL not set. Please define VITE_API_BASE_URL (preferred) or VITE_PUBLIC_API_BASE_URL in your environment. Falling back to http://localhost:8000');
       return 'http://localhost:8000'; // Fallback for safety
     }
-    return prodUrl;
+    return prodUrl as string;
   }
   
   // Default fallback

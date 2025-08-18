@@ -22,6 +22,7 @@ const BACKEND_URLS = [
 // Create a base Axios instance without a baseURL
 const apiClient = axios.create({
   timeout: TIMEOUT,
+  withCredentials: true, // include cookies for HTTP-only cookie authentication
   headers: {
     'Content-Type': 'application/json',
   },
