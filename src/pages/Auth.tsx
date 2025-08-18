@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   User,
   Mail,
@@ -360,20 +361,35 @@ export function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
         {/* Logo and Brand */}
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-2">
-            <div className="p-3 bg-blue-600 rounded-xl">
+          <div className="flex flex-col items-center justify-center space-y-2">
+            {/* <div className="p-3 bg-blue-600 rounded-xl">
               <Zap className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">YoForex AI</h1>
               <p className="text-gray-400">Advanced Trading Platform</p>
-            </div>
+            </div> */}
+            {/* <img src="/logo_signin_optimized.png" alt="YoForex Logo"/> */}
+            <h1
+              className="text-3xl sm:text-4xl md:text-5xl mb-1 font-brand font-semibold tracking-tight leading-tight text-foreground"
+              aria-label="YoForex AI"
+            >
+              YoForex AI
+            </h1>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              powered by
+              <img src="/logo_signin_optimized.png" alt="YoForex Logo" className="h-5 w-auto opacity-90" />
+            </p>
+            
           </div>
-          <div className="flex items-center justify-center space-x-2">
+          <div className="flex items-center justify-center space-x-2 mt-[0px]">
             <Badge variant="secondary" className="bg-gradient-profit text-white">
               <Brain className="h-3 w-3 mr-1" />
               AI-Powered

@@ -7,6 +7,7 @@ import TradingTips from "@/components/TradingTips";
 import { useAuth } from "@/hooks/useAuth";
 import { profileStorage } from "@/utils/profileStorage";
 import { useState, useEffect } from "react";
+import { navigate } from "wouter/use-browser-location";
 
 const portfolioStats = [
   {
@@ -119,7 +120,7 @@ export function Dashboard() {
     <TradingLayout>
       <div className="space-y-6">
         {/* Welcome Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-5">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Welcome back, {firstName}!</h1>
             <p className="text-muted-foreground mt-1">
@@ -155,7 +156,7 @@ export function Dashboard() {
               <div className="h-2 w-2 rounded-full bg-white mr-2 animate-pulse" />
               Live Trading Active
             </Badge>
-            <Button className="bg-gradient-primary hover:bg-primary-hover">
+            <Button className="bg-gradient-primary hover:bg-primary-hover" onClick={()=>navigate('')}>
               <Zap className="h-4 w-4 mr-2" />
               Start AI Analysis
             </Button>
