@@ -90,7 +90,7 @@ export function Dashboard() {
       if (user?.email) {
         try {
           await profileStorage.initializeTables();
-          const profile = await profileStorage.getProfile(user.email);
+          const profile = await profileStorage.getProfile();
           if (profile) {
             setUserProfile(profile);
           } else {

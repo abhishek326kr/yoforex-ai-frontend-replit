@@ -47,7 +47,7 @@ const shouldRetry = (error: AxiosError, retryCount: number): boolean => {
   
   // Retry on network errors or specific status codes
   if (!error.response) return true; // Network error
-  if (RETRY_STATUS_CODES.includes(error.response.status)) return true;
+  if (RETRY_STATUS_CODES.includes(Number(error.response.status))) return true;
   
   return false;
 };
