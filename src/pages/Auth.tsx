@@ -385,7 +385,7 @@ export function Auth() {
             </h1>
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               powered by
-              <img src="/logo_signin_optimized.png" alt="YoForex Logo" className="h-5 w-auto opacity-90" />
+              <img src="/yoforexai.png" alt="YoForex Logo" className="h-5 w-auto opacity-90" />
             </p>
             
           </div>

@@ -67,6 +67,7 @@ export function Profile() {
             preferred_pairs: profile.preferred_pairs || '',
             risk_tolerance: profile.risk_tolerance || ''
           });
+
         }
         
         // Load preferences
@@ -115,9 +116,13 @@ export function Profile() {
         }
       }
     };
+
+  
     
     loadProfileData();
   }, [user, toast]);
+
+  
   
   const [profileData, setProfileData] = useState({
     name: user?.name || 'John Doe',
@@ -352,7 +357,8 @@ export function Profile() {
                       id="email"
                       type="email"
                       value={profileData.email}
-                      onChange={(e) => setProfileData(prev => ({...prev, email: e.target.value}))}
+                      readOnly
+                      disabled
                       className="w-full"
                     />
                   </div>
@@ -362,7 +368,8 @@ export function Profile() {
                     <Input
                       id="phone"
                       value={profileData.phone}
-                      onChange={(e) => setProfileData(prev => ({...prev, phone: e.target.value}))}
+                      readOnly
+                      disabled
                       className="w-full"
                     />
                   </div>

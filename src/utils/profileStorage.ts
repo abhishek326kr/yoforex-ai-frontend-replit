@@ -89,6 +89,87 @@ class ProfileStorageService {
     return response;
   }
 
+  // --- Phone change with WATI OTP ---
+  async requestPhoneChange(newPhone: string): Promise<{ status: string }> {
+    try {
+      const response = await this.makeRequest('/auth/profile/change-phone/request', {
+        method: 'POST',
+        body: JSON.stringify({ new_phone: newPhone })
+      });
+      return await response.json();
+    } catch (error: any) {
+      console.error('Failed to request phone change:', error.message);
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  async verifyPhoneChange(otp: string): Promise<{ status: string; phone?: string }> {
+    try {
+      const response = await this.makeRequest('/auth/profile/change-phone/verify', {
+        method: 'POST',
+        body: JSON.stringify({ otp })
+      });
+      const data = await response.json();
+      // update cached profile if phone returned
+      if (data?.phone) {
+        try {
+          const cached = localStorage.getItem('userProfile');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            parsed.phone = data.phone;
+            localStorage.setItem('userProfile', JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+      return data;
+    } catch (error: any) {
+      console.error('Failed to verify phone change:', error.message);
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // --- Email change with Email OTP ---
+  async requestEmailChange(newEmail: string): Promise<{ status: string }> {
+    try {
+      const response = await this.makeRequest('/auth/profile/change-email/request', {
+        method: 'POST',
+        body: JSON.stringify({ new_email: newEmail })
+      });
+      return await response.json();
+    } catch (error: any) {
+      console.error('Failed to request email change:', error.message);
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  async verifyEmailChange(otp: string): Promise<{ status: string; email?: string }> {
+    try {
+      const response = await this.makeRequest('/auth/profile/change-email/verify', {
+        method: 'POST',
+        body: JSON.stringify({ otp })
+      });
+      const data = await response.json();
+      if (data?.email) {
+        try {
+          const cached = localStorage.getItem('userProfile');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            parsed.email = data.email;
+            localStorage.setItem('userProfile', JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+      return data;
+    } catch (error: any) {
+      console.error('Failed to verify email change:', error.message);
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
   // Build a payload with only defined, non-empty values to avoid overwriting with blanks
   private buildPayload(data: Record<string, any>): Record<string, any> {
     const payload: Record<string, any> = {};
@@ -126,8 +207,6 @@ class ProfileStorageService {
     try {
       const payload = this.buildPayload({
         name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
         bio: profileData.bio,
         location: profileData.location,
         timezone: profileData.timezone,
