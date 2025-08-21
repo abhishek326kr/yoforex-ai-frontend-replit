@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+// import { useToast } from '@/hooks/use-toast';
 import {
   Activity,
   Target,
@@ -197,10 +197,10 @@ export function LiveTrading() {
               <Activity className="h-3 w-3 mr-1" />
               Live Markets
             </Badge>
-            <Button className="bg-gradient-primary hover:bg-primary-hover whitespace-nowrap">
+            {/* <Button className="bg-gradient-primary hover:bg-primary-hover whitespace-nowrap">
               <Zap className="h-4 w-4 mr-2" />
               Emergency Stop
-            </Button>
+            </Button> */}
           </div>
         </div>
 

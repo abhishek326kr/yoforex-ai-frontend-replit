@@ -21,7 +21,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "react", "react-dom"],
     "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src", "src/**/*", "vite.config.ts", "vite-env.d.ts"],
