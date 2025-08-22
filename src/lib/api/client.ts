@@ -13,11 +13,11 @@ const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 import { API_BASE_URL } from '../../config/api';
 
-// Backend URLs - add more if available
-const BACKEND_URLS = [
-  API_BASE_URL,
-  'https://backup-api.example.com/api' // Add your backup API URL here
-].filter(Boolean);
+// Optional backup URL from environment
+const BACKUP_API_URL = import.meta.env.VITE_BACKUP_API_URL as string | undefined;
+
+// Backend URLs - only include backup if configured
+const BACKEND_URLS = [API_BASE_URL, BACKUP_API_URL].filter(Boolean) as string[];
 
 // Create a base Axios instance without a baseURL
 const apiClient = axios.create({

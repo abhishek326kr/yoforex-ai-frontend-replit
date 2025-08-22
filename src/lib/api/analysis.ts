@@ -79,7 +79,12 @@ const formatStrategyForApi = (strategy: string): string => {
   }
 };
 
-export default function formattedTimeframe (timeframe: string) {
+export default function formattedTimeframe(timeframe: string) {
+  // If already in API format, return as-is
+  const apiFormats = new Set(['M1','M5','M15','M30','H1','H4','H8','D1','W1','M']);
+  if (apiFormats.has(timeframe)) return timeframe as any;
+
+  // Map from UI formats to API formats
   switch (timeframe) {
     case '1M': return 'M1';
     case '5M': return 'M5';
@@ -91,7 +96,20 @@ export default function formattedTimeframe (timeframe: string) {
     case '1D': return 'D1';
     case '1W': return 'W1';
     case '1MO': return 'M';
-    default: return 'H1'; // Default to 1 hour if unknown
+  }
+
+  // Map from TradingView interval to API format
+  switch (timeframe) {
+    case '1': return 'M1';
+    case '5': return 'M5';
+    case '15': return 'M15';
+    case '30': return 'M30';
+    case '60': return 'H1';
+    case '240': return 'H4';
+    case 'D': return 'D1';
+    case 'W': return 'W1';
+    case 'M': return 'M';
+    default: return 'H1'; // Fallback
   }
 }
 
@@ -124,10 +142,9 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
         url,
         {},
         {
-          timeout: 400000, // 60 seconds timeout
+          timeout: 400000, // 400 seconds timeout for long-running analysis
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'YoForex-Frontend/1.0',
           },
           validateStatus: (status) => status < 500 // Don't retry on client errors
         }
