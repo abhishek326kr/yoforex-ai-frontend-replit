@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { MultiAnalysisResponse, Provider } from '@/lib/api/aiMulti';
 import { AnalysisDisplay } from '@/components/AnalysisDisplay';
+import { toast } from 'react-toastify';
 
 const PROVIDER_LABELS: Record<string, string> = {
   gemini: 'Gemini',
@@ -153,7 +154,9 @@ function extractErrorText(payload: any): string | null {
           const parsed = JSON.parse(v);
           const nested = extractErrorText(parsed);
           if (nested) return nested;
-        } catch {}
+        } catch {
+          console.log("No JSON response!");
+        }
         // Strip quotes/escapes/newlines
         return v.replace(/\\n/g, '\n').replace(/^"|"$/g, '').trim();
       }
