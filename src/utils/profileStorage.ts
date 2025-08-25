@@ -120,7 +120,9 @@ class ProfileStorageService {
             parsed.phone = data.phone;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
           }
-        } catch {}
+        } catch {
+          toast.error("No phone number found!")
+        }
       }
       return data;
     } catch (error: any) {
@@ -160,7 +162,9 @@ class ProfileStorageService {
             parsed.email = data.email;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
           }
-        } catch {}
+        } catch {
+          toast.error("No email is found!")
+        }
       }
       return data;
     } catch (error: any) {

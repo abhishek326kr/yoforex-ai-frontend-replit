@@ -86,27 +86,50 @@ export function Auth() {
         setActiveTab("verify-signup");
       }
     } catch (error: any) {
-      console.error("Signup error:", error);
-      console.error("Error response:", error.response);
-      console.log(error.response)
-
-      if (error.response?.status === 422) {
-        const errorData = error.response.data;
+      const res = error?.response;
+      if (!res) {
         toast({
-          title: "Signup Failed",
-          description: errorData.detail?.[0]?.msg || "Validation error occurred.",
+          title: "Network Error",
+          description: "Please check your internet connection and try again.",
           variant: "destructive",
         });
-      } else if (error.response?.status === 409) {
+      } else if (res?.status === 422) {
+        const detail = res?.data?.detail;
+        const description = Array.isArray(detail)
+          ? (detail[0]?.msg || detail[0] || "Validation error occurred.")
+          : (typeof detail === 'string' ? detail : (detail?.error || "Validation error occurred."));
+        toast({
+          title: "Signup Failed",
+          description,
+          variant: "destructive",
+        });
+      } else if (res?.status === 409) {
+        const detail = res?.data?.detail;
+        const description = typeof detail === 'string' ? detail : (detail?.error || "An account with this email or phone already exists.");
         toast({
           title: "Account Already Exists",
-          description: "An account with this email or phone already exists.",
+          description,
           variant: "destructive",
         });
       } else {
+        const detail = res?.data?.detail;
+        const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
+        let title = "Signup Failed";
+        let description = "An unexpected error occurred.";
+        if (code === 'user_already_verified' || res?.status === 400) {
+          title = "Account already verified";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "This account is already verified. Please login.";
+        } else if (res?.status === 409) {
+          title = "Account Already Exists";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "An account with this email or phone already exists.";
+        } else {
+          description = Array.isArray(detail)
+            ? (detail[0]?.msg || detail[0] || description)
+            : (typeof detail === 'string' ? detail : (detail?.error || error?.message || description));
+        }
         toast({
-          title: `Error: ${error.response.status}`,
-          description: `${error.response.data.detail}`,
+          title,
+          description,
           variant: "destructive",
         });
       }
@@ -161,17 +184,45 @@ export function Auth() {
         }
       }
     } catch (error: any) {
-      if (error.response?.status === 422) {
-        const errorData = error.response.data;
+      const res = error?.response;
+      if (!res) {
+        toast({
+          title: "Network Error",
+          description: "Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else if (res?.status === 422) {
+        const detail = res?.data?.detail;
+        const description = Array.isArray(detail)
+          ? (detail[0]?.msg || detail[0] || "Invalid OTP. Please try again.")
+          : (typeof detail === 'string' ? detail : (detail?.error || "Invalid OTP. Please try again."));
         toast({
           title: "Verification Failed",
-          description: errorData.detail?.[0]?.msg || "Invalid OTP. Please try again.",
+          description,
           variant: "destructive",
         });
       } else {
+        const detail = res?.data?.detail;
+        const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
+        let title = "Verification Failed";
+        let description = "An unexpected error occurred.";
+        if (code === 'user_not_found' || res?.status === 404) {
+          title = "User not found";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "No account found for this phone number.";
+        } else if (code === 'otp_expired') {
+          title = "OTP expired";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Your verification code has expired. Please request a new one.";
+        } else if (code === 'invalid_otp') {
+          title = "Invalid OTP";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "The verification code you entered is incorrect.";
+        } else {
+          description = Array.isArray(detail)
+            ? (detail[0]?.msg || detail[0] || description)
+            : (typeof detail === 'string' ? detail : (detail?.error || error?.message || description));
+        }
         toast({
-          title: `Error: ${error.response.status}`,
-          description: `${error.response.data.detail}`,
+          title,
+          description,
           variant: "destructive",
         });
       }
@@ -201,43 +252,69 @@ export function Auth() {
         }
       });
 
-      // Backend returns JSON { status: 'success' }
-      if (response.data?.status === "success") {
+      // API docs: 200 returns a string body (success message)
+      if (response.status === 200) {
+        const message = typeof response.data === 'string'
+          ? response.data
+          : (response.data?.message || "Please check your phone for the login OTP.");
         toast({
           title: "OTP Sent",
-          description: "Please check your phone for the login OTP.",
+          description: message,
         });
         setActiveTab("verify-login");
       }
     } catch (error: any) {
-      toast({
-        title: "Error!",
-        description: `${error}`,
-        variant: "destructive",
-      });
-      
-      if (!error.response) {
+      const res = error?.response;
+      if (!res) {
+        // Try to parse error details from error.message (some environments serialize backend error here)
+        let code = 'not-found';
+        let description = "Failed to send OTP. Please try again.";
+       
+          const parsed = JSON.parse(error?.message || '');
+          const detail = parsed?.detail;
+          if (typeof detail === 'string') {
+            description = detail;
+          } else if (detail && typeof detail === 'object') {
+            description = detail.error || description;
+            code = detail.code || code;
+          }
         toast({
-          title: "Error!",
-          description: "Network error occurred",
+          title: `Error: ${code}`,
+          description,
           variant: "destructive",
         });
-        return;
-      }
-
-      if (error?.response?.status === 422) {
-        const errorData = error.response.data;
-        const errorMessage = errorData.detail?.[0]?.msg || "Failed to send OTP. Please try again.";
+      } else if (res?.status === 422) {
+        const detail = res?.data?.detail;
+        const description = Array.isArray(detail)
+          ? (detail[0]?.msg || detail[0] || "Failed to send OTP. Please try again.")
+          : (typeof detail === 'string' ? detail : (detail?.error || "Failed to send OTP. Please try again."));
         toast({
           title: "Request Failed",
-          description: errorMessage,
+          description,
           variant: "destructive",
         });
       } else {
-        const errorMessage = error.response.data?.detail || "An unexpected error occurred";
+        const detail = res?.data?.detail;
+        const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
+        let title = "Request Failed";
+        let description = "An unexpected error occurred.";
+        if (code === 'phone_not_found' || res?.status === 404) {
+          title = "Phone not registered";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "No account found for this phone number.";
+        } else if (code === 'otp_save_failed') {
+          title = "Failed to send OTP";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Could not save OTP. Please try again.";
+        } else if (code === 'internal_error' || res?.status >= 500) {
+          title = "Server error";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Something went wrong on our side. Please try again later.";
+        } else {
+          description = Array.isArray(detail)
+            ? (detail[0]?.msg || detail[0] || description)
+            : (typeof detail === 'string' ? detail : (detail?.error || error?.message || description));
+        }
         toast({
-          title: `Error: ${error.response.status}`,
-          description: errorMessage,
+          title,
+          description,
           variant: "destructive",
         });
       }
@@ -279,19 +356,45 @@ export function Auth() {
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
-      if (error.response?.status === 422) {
-        const errorData = error.response.data;
-        console.log(errorData)
+      const res = error?.response;
+      if (!res) {
+        toast({
+          title: "Network Error",
+          description: "Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else if (res?.status === 422) {
+        const detail = res?.data?.detail;
+        const description = Array.isArray(detail)
+          ? (detail[0]?.msg || detail[0] || "Invalid credentials. Please try again.")
+          : (typeof detail === 'string' ? detail : (detail?.error || "Invalid credentials. Please try again."));
         toast({
           title: "Login Failed",
-          description: errorData.detail?.[0]?.msg || "Invalid credentials. Please try again.",
+          description,
           variant: "destructive",
         });
       } else {
-        console.log(error.response)
+        const detail = res?.data?.detail;
+        const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
+        let title = "Login Failed";
+        let description = "An unexpected error occurred.";
+        if (code === 'user_not_found' || res?.status === 404) {
+          title = "User not found";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "No account found for this phone number.";
+        } else if (code === 'otp_expired') {
+          title = "OTP expired";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Your login code has expired. Please request a new one.";
+        } else if (code === 'invalid_otp') {
+          title = "Invalid OTP";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "The login code you entered is incorrect.";
+        } else {
+          description = Array.isArray(detail)
+            ? (detail[0]?.msg || detail[0] || description)
+            : (typeof detail === 'string' ? detail : (detail?.error || error?.message || description));
+        }
         toast({
-          title: `Error: ${error.response.status}`,
-          description: `${error.response.detail}`,
+          title,
+          description,
           variant: "destructive",
         });
       }
@@ -341,17 +444,50 @@ export function Auth() {
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
-      if (error.response?.status === 422) {
-        const errorData = error.response.data;
+      const res = error?.response;
+      if (!res) {
+        toast({
+          title: "Network Error",
+          description: "Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else if (res?.status === 422) {
+        const data = res.data;
+        const detail = data?.detail;
+        const description = Array.isArray(detail)
+          ? (detail[0]?.msg || detail[0] || "Invalid credentials. Please try again.")
+          : (typeof detail === 'string'
+              ? detail
+              : (detail?.error || "Invalid credentials. Please try again."));
         toast({
           title: "Login Failed",
-          description: errorData.detail?.[0]?.msg || "Invalid credentials. Please try again.",
+          description,
           variant: "destructive",
         });
       } else {
+        const detail = res?.data?.detail;
+        const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
+        // Friendly mapping for known backend codes
+        let title = "Login Failed";
+        let description = "An unexpected error occurred.";
+        if (code === 'user_not_found' || res?.status === 404) {
+          title = "Email not registered";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "No account found for this email. Please sign up.";
+        } else if (code === 'invalid_credentials' || res?.status === 401) {
+          title = "Invalid credentials";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Incorrect email or password.";
+        } else if (code === 'account_not_verified' || res?.status === 403) {
+          title = "Account not verified";
+          description = (typeof detail === 'object' && detail?.error) ? detail.error : "Please verify your account to continue.";
+        } else {
+          // Fallbacks for any unexpected detail shapes
+          description = Array.isArray(detail)
+            ? (detail[0]?.msg || detail[0] || description)
+            : (typeof detail === 'string' ? detail : (detail?.error || error?.message || description));
+        }
         toast({
-          title: `Error: ${error.response.status}`,
-          description: `${error.response.data.detail}`,
+          title,
+          description,
           variant: "destructive",
         });
       }

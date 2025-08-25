@@ -31,12 +31,6 @@ const devProxy = {
     secure: true,
     rewrite: (path: string) => path.replace(/^\/api/, '')
   },
-  '/auth': {
-    target: 'https://backend.axiontrust.com',
-    changeOrigin: true,
-    secure: true,
-    rewrite: (path: string) => path.replace(/^\/auth/, '')
-  },
   '/prices': {
     target: 'https://backend.axiontrust.com',
     changeOrigin: true,
@@ -93,12 +87,6 @@ export default defineConfig(({ command, mode }) => {
             changeOrigin: true,
             secure: true,
             rewrite: (path) => path.replace(/^\/api/, '')
-          },
-          '/auth': {
-            target: apiBaseUrl,
-            changeOrigin: true,
-            secure: true,
-            rewrite: (path) => path.replace(/^\/auth/, '')
           },
           '/prices': {
             target: apiBaseUrl,
