@@ -278,9 +278,11 @@ export function LiveTrading() {
                     analysis={analysis}
                     onRunAnalysis={handleAnalysis}
                     disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
-                  >
+                  />
+                  {/* AI Providers Results moved under Market Analysis */}
+                  <div className="mt-4">
                     <AIMultiResults result={multiResult} />
-                  </TechnicalAnalysisCard>
+                  </div>
                 </div>
               </div>
 
