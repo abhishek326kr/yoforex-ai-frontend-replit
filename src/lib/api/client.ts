@@ -111,6 +111,11 @@ apiClient.interceptors.response.use(
       const enhancedError = new Error(errorMessage) as any;
       enhancedError.status = status;
       enhancedError.details = errorDetails;
+      // Preserve original Axios response so callers can inspect error.response
+      enhancedError.response = error.response;
+      // Preserve Axios error shape hints
+      enhancedError.code = (data?.detail?.code ?? error.code);
+      enhancedError.isAxiosError = true;
       
       switch (status) {
         case 400:

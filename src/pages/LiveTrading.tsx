@@ -21,13 +21,14 @@ interface TechnicalAnalysisCardProps {
   };
   onRunAnalysis: () => void;
   disabled?: boolean;
+  children?: React.ReactNode;
 }
 
 // Import the AnalysisDisplay component
 import { AnalysisDisplay } from '@/components/AnalysisDisplay';
 
 // Technical Analysis Card Component
-const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false }: TechnicalAnalysisCardProps) => (
+const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children }: TechnicalAnalysisCardProps) => (
   <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
     <h3 className="text-lg font-semibold text-foreground mb-3">Market Analysis</h3>
     {analysis.loading ? (
@@ -72,7 +73,10 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false }: Te
         </Button>
       </div>
     ) : analysis.data?.analysis ? (
-      <AnalysisDisplay analysis={analysis.data.analysis} onRefresh={onRunAnalysis} />
+      <>
+        <AnalysisDisplay analysis={analysis.data.analysis} onRefresh={onRunAnalysis} />
+        {children}
+      </>
     ) : (
       <div className="flex flex-col items-center p-6 text-center">
         <div className="bg-muted/20 p-4 rounded-full mb-4">
@@ -118,6 +122,9 @@ import TimeframeSelection from '@/components/TimeframeSelection';
 import { TradingChart } from '@/components/TradingChart';
 import StrategySelection from '@/components/StrategySelection';
 import ActivePositions from '@/components/ActivePositions';
+import AIMultiPanel from '@/components/AIMultiPanel';
+import AIMultiResults from '@/components/AIMultiResults';
+import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
 
 export function LiveTrading() {
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
@@ -132,6 +139,7 @@ export function LiveTrading() {
     data: any | null;
     hasRun: boolean; // Track if analysis has been run
   }>({ loading: false, error: null, data: null, hasRun: false });
+  const [multiResult, setMultiResult] = useState<MultiAnalysisResponse | null>(null);
   
   // Handle strategy selection from StrategySelection component
   const handleStrategySelect = (strategy: string) => {
@@ -244,6 +252,14 @@ export function LiveTrading() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
+
+                {/* Multi-Provider AI Analysis */}
+                <AIMultiPanel
+                  pair={selectedPair}
+                  timeframe={selectedTimeframe}
+                  strategy={selectedStrategy}
+                  onResult={setMultiResult}
+                />
               </div>
 
               {/* Center Panel - Trading Chart and Analysis */}
@@ -262,7 +278,9 @@ export function LiveTrading() {
                     analysis={analysis}
                     onRunAnalysis={handleAnalysis}
                     disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
-                  />
+                  >
+                    <AIMultiResults result={multiResult} />
+                  </TechnicalAnalysisCard>
                 </div>
               </div>
 

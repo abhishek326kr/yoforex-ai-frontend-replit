@@ -80,7 +80,7 @@ export function Auth() {
       // Backend returns JSON { status: 'otp_sent' }
       if (response.data?.status === 'otp_sent') {
         toast({
-          title: "Signup Successful",
+          title: "OTP Sent",
           description: "Please check your phone for OTP verification.",
         });
         setActiveTab("verify-signup");
@@ -169,7 +169,7 @@ export function Auth() {
           login(access_token);
           
           toast({
-            title: "Verification Successful",
+            title: "Signup Successful",
             description: "Welcome to YoForex AI! Your account is now verified.",
           });
           
@@ -177,7 +177,7 @@ export function Auth() {
           window.location.href = '/dashboard';
         } else {
           toast({
-            title: "Verification Successful",
+            title: "Signup Successful",
             description: "Your account has been verified successfully!",
           });
           setActiveTab("login");
@@ -266,18 +266,9 @@ export function Auth() {
     } catch (error: any) {
       const res = error?.response;
       if (!res) {
-        // Try to parse error details from error.message (some environments serialize backend error here)
-        let code = 'not-found';
-        let description = "Failed to send OTP. Please try again.";
-       
-          const parsed = JSON.parse(error?.message || '');
-          const detail = parsed?.detail;
-          if (typeof detail === 'string') {
-            description = detail;
-          } else if (detail && typeof detail === 'object') {
-            description = detail.error || description;
-            code = detail.code || code;
-          }
+        // Always treat no-response as backend unreachable to avoid confusing fallbacks
+        const code = 'backend-offline';
+        const description = 'Cannot connect to the server. Please ensure the backend is running and reachable, then try again.';
         toast({
           title: `Error: ${code}`,
           description,
@@ -298,7 +289,7 @@ export function Auth() {
         const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
         let title = "Request Failed";
         let description = "An unexpected error occurred.";
-        if (code === 'phone_not_found' || res?.status === 404) {
+        if (code === 'phone_not_found' || code === 'user_not_found' || res?.status === 404) {
           title = "Phone not registered";
           description = (typeof detail === 'object' && detail?.error) ? detail.error : "No account found for this phone number.";
         } else if (code === 'otp_save_failed') {
@@ -785,11 +776,11 @@ export function Auth() {
                     <Input
                       id="signup-otp"
                       type="text"
-                      placeholder="Enter 6-digit code"
+                      placeholder="Enter 4-digit code"
                       value={formData.otp || ""}
                       onChange={(e) => handleInputChange("otp", e.target.value)}
                       className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                      maxLength={6}
+                      maxLength={4}
                     />
                   </div>
                 </div>
@@ -829,11 +820,11 @@ export function Auth() {
                     <Input
                       id="login-otp"
                       type="text"
-                      placeholder="Enter 6-digit code"
+                      placeholder="Enter 4-digit code"
                       value={formData.otp || ""}
                       onChange={(e) => handleInputChange("otp", e.target.value)}
                       className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                      maxLength={6}
+                      maxLength={4}
                     />
                   </div>
                 </div>
