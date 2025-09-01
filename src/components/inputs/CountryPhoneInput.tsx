@@ -38,7 +38,7 @@ export const CountryPhoneInput: React.FC<CountryPhoneInputProps> = ({
   preferredCountries = ["in", "us", "gb", "ae", "sa"],
   id,
   name,
-  placeholder = " E.g. +919812345678",
+  placeholder = "E.g. +919812345678",
   className,
 }) => {
   const initialCountry: Country = useMemo(() => {
@@ -71,13 +71,13 @@ export const CountryPhoneInput: React.FC<CountryPhoneInputProps> = ({
 
   return (
     <div className={`relative ${className || ""}`}>
-      <div className="absolute inset-y-0 left-0 flex items-center pl-2 pr-2 w-28 border-r border-border/30">
+      <div className="absolute inset-y-0 left-0 flex items-center pl-2 pr-2 w-32 border-r border-border/30">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               aria-label={`Select country, currently ${selected.name}`}
-              className="h-10 px-1 gap-2 hover:bg-transparent focus-visible:ring-0"
+              className="h-10 pl-2 pr-0 gap-2 hover:bg-transparent focus-visible:ring-0"
             >
               {(() => {
                 const Key = selected.iso2.toUpperCase() as keyof typeof Flags;
@@ -146,7 +146,7 @@ export const CountryPhoneInput: React.FC<CountryPhoneInputProps> = ({
         inputMode="numeric"
         placeholder={placeholder}
         onChange={(e) => handleNumberChange(e.target.value)}
-        className="pl-28 h-10 bg-muted/20 border-border/30 focus:border-primary/50"
+        className="pl-[136px] h-10 bg-muted/20 border-border/30 focus:border-primary/50"
       />
     </div>
   );
