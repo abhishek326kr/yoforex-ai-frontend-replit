@@ -84,6 +84,17 @@ export function Profile() {
             compactView: userPrefs.compact_view,
             autoSave: userPrefs.auto_save
           });
+<<<<<<< HEAD
+=======
+          // Apply compact class immediately based on loaded prefs
+          try {
+            if (userPrefs.compact_view) {
+              document.documentElement.classList.add('compact');
+            } else {
+              document.documentElement.classList.remove('compact');
+            }
+          } catch {}
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
         }
         
         // Load security settings
@@ -517,9 +528,28 @@ export function Profile() {
                     </div>
                     <Switch 
                       checked={preferences.compactView}
+<<<<<<< HEAD
                       onCheckedChange={(checked) => 
                         setPreferences(prev => ({...prev, compactView: checked}))
                       }
+=======
+                      onCheckedChange={(checked) => {
+                        setPreferences(prev => ({...prev, compactView: checked}));
+                        // Update localStorage cache so layout reacts immediately
+                        try {
+                          const cached = localStorage.getItem('userPreferences');
+                          const prefs = cached ? JSON.parse(cached) : {};
+                          const updated = { ...prefs, compact_view: checked };
+                          localStorage.setItem('userPreferences', JSON.stringify(updated));
+                        } catch {}
+                        // Toggle global class for immediate UI change
+                        if (checked) {
+                          document.documentElement.classList.add('compact');
+                        } else {
+                          document.documentElement.classList.remove('compact');
+                        }
+                      }}
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
                     />
                   </div>
 

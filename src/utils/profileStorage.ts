@@ -322,6 +322,15 @@ class ProfileStorageService {
         method: 'PUT',
         body: JSON.stringify(preferences)
       });
+<<<<<<< HEAD
+=======
+      // Update local cache so layout can react immediately (e.g., compact_view)
+      try {
+        localStorage.setItem('userPreferences', JSON.stringify(preferences));
+      } catch (e) {
+        // ignore localStorage caching errors (quota, privacy mode, etc.)
+      }
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
     } catch (error) {
       console.error('Failed to save preferences:', error);
       throw error;

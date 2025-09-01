@@ -1,4 +1,8 @@
 import { useState } from "react";
+<<<<<<< HEAD
+=======
+import CountryPhoneInput from "@/components/inputs/CountryPhoneInput";
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +29,11 @@ import {
   TrendingUp
 } from "lucide-react";
 import apiClient from "@/lib/api/client";
+<<<<<<< HEAD
 import 'react-phone-input-2/lib/style.css'
+=======
+ 
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
 
 interface AuthFormData {
   name?: string;
@@ -36,7 +44,11 @@ interface AuthFormData {
 }
 
 export function Auth() {
+<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState("signup");
+=======
+  const [activeTab, setActiveTab] = useState("login");
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
@@ -45,12 +57,17 @@ export function Auth() {
     password: "",
   });
   const { toast } = useToast();
+<<<<<<< HEAD
+=======
+  const SIGNUP_LOCKED = true;
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
   const { login } = useAuth();
 
   const handleInputChange = (field: keyof AuthFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+<<<<<<< HEAD
   const handleSignup = async () => {
     if (!formData.name || !formData.email || !formData.phone || !formData.password) {
       toast({
@@ -61,6 +78,179 @@ export function Auth() {
       return;
     }
 
+=======
+  // Simple E.164 validator for WhatsApp number (e.g., +14155552671)
+  const validateWhatsappNumber = (phone: string): string | null => {
+    if (!phone) return 'No phone number entered';
+    const trimmed = phone.trim();
+    const e164 = /^\+[1-9]\d{7,14}$/; // + and 8-15 digits total
+    if (!e164.test(trimmed)) {
+      return 'Invalid WhatsApp number. Use international format, e.g., +14155552671';
+    }
+    return null;
+  };
+
+  // Forgot Password: Request reset OTP
+  const handleRequestPasswordReset = async () => {
+    {
+      const phoneErr = validateWhatsappNumber(formData.phone);
+      if (phoneErr) {
+        toast({ title: phoneErr, variant: 'destructive' });
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post(`/auth/request-password-reset`, {
+        phone: formData.phone,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.data?.status === 'otp_sent') {
+        toast({
+          title: 'OTP Sent',
+          description: 'We sent a verification code to your phone.',
+        });
+        setActiveTab('reset-password');
+      }
+    } catch (error: any) {
+      const res = error?.response;
+      if (!res) {
+        toast({
+          title: 'Network Error',
+          description: 'Please check your internet connection and try again.',
+          variant: 'destructive',
+        });
+      } else {
+        const detail = res?.data?.detail;
+        // Surface phone invalid specifically
+        let title = 'Request Failed';
+        let description = 'Failed to send reset code.';
+        if (Array.isArray(detail)) {
+          const msg = detail[0]?.msg || detail[0];
+          if (typeof msg === 'string' && /phone|invalid/i.test(msg)) {
+            title = 'Invalid WhatsApp number';
+            description = msg;
+          } else {
+            description = msg || description;
+          }
+        } else if (typeof detail === 'string') {
+          if (/phone|invalid/i.test(detail)) {
+            title = 'Invalid WhatsApp number';
+          }
+          description = detail;
+        } else if (detail?.error) {
+          if (/phone|invalid/i.test(detail.error)) {
+            title = 'Invalid WhatsApp number';
+          }
+          description = detail.error;
+        } else if (error?.message) {
+          description = error.message;
+        }
+        toast({ title, description, variant: 'destructive' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Forgot Password: Verify OTP and set new password
+  const handleResetPassword = async () => {
+    if (!formData.phone || !formData.otp || !formData.password) {
+      const missing: string[] = [];
+      if (!formData.phone) missing.push('phone number');
+      if (!formData.otp) missing.push('OTP');
+      if (!formData.password) missing.push('new password');
+      const message = `Missing ${missing.join(', ')}`;
+      toast({ title: message, variant: 'destructive' });
+      return;
+    }
+
+    {
+      const phoneErr = validateWhatsappNumber(formData.phone);
+      if (phoneErr) {
+        toast({ title: phoneErr, variant: 'destructive' });
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post(`/auth/reset-password`, {
+        phone: formData.phone,
+        otp: formData.otp,
+        new_password: formData.password,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (response.data?.status === 'password_reset_successful') {
+        toast({
+          title: 'Password Reset',
+          description: 'Your password has been updated. Please login with the new password.',
+        });
+        // Clear sensitive fields
+        setFormData(prev => ({ ...prev, password: '', otp: '' }));
+        setActiveTab('login');
+      }
+    } catch (error: any) {
+      const res = error?.response;
+      if (!res) {
+        toast({ title: 'Network Error', description: 'Please check your internet connection and try again.', variant: 'destructive' });
+      } else {
+        const detail = res?.data?.detail;
+        let description = 'Failed to reset password.';
+        if (Array.isArray(detail)) {
+          description = detail[0]?.msg || detail[0] || description;
+        } else if (typeof detail === 'string') {
+          description = detail;
+        } else if (detail?.error) {
+          description = detail.error;
+        } else if (error?.message) {
+          description = error.message;
+        }
+        toast({ title: 'Reset Failed', description, variant: 'destructive' });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    if (SIGNUP_LOCKED) {
+      toast({ title: 'Signups are disabled', description: 'Account creation is currently locked. Please login.', variant: 'destructive' });
+      return;
+    }
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+      const missing: string[] = [];
+      if (!formData.name || !formData.name.trim()) missing.push('name');
+      if (!formData.email || !formData.email.trim()) missing.push('email');
+      if (!formData.phone) missing.push('phone number');
+      if (!formData.password) missing.push('password');
+      const message = missing.length === 4
+        ? 'No signup details entered'
+        : `Missing ${missing.join(', ')}`;
+      toast({ title: message, variant: 'destructive' });
+      return;
+    }
+
+    {
+      const phoneErr = validateWhatsappNumber(formData.phone);
+      if (phoneErr) {
+        toast({ title: phoneErr, variant: 'destructive' });
+        return;
+      }
+    }
+
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/signup`, {
@@ -95,6 +285,7 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
+<<<<<<< HEAD
         const description = Array.isArray(detail)
           ? (detail[0]?.msg || detail[0] || "Validation error occurred.")
           : (typeof detail === 'string' ? detail : (detail?.error || "Validation error occurred."));
@@ -103,6 +294,19 @@ export function Auth() {
           description,
           variant: "destructive",
         });
+=======
+        let title = 'Signup Failed';
+        let description = 'Validation error occurred.';
+        const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
+        const msg = pickMsg(detail);
+        if (typeof msg === 'string') {
+          if (/phone|invalid/i.test(msg)) {
+            title = 'Invalid WhatsApp number';
+          }
+          description = msg || description;
+        }
+        toast({ title, description, variant: 'destructive' });
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
       } else if (res?.status === 409) {
         const detail = res?.data?.detail;
         const description = typeof detail === 'string' ? detail : (detail?.error || "An account with this email or phone already exists.");
@@ -140,11 +344,21 @@ export function Auth() {
 
   const handleVerifySignupOTP = async () => {
     if (!formData.phone || !formData.otp) {
+<<<<<<< HEAD
       toast({
         title: "Validation Error",
         description: "Please enter your phone number and OTP.",
         variant: "destructive",
       });
+=======
+      const missingPhone = !formData.phone;
+      const message = missingPhone && !formData.otp
+        ? 'No phone number and OTP entered'
+        : missingPhone
+          ? 'No phone number entered'
+          : 'No OTP entered';
+      toast({ title: message, variant: 'destructive' });
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
       return;
     }
 
@@ -232,6 +446,7 @@ export function Auth() {
   };
 
   const handleRequestLoginOTP = async () => {
+<<<<<<< HEAD
     if (!formData.phone) {
       toast({
         title: "Validation Error",
@@ -239,6 +454,14 @@ export function Auth() {
         variant: "destructive",
       });
       return;
+=======
+    {
+      const phoneErr = validateWhatsappNumber(formData.phone);
+      if (phoneErr) {
+        toast({ title: phoneErr, variant: 'destructive' });
+        return;
+      }
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
     }
 
     setIsLoading(true);
@@ -276,6 +499,7 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
+<<<<<<< HEAD
         const description = Array.isArray(detail)
           ? (detail[0]?.msg || detail[0] || "Failed to send OTP. Please try again.")
           : (typeof detail === 'string' ? detail : (detail?.error || "Failed to send OTP. Please try again."));
@@ -284,6 +508,19 @@ export function Auth() {
           description,
           variant: "destructive",
         });
+=======
+        let title = 'Request Failed';
+        let description = 'Failed to send OTP. Please try again.';
+        const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
+        const msg = pickMsg(detail);
+        if (typeof msg === 'string') {
+          if (/phone|invalid/i.test(msg)) {
+            title = 'Invalid WhatsApp number';
+          }
+          description = msg || description;
+        }
+        toast({ title, description, variant: 'destructive' });
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
       } else {
         const detail = res?.data?.detail;
         const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
@@ -316,6 +553,7 @@ export function Auth() {
 
   const handleVerifyLoginOTP = async () => {
     if (!formData.phone || !formData.otp) {
+<<<<<<< HEAD
       toast({
         title: "Validation Error",
         description: "Please enter your phone number and OTP.",
@@ -324,6 +562,26 @@ export function Auth() {
       return;
     }
 
+=======
+      const missingPhone = !formData.phone;
+      const message = missingPhone && !formData.otp
+        ? 'No phone number and OTP entered'
+        : missingPhone
+          ? 'No phone number entered'
+          : 'No OTP entered';
+      toast({ title: message, variant: 'destructive' });
+      return;
+    }
+
+    {
+      const phoneErr = validateWhatsappNumber(formData.phone);
+      if (phoneErr) {
+        toast({ title: phoneErr, variant: 'destructive' });
+        return;
+      }
+    }
+
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/login/verify-otp`, {
@@ -396,10 +654,23 @@ export function Auth() {
 
   const handleEmailLogin = async () => {
     if (!formData.email || !formData.password) {
+<<<<<<< HEAD
       toast({
         title: "Validation Error",
         description: "Please enter your email and password.",
         variant: "destructive",
+=======
+      const missingEmail = !formData.email || !formData.email.trim();
+      const missingPassword = !formData.password;
+      const message = missingEmail && missingPassword
+        ? 'No email and password entered'
+        : missingEmail
+          ? 'No email entered'
+          : 'No password entered';
+      toast({
+        title: message,
+        variant: 'destructive',
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
       });
       return;
     }
@@ -530,9 +801,32 @@ export function Auth() {
 
         {/* Auth Card */}
         <Card className="bg-gradient-glass border-border/20 shadow-glass p-6 space-y-6">
+<<<<<<< HEAD
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-muted/20">
               <TabsTrigger value="signup" className="data-[state=active]:bg-primary">
+=======
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              if (v === 'signup' && SIGNUP_LOCKED) {
+                toast({ title: 'Signups are disabled', description: 'Please login to continue.', variant: 'destructive' });
+                setActiveTab('login');
+                return;
+              }
+              setActiveTab(v);
+            }}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 bg-muted/20">
+              <TabsTrigger
+                value="signup"
+                className="data-[state=active]:bg-primary cursor-not-allowed opacity-60"
+                disabled
+                title="Signups are disabled"
+                aria-disabled
+              >
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
                 Sign Up
               </TabsTrigger>
               <TabsTrigger value="login" className="data-[state=active]:bg-primary">
@@ -542,6 +836,12 @@ export function Auth() {
 
             {/* Signup Tab */}
             <TabsContent value="signup" className="space-y-4">
+<<<<<<< HEAD
+=======
+              <div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">
+                Signups are currently disabled. Please use Login.
+              </div>
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-sm font-medium text-foreground pb-[10px]">
@@ -586,6 +886,7 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
+<<<<<<< HEAD
 
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -598,6 +899,17 @@ export function Auth() {
                       className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
                     />
                   </div>
+=======
+                  <CountryPhoneInput
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(v) => handleInputChange('phone', v)}
+                    defaultCountry="in"
+                    preferredCountries={["in","us","gb","ae","sa"]}
+                    className="mt-1"
+                  />
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
                 </div>
 
 
@@ -633,7 +945,11 @@ export function Auth() {
 
                 <Button
                   onClick={handleSignup}
+<<<<<<< HEAD
                   disabled={isLoading}
+=======
+                  disabled
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
                   className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
                 >
                   {isLoading ? (
@@ -727,6 +1043,7 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
+<<<<<<< HEAD
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -738,6 +1055,17 @@ export function Auth() {
                       className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
                     />
                   </div>
+=======
+                  <CountryPhoneInput
+                    id="login-phone"
+                    name="login-phone"
+                    value={formData.phone}
+                    onChange={(v) => handleInputChange('phone', v)}
+                    defaultCountry="in"
+                    preferredCountries={["in","us","gb","ae","sa"]}
+                    className="mt-1"
+                  />
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
                 </div>
 
                 <Button
@@ -753,6 +1081,139 @@ export function Auth() {
                   )}
                   Login with OTP
                 </Button>
+<<<<<<< HEAD
+=======
+
+                {/* Forgot password link at the bottom of the Login card */}
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('forgot-password')}
+                    className="text-sm text-primary hover:underline mt-2"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Forgot Password: Request OTP */}
+            <TabsContent value="forgot-password" className="space-y-4">
+              <div className="space-y-4">
+                <div className="phone-input">
+                  <Label htmlFor="fp-phone" className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]">
+                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
+                    <span>Whatsapp Number</span>
+                  </Label>
+                  <CountryPhoneInput
+                    id="fp-phone"
+                    name="fp-phone"
+                    value={formData.phone}
+                    onChange={(v) => handleInputChange('phone', v)}
+                    defaultCountry="in"
+                    preferredCountries={["in","us","gb","ae","sa"]}
+                    className="mt-1"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleRequestPasswordReset}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                  )}
+                  Send Reset Code
+                </Button>
+
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('login')}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Reset Password: Verify OTP and set new password */}
+            <TabsContent value="reset-password" className="space-y-4">
+              <div className="space-y-4">
+                <div className="phone-input">
+                  <Label htmlFor="rp-phone" className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]">
+                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
+                    <span>Whatsapp Number</span>
+                  </Label>
+                  <CountryPhoneInput
+                    id="rp-phone"
+                    name="rp-phone"
+                    value={formData.phone}
+                    onChange={(v) => handleInputChange('phone', v)}
+                    defaultCountry="in"
+                    preferredCountries={["in","us","gb","ae","sa"]}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="rp-otp" className="text-sm font-medium text-foreground pb-[10px]">Verification Code</Label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="rp-otp"
+                      type="text"
+                      placeholder="Enter 4-digit code"
+                      value={formData.otp || ''}
+                      onChange={(e) => handleInputChange('otp', e.target.value)}
+                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      maxLength={4}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="rp-new" className="text-sm font-medium text-foreground pb-[10px]">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="rp-new"
+                      type="password"
+                      placeholder="Enter new password"
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleResetPassword}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Reset Password
+                </Button>
+
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('login')}
+                    className="text-xs text-muted-foreground hover:underline"
+                  >
+                    Back to Login
+                  </button>
+                </div>
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
               </div>
             </TabsContent>
 

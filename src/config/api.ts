@@ -8,7 +8,11 @@ const isProduction = import.meta.env.PROD;
 const getApiBaseUrl = (): string => {
   // In development, always use localhost:8000
   if (isDevelopment) {
+<<<<<<< HEAD
     return 'https://backend.axiontrust.com';
+=======
+    return 'http://localhost:8000';
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
   }
   
   // In production, use environment variable or fallback
@@ -24,7 +28,11 @@ const getApiBaseUrl = (): string => {
   }
   
   // Default fallback
+<<<<<<< HEAD
   return 'https://backend.axiontrust.com';
+=======
+  return 'http://localhost:8000';
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
 };
 
 export const API_BASE_URL = getApiBaseUrl();

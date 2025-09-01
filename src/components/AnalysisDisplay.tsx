@@ -128,7 +128,11 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
           <h3 className="text-lg font-semibold text-foreground">Technical Analysis</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<<<<<<< HEAD
           {Object.entries(analysis.technical_analysis).map(([key, value]) => {
+=======
+          {Object.entries(analysis.technical_analysis ?? {}).map(([key, value]) => {
+>>>>>>> cdeaa4e (aaj to phaad hi denge)
             // Helper function to format parameter names for display
             const formatParameterName = (paramName: string) => {
               return paramName
