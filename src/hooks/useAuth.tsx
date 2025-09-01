@@ -20,6 +20,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [logoutTimerId, setLogoutTimerId] = useState<number | null>(null);
+
+  // Decode JWT without external deps (assumes well-formed JWT)
+  const parseJwt = (token: string): any | null => {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      return decoded;
+    } catch {
+      return null;
+    }
+  };
+
+  const scheduleAutoLogout = (token: string | null) => {
+    if (logoutTimerId) {
+      clearTimeout(logoutTimerId);
+      setLogoutTimerId(null);
+    }
+    if (!token) return;
+    const payload = parseJwt(token);
+    const expSec = payload?.exp; // seconds since epoch
+    if (!expSec) return;
+    const nowMs = Date.now();
+    const expMs = expSec * 1000;
+    // Logout 5 seconds before expiry to avoid race
+    const delay = Math.max(0, expMs - nowMs - 5000);
+    const id = window.setTimeout(() => {
+      // Broadcast cross-tab logout and perform local logout
+      try { localStorage.setItem('auth:logout', String(Date.now())); } catch {}
+      logout();
+    }, delay);
+    setLogoutTimerId(id);
+    // Persist expiry for other tabs to optionally read/display
+    try { localStorage.setItem('auth:exp', String(expMs)); } catch {}
+  };
+
+  // Cross-tab auth events
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'auth:logout') {
+        // Another tab logged out; mirror locally without redirect thrash
+        clearLocalAuthState(false);
+      } else if (e.key === 'auth:token') {
+        // Token rotated/updated in another tab; reschedule timer
+        const t = localStorage.getItem('authToken') || localStorage.getItem('access_token');
+        scheduleAutoLogout(t);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [logoutTimerId]);
 
   useEffect(() => {
     // Check for existing session on app load using cookie-based auth
@@ -32,6 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         typeof window !== 'undefined'
           ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
           : null;
+      // Keep auto-logout aligned with backend exp if a token exists
+      scheduleAutoLogout(token);
       // Try to fetch profile using cookie-based authentication
       const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
         withCredentials: true,
@@ -40,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
       });
-      
+
       if (response.data) {
         setIsAuthenticated(true);
         setUser(response.data);
@@ -49,9 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       // No valid session, clear any stale auth state
-      localStorage.removeItem('authToken');
-      setIsAuthenticated(false);
-      setUser(null);
+      clearLocalAuthState();
     } finally {
       setLoading(false);
     }
@@ -73,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.data) {
         const profileData = response.data;
-        
+
         // Initialize storage and cache locally without writing back to API
         await profileStorage.initializeTables();
         localStorage.setItem('userProfile', JSON.stringify(profileData));
@@ -86,9 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error fetching profile data:', error);
       // If we get 401, user is not authenticated
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        setIsAuthenticated(false);
-        setUser(null);
-        localStorage.removeItem('authToken');
+        clearLocalAuthState();
       }
     }
   };
@@ -104,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
       });
-      
+
       if (response.data) {
         setIsAuthenticated(true);
         setUser(response.data);
@@ -113,9 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       // Session is invalid, clear auth state
-      localStorage.removeItem('authToken');
-      setIsAuthenticated(false);
-      setUser(null);
+      clearLocalAuthState();
     } finally {
       setLoading(false);
     }
@@ -123,10 +170,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (token: string) => {
     localStorage.setItem('authToken', token);
+    try { localStorage.setItem('auth:token', String(Date.now())); } catch {}
     setIsAuthenticated(true);
-    
+    scheduleAutoLogout(token);
+
     // Fetch and store profile data after successful login
     await fetchAndStoreProfile();
+  };
+
+  const clearLocalAuthState = (broadcast: boolean = false) => {
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('userPreferences');
+      localStorage.removeItem('userSecurity');
+      localStorage.removeItem('auth:exp');
+      if (broadcast) localStorage.setItem('auth:logout', String(Date.now()));
+    } catch {}
+    if (logoutTimerId) {
+      clearTimeout(logoutTimerId);
+    }
+    setIsAuthenticated(false);
+    setUser(null);
   };
 
   const logout = async () => {
@@ -151,18 +217,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore network errors here; we'll still clear local state
       console.warn('Logout request failed, proceeding to clear local state');
     } finally {
-      // Clear local auth and cached profile data
-      try {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userPreferences');
-        localStorage.removeItem('userSecurity');
-      } catch (e) {
-        // ignore localStorage clearing errors (e.g., browser restrictions or quotas)
-      }
-      setIsAuthenticated(false);
-      setUser(null);
+      // Clear local auth and cached profile data, and broadcast
+      clearLocalAuthState(true);
       // Redirect to landing/login
       window.location.href = '/';
     }

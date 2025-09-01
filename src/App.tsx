@@ -14,6 +14,7 @@ import { Profile } from "@/pages/Profile";
 import { Auth } from "@/pages/Auth";
 // import { Landing } from "@/pages/Landing";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PublicRoute } from "@/components/PublicRoute";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import NotFound from "@/pages/NotFound";
@@ -43,20 +44,62 @@ const App = () => (
           <Switch>
             {/* Public routes */}
             <Route path="/auth">
-              <Auth />
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
             </Route>
 
             {/* Protected routes */}
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/trading" component={LiveTrading} />
-            <Route path="/history" component={History} />
-            <Route path="/active" component={ActiveTrades} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/pricing" component={Pricing} />
-            <Route path="/billing" component={Billing} />
-            <Route path="/help" component={HelpSupport} />
-            <Route path="/journal" component={Journal}/>
+            <Route path="/dashboard">
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/trading">
+              <ProtectedRoute>
+                <LiveTrading />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/history">
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/active">
+              <ProtectedRoute>
+                <ActiveTrades />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/settings">
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/profile">
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/pricing">
+              <ProtectedRoute>
+                <Pricing />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/billing">
+              <ProtectedRoute>
+                <Billing />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/help">
+              <ProtectedRoute>
+                <HelpSupport />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/journal">
+              <ProtectedRoute>
+                <Journal />
+              </ProtectedRoute>
+            </Route>
             
             {/* Catch-all route - redirects based on auth status */}
             <Route path="/">

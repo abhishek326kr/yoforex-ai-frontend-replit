@@ -123,9 +123,21 @@ apiClient.interceptors.response.use(
           break;
         case 401:
           enhancedError.message = 'Session expired. Please log in again.';
-          // Optionally clear auth and redirect to login
-          localStorage.removeItem('authToken');
-          window.location.href = '/auth';
+          // Clear auth, broadcast cross-tab logout, and redirect
+          try {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('userProfile');
+            localStorage.removeItem('userPreferences');
+            localStorage.removeItem('userSecurity');
+            localStorage.removeItem('auth:exp');
+            localStorage.setItem('auth:logout', String(Date.now()));
+          } catch {}
+          // Avoid redirect storms by using a simple guard
+          if (!(window as any).__logging_out) {
+            (window as any).__logging_out = true;
+            window.location.href = '/auth';
+          }
           break;
         case 403:
           enhancedError.message = 'You do not have permission to perform this action';
