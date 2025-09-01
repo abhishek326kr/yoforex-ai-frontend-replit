@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { TradingLayout } from "@/components/layout/TradingLayout";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,8 +84,6 @@ export function Profile() {
             compactView: userPrefs.compact_view,
             autoSave: userPrefs.auto_save
           });
-<<<<<<< HEAD
-=======
           // Apply compact class immediately based on loaded prefs
           try {
             if (userPrefs.compact_view) {
@@ -93,8 +91,13 @@ export function Profile() {
             } else {
               document.documentElement.classList.remove('compact');
             }
-          } catch {}
->>>>>>> cdeaa4e (aaj to phaad hi denge)
+          } catch {
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: 'Failed to apply compact view preference',
+            });
+          }
         }
         
         // Load security settings
@@ -528,11 +531,6 @@ export function Profile() {
                     </div>
                     <Switch 
                       checked={preferences.compactView}
-<<<<<<< HEAD
-                      onCheckedChange={(checked) => 
-                        setPreferences(prev => ({...prev, compactView: checked}))
-                      }
-=======
                       onCheckedChange={(checked) => {
                         setPreferences(prev => ({...prev, compactView: checked}));
                         // Update localStorage cache so layout reacts immediately
@@ -541,7 +539,13 @@ export function Profile() {
                           const prefs = cached ? JSON.parse(cached) : {};
                           const updated = { ...prefs, compact_view: checked };
                           localStorage.setItem('userPreferences', JSON.stringify(updated));
-                        } catch {}
+                        } catch {
+                          toast({
+                            variant: 'destructive',
+                            title: 'Error',
+                            description: 'Failed to update compact view preference in localStorage',
+                          });
+                        }
                         // Toggle global class for immediate UI change
                         if (checked) {
                           document.documentElement.classList.add('compact');
@@ -549,7 +553,6 @@ export function Profile() {
                           document.documentElement.classList.remove('compact');
                         }
                       }}
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                     />
                   </div>
 

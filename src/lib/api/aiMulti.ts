@@ -114,11 +114,6 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
       const response = await apiClient.post<MultiAnalysisResponse>(url, body, {
         headers: { Accept: 'application/json' },
         timeout: 400000,
-<<<<<<< HEAD
-        validateStatus: (s) => s < 500, // let axios reject on 5xx
-      });
-      return response.data;
-=======
         // Treat only 2xx as success; 4xx should throw and be handled below
         validateStatus: (s) => s >= 200 && s < 300,
       });
@@ -130,7 +125,6 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
         throw new Error(`Invalid AI multi-analysis response: ${raw?.slice(0, 500)}`);
       }
       return data as MultiAnalysisResponse;
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     } catch (e: any) {
       lastErr = e;
       const status = e?.status || e?.response?.status;

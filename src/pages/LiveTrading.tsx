@@ -10,8 +10,6 @@ import {
   AlertCircle,
   Lock
 } from 'lucide-react';
-<<<<<<< HEAD
-=======
 import { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,7 +36,6 @@ import ActivePositions from '@/components/ActivePositions';
 import AIMultiPanel from '@/components/AIMultiPanel';
 import AIMultiResults from '@/components/AIMultiResults';
 import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 
 // Type definitions for Technical Analysis Card props
 interface TechnicalAnalysisCardProps {
@@ -51,21 +48,13 @@ interface TechnicalAnalysisCardProps {
   onRunAnalysis: () => void;
   disabled?: boolean;
   children?: React.ReactNode;
-<<<<<<< HEAD
-=======
   showRunNew?: boolean;
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 }
 
 // Import the AnalysisDisplay component
 import { AnalysisDisplay } from '@/components/AnalysisDisplay';
 
 // Technical Analysis Card Component
-<<<<<<< HEAD
-const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children }: TechnicalAnalysisCardProps) => (
-  <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
-    <h3 className="text-lg font-semibold text-foreground mb-3">Market Analysis</h3>
-=======
 const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children, showRunNew = false }: TechnicalAnalysisCardProps) => (
   <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
     <div className="flex items-center justify-between mb-3">
@@ -83,7 +72,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
         )}
       </div>
     </div>
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     {analysis.loading ? (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" />
@@ -95,11 +83,7 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
           <Zap className="h-8 w-8 text-primary" />
         </div>
         <h4 className="text-lg font-medium mb-2">Run Market Analysis</h4>
-<<<<<<< HEAD
-        <p className="text-muted-foreground text-sm mb-6 max-w-md">
-=======
         <p className="text-muted-foreground text-sm mb-6">
->>>>>>> cdeaa4e (aaj to phaad hi denge)
           Get detailed technical analysis, trade signals, and risk assessment for the selected currency pair.
         </p>
         <Button 
@@ -130,12 +114,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
         </Button>
       </div>
     ) : analysis.data?.analysis ? (
-<<<<<<< HEAD
-      <>
-        <AnalysisDisplay analysis={analysis.data.analysis} onRefresh={onRunAnalysis} />
-        {children}
-      </>
-=======
       // If the payload looks like MultiAnalysisResponse (has nested 'analysis'),
       // render children (AIMultiResults) only; otherwise render the single AnalysisDisplay
       ((analysis.data as any)?.analysis?.analysis ? (
@@ -146,7 +124,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
           {children}
         </>
       ))
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     ) : (
       <div className="flex flex-col items-center p-6 text-center">
         <div className="bg-muted/20 p-4 rounded-full mb-4">
@@ -168,37 +145,7 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
     )}
   </Card>
 );
-<<<<<<< HEAD
-import { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import TradingTips from '@/components/TradingTips';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-
-import MarketSelection from '@/components/MarketSelection';
-import TradingViewWidget from '@/components/charts/TradingViewWidget';
-import { TradingLayout } from '@/components/layout/TradingLayout';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import LiveSignals from '@/components/LiveSignals';
-import AiModelsSelection from '@/components/AiModelsSelection';
-import TimeframeSelection from '@/components/TimeframeSelection';
-import { TradingChart } from '@/components/TradingChart';
-import StrategySelection from '@/components/StrategySelection';
-import ActivePositions from '@/components/ActivePositions';
-import AIMultiPanel from '@/components/AIMultiPanel';
-import AIMultiResults from '@/components/AIMultiResults';
-import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
-=======
  
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 
 export function LiveTrading() {
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
@@ -216,11 +163,8 @@ export function LiveTrading() {
   const [multiResult, setMultiResult] = useState<MultiAnalysisResponse | null>(null);
   // Keep latest AIMultiPanel config so Market Analysis can reuse it
   const [aiConfig, setAiConfig] = useState<{ provider: string; models: Record<string, string> } | null>(null);
-<<<<<<< HEAD
-=======
   // Track last successful run signature to detect parameter changes
   const [lastRunSig, setLastRunSig] = useState<string | null>(null);
->>>>>>> cdeaa4e (aaj to phaad hi denge)
   
   // Handle strategy selection from StrategySelection component
   const handleStrategySelect = (strategy: string) => {
@@ -268,9 +212,6 @@ export function LiveTrading() {
 
   // Run the multi-provider AI analysis from the Market Analysis run button
   const runMultiFromConfig = async () => {
-<<<<<<< HEAD
-    if (!aiConfig || !selectedPair || !selectedTimeframe || !selectedStrategy) return;
-=======
     // Validate inputs; surface a helpful error instead of silently returning
     if (!selectedPair || !selectedTimeframe || !selectedStrategy) {
       setAnalysis({ loading: false, error: 'Please select a pair, timeframe, and strategy first', data: null, hasRun: true });
@@ -281,19 +222,10 @@ export function LiveTrading() {
       return;
     }
 
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     try {
       // show loading in the analysis card area
       setAnalysis({ loading: true, error: null, data: null, hasRun: true });
       const { runMultiAnalysis } = await import('@/lib/api/aiMulti');
-<<<<<<< HEAD
-      const data = await runMultiAnalysis({ providers: [aiConfig.provider as any], pair: selectedPair, timeframe: selectedTimeframe, strategy: selectedStrategy, models: aiConfig.models });
-      setMultiResult(data as MultiAnalysisResponse);
-      setAnalysis({ loading: false, error: null, data: { analysis: data }, hasRun: true });
-    } catch (e: any) {
-      console.error('Error running multi analysis from Market Analysis:', e);
-      setAnalysis({ loading: false, error: e?.message || 'Failed to run AI analysis', data: null, hasRun: true });
-=======
       const data = await runMultiAnalysis({
         providers: [aiConfig.provider as any],
         pair: selectedPair,
@@ -311,7 +243,6 @@ export function LiveTrading() {
       console.error('Error running multi analysis from Market Analysis:', e);
       const msg = e?.message || 'Failed to run AI analysis';
       setAnalysis({ loading: false, error: msg, data: null, hasRun: true });
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     }
   };
 
@@ -407,10 +338,6 @@ export function LiveTrading() {
                 <div className="flex-1 min-h-[400px]">
                   <TechnicalAnalysisCard 
                     analysis={analysis}
-<<<<<<< HEAD
-                    onRunAnalysis={handleAnalysis}
-                    disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
-=======
                     onRunAnalysis={runMultiFromConfig}
                     disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
                     showRunNew={
@@ -419,7 +346,6 @@ export function LiveTrading() {
                         lastRunSig !== JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
                       )
                     }
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                   />
                   {/* AI Providers Results moved under Market Analysis */}
                   <div className="mt-4">

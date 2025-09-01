@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { ReactNode } from "react";
-=======
 import { ReactNode, useEffect, useState } from "react";
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 import { TradingSidebar } from "./TradingSidebar";
 import { TradingHeader } from "./TradingHeader";
 
@@ -11,8 +7,6 @@ interface TradingLayoutProps {
 }
 
 export function TradingLayout({ children }: TradingLayoutProps) {
-<<<<<<< HEAD
-=======
   const [compact, setCompact] = useState<boolean>(false);
 
   useEffect(() => {
@@ -53,20 +47,14 @@ export function TradingLayout({ children }: TradingLayoutProps) {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
->>>>>>> cdeaa4e (aaj to phaad hi denge)
   return (
     <div className="min-h-screen bg-gradient-dark">
       <TradingSidebar />
       <TradingHeader />
       
       {/* Main Content */}
-<<<<<<< HEAD
-      <main className="md:pl-60 pt-16">
-        <div className="p-4 md:p-6">
-=======
       <main className={compact ? "md:pl-60 pt-12" : "md:pl-60 pt-16"}>
         <div className={compact ? "p-3 md:p-4" : "p-4 md:p-6"}>
->>>>>>> cdeaa4e (aaj to phaad hi denge)
           {children}
         </div>
       </main>

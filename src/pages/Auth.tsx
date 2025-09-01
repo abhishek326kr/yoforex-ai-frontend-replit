@@ -1,8 +1,5 @@
 import { useState } from "react";
-<<<<<<< HEAD
-=======
 import CountryPhoneInput from "@/components/inputs/CountryPhoneInput";
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +26,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import apiClient from "@/lib/api/client";
-<<<<<<< HEAD
-import 'react-phone-input-2/lib/style.css'
-=======
  
->>>>>>> cdeaa4e (aaj to phaad hi denge)
 
 interface AuthFormData {
   name?: string;
@@ -44,11 +37,7 @@ interface AuthFormData {
 }
 
 export function Auth() {
-<<<<<<< HEAD
-  const [activeTab, setActiveTab] = useState("signup");
-=======
   const [activeTab, setActiveTab] = useState("login");
->>>>>>> cdeaa4e (aaj to phaad hi denge)
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
@@ -57,28 +46,13 @@ export function Auth() {
     password: "",
   });
   const { toast } = useToast();
-<<<<<<< HEAD
-=======
   const SIGNUP_LOCKED = true;
->>>>>>> cdeaa4e (aaj to phaad hi denge)
   const { login } = useAuth();
 
   const handleInputChange = (field: keyof AuthFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-<<<<<<< HEAD
-  const handleSignup = async () => {
-    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-=======
   // Simple E.164 validator for WhatsApp number (e.g., +14155552671)
   const validateWhatsappNumber = (phone: string): string | null => {
     if (!phone) return 'No phone number entered';
@@ -250,7 +224,6 @@ export function Auth() {
       }
     }
 
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/signup`, {
@@ -285,16 +258,6 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
-<<<<<<< HEAD
-        const description = Array.isArray(detail)
-          ? (detail[0]?.msg || detail[0] || "Validation error occurred.")
-          : (typeof detail === 'string' ? detail : (detail?.error || "Validation error occurred."));
-        toast({
-          title: "Signup Failed",
-          description,
-          variant: "destructive",
-        });
-=======
         let title = 'Signup Failed';
         let description = 'Validation error occurred.';
         const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
@@ -306,7 +269,6 @@ export function Auth() {
           description = msg || description;
         }
         toast({ title, description, variant: 'destructive' });
->>>>>>> cdeaa4e (aaj to phaad hi denge)
       } else if (res?.status === 409) {
         const detail = res?.data?.detail;
         const description = typeof detail === 'string' ? detail : (detail?.error || "An account with this email or phone already exists.");
@@ -344,13 +306,6 @@ export function Auth() {
 
   const handleVerifySignupOTP = async () => {
     if (!formData.phone || !formData.otp) {
-<<<<<<< HEAD
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number and OTP.",
-        variant: "destructive",
-      });
-=======
       const missingPhone = !formData.phone;
       const message = missingPhone && !formData.otp
         ? 'No phone number and OTP entered'
@@ -358,7 +313,6 @@ export function Auth() {
           ? 'No phone number entered'
           : 'No OTP entered';
       toast({ title: message, variant: 'destructive' });
->>>>>>> cdeaa4e (aaj to phaad hi denge)
       return;
     }
 
@@ -446,22 +400,12 @@ export function Auth() {
   };
 
   const handleRequestLoginOTP = async () => {
-<<<<<<< HEAD
-    if (!formData.phone) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number.",
-        variant: "destructive",
-      });
-      return;
-=======
     {
       const phoneErr = validateWhatsappNumber(formData.phone);
       if (phoneErr) {
         toast({ title: phoneErr, variant: 'destructive' });
         return;
       }
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     }
 
     setIsLoading(true);
@@ -499,16 +443,6 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
-<<<<<<< HEAD
-        const description = Array.isArray(detail)
-          ? (detail[0]?.msg || detail[0] || "Failed to send OTP. Please try again.")
-          : (typeof detail === 'string' ? detail : (detail?.error || "Failed to send OTP. Please try again."));
-        toast({
-          title: "Request Failed",
-          description,
-          variant: "destructive",
-        });
-=======
         let title = 'Request Failed';
         let description = 'Failed to send OTP. Please try again.';
         const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
@@ -520,7 +454,6 @@ export function Auth() {
           description = msg || description;
         }
         toast({ title, description, variant: 'destructive' });
->>>>>>> cdeaa4e (aaj to phaad hi denge)
       } else {
         const detail = res?.data?.detail;
         const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
@@ -553,16 +486,6 @@ export function Auth() {
 
   const handleVerifyLoginOTP = async () => {
     if (!formData.phone || !formData.otp) {
-<<<<<<< HEAD
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number and OTP.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-=======
       const missingPhone = !formData.phone;
       const message = missingPhone && !formData.otp
         ? 'No phone number and OTP entered'
@@ -581,7 +504,6 @@ export function Auth() {
       }
     }
 
->>>>>>> cdeaa4e (aaj to phaad hi denge)
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/login/verify-otp`, {
@@ -654,12 +576,6 @@ export function Auth() {
 
   const handleEmailLogin = async () => {
     if (!formData.email || !formData.password) {
-<<<<<<< HEAD
-      toast({
-        title: "Validation Error",
-        description: "Please enter your email and password.",
-        variant: "destructive",
-=======
       const missingEmail = !formData.email || !formData.email.trim();
       const missingPassword = !formData.password;
       const message = missingEmail && missingPassword
@@ -670,7 +586,6 @@ export function Auth() {
       toast({
         title: message,
         variant: 'destructive',
->>>>>>> cdeaa4e (aaj to phaad hi denge)
       });
       return;
     }
@@ -801,11 +716,6 @@ export function Auth() {
 
         {/* Auth Card */}
         <Card className="bg-gradient-glass border-border/20 shadow-glass p-6 space-y-6">
-<<<<<<< HEAD
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/20">
-              <TabsTrigger value="signup" className="data-[state=active]:bg-primary">
-=======
           <Tabs
             value={activeTab}
             onValueChange={(v) => {
@@ -826,7 +736,6 @@ export function Auth() {
                 title="Signups are disabled"
                 aria-disabled
               >
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                 Sign Up
               </TabsTrigger>
               <TabsTrigger value="login" className="data-[state=active]:bg-primary">
@@ -836,12 +745,9 @@ export function Auth() {
 
             {/* Signup Tab */}
             <TabsContent value="signup" className="space-y-4">
-<<<<<<< HEAD
-=======
               <div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">
                 Signups are currently disabled. Please use Login.
               </div>
->>>>>>> cdeaa4e (aaj to phaad hi denge)
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-sm font-medium text-foreground pb-[10px]">
@@ -886,20 +792,6 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
-<<<<<<< HEAD
-
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="E.g. +910234567890"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                    />
-                  </div>
-=======
                   <CountryPhoneInput
                     id="phone"
                     name="phone"
@@ -909,7 +801,6 @@ export function Auth() {
                     preferredCountries={["in","us","gb","ae","sa"]}
                     className="mt-1"
                   />
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                 </div>
 
 
@@ -945,11 +836,7 @@ export function Auth() {
 
                 <Button
                   onClick={handleSignup}
-<<<<<<< HEAD
-                  disabled={isLoading}
-=======
                   disabled
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                   className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
                 >
                   {isLoading ? (
@@ -1043,19 +930,6 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
-<<<<<<< HEAD
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-phone"
-                      type="tel"
-                      placeholder="E.g. +910123456789"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                    />
-                  </div>
-=======
                   <CountryPhoneInput
                     id="login-phone"
                     name="login-phone"
@@ -1065,7 +939,6 @@ export function Auth() {
                     preferredCountries={["in","us","gb","ae","sa"]}
                     className="mt-1"
                   />
->>>>>>> cdeaa4e (aaj to phaad hi denge)
                 </div>
 
                 <Button
@@ -1081,8 +954,6 @@ export function Auth() {
                   )}
                   Login with OTP
                 </Button>
-<<<<<<< HEAD
-=======
 
                 {/* Forgot password link at the bottom of the Login card */}
                 <div className="flex justify-center">
@@ -1213,7 +1084,6 @@ export function Auth() {
                     Back to Login
                   </button>
                 </div>
->>>>>>> cdeaa4e (aaj to phaad hi denge)
               </div>
             </TabsContent>
 
