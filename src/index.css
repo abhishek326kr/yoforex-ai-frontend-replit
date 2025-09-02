@@ -87,6 +87,14 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease-out;
 
+    /* Responsive Breakpoints */
+    --screen-xs: 480px;
+    --screen-sm: 640px;
+    --screen-md: 768px;
+    --screen-lg: 1024px;
+    --screen-xl: 1280px;
+    --screen-2xl: 1440px;
+
     /* Border Radius */
     --radius: 0.75rem;
     --radius-card: 1rem;
@@ -274,6 +282,75 @@
     @apply bg-gradient-glass backdrop-blur-md border border-border/30;
   }
 
+  /* Responsive container */
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      max-width: 640px;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .container {
+      max-width: 768px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container {
+      max-width: 1024px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .container {
+      max-width: 1280px;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    .container {
+      max-width: 1440px;
+    }
+  }
+
+  /* Ensure images and media are responsive */
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Prevent text from overflowing */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+
+  /* Improve form elements for touch */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Professional Scrollbars */
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -295,6 +372,24 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground));
+  }
+
+  /* Themed scrollbar using primary color */
+  .scrollbar-primary {
+    scrollbar-color: hsl(var(--primary)) transparent;
+  }
+
+  .scrollbar-primary::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary));
+  }
+
+  .scrollbar-primary::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary-hover));
+  }
+
+  /* Ensure horizontal scrollbar height is also set for thin variant */
+  .scrollbar-thin::-webkit-scrollbar:horizontal {
+    height: 6px;
   }
 }
 

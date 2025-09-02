@@ -55,7 +55,8 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   };
 
   const isProviderLocked = (provider: Provider): boolean => {
-    if (provider === 'claude') return true;
+    // Lock both OpenAI and Claude providers
+    if (provider === 'claude' || provider === 'openai') return true;
     const list = catalog[provider] || [];
     return list.length > 0 && list.every((m) => isPaidModel(provider, m));
   };

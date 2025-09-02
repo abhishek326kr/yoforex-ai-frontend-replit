@@ -44,7 +44,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
     
 
     return (
-        <Card className="bg-gradient-glass backdrop-blur-sm border-border/20">
+        <Card className="bg-gradient-glass backdrop-blur-sm border-border/20 relative z-10">
             <Accordion type="single" collapsible defaultValue="market-selection" className="w-full">
                 <AccordionItem value="market-selection" className="border-0">
                     <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 py-3">
@@ -52,38 +52,44 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                             <h3 className="text-lg font-semibold text-foreground">Market Selection</h3>
                         </AccordionTrigger>
                     </div>
-                    <AccordionContent className="px-4 pb-4 pt-2">
+                    <AccordionContent className="px-4 pb-4 pt-2 relative z-20">
                         {/* Currency Pair Tabs */}
-                        {/* Market Type Selection */}
-                        <div className="flex space-x-2 mb-4 pb-2">
-                            <Button
-                                variant={selectedMarket === 'forex' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSelectedMarket('forex')}
-                            >
-                                Forex
-                            </Button>
-                            <Button
-                                variant={selectedMarket === 'crypto' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSelectedMarket('crypto')}
-                            >
-                                Crypto
-                            </Button>
-                            <Button
-                                variant={selectedMarket === 'indices' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSelectedMarket('indices')}
-                            >
-                                Indices
-                            </Button>
-                            <Button
-                                variant={selectedMarket === 'commodities' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setSelectedMarket('commodities')}
-                            >
-                                Commodities
-                            </Button>
+                        {/* Market Type Selection - Responsive Button Group */}
+                        <div className="w-full overflow-x-auto pb-2 mb-4 scrollbar-thin scrollbar-primary">
+                            <div className="flex space-x-2 w-max min-w-full">
+                                <Button
+                                    variant={selectedMarket === 'forex' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="whitespace-nowrap flex-shrink-0"
+                                    onClick={() => setSelectedMarket('forex')}
+                                >
+                                    Forex
+                                </Button>
+                                <Button
+                                    variant={selectedMarket === 'crypto' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="whitespace-nowrap flex-shrink-0"
+                                    onClick={() => setSelectedMarket('crypto')}
+                                >
+                                    Crypto
+                                </Button>
+                                <Button
+                                    variant={selectedMarket === 'indices' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="whitespace-nowrap flex-shrink-0"
+                                    onClick={() => setSelectedMarket('indices')}
+                                >
+                                    Indices
+                                </Button>
+                                <Button
+                                    variant={selectedMarket === 'commodities' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className="whitespace-nowrap flex-shrink-0"
+                                    onClick={() => setSelectedMarket('commodities')}
+                                >
+                                    Commodities
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Search */}
@@ -98,7 +104,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                         </div>
 
                         {/* Market Pairs List */}
-                        <div className="space-y-4 flex-1 overflow-hidden pr-1 pb-2 max-h-[400px] overflow-y-auto">
+                        <div className="space-y-4 flex-1 pr-1 pb-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-primary">
                             {filteredMarketData.length === 0 ? (
                                 <div className="text-center py-4 text-muted-foreground">
                                     No pairs found matching "{searchQuery}"

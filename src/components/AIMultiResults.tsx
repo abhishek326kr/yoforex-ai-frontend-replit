@@ -92,11 +92,25 @@ function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
   };
 
   const signalRaw = String(payload.signal || '').toUpperCase();
-  const signal: Signal = signalRaw === 'BUY' || signalRaw === 'SELL' ? (signalRaw as Signal) : 'HOLD';
+  const signal: Signal = signalRaw === 'BUY' || signalRaw === 'SELL' || signalRaw === 'STRADDLE_BUY' || signalRaw === 'STRADDLE_SELL' ? 
+    (signalRaw.includes('BUY') ? 'BUY' : signalRaw.includes('SELL') ? 'SELL' : signalRaw as Signal) : 'HOLD';
+  
   const confidence = toNum(payload.confidence);
-  const entry = toNum(payload.entry);
-  const stop_loss = toNum(payload.stop_loss);
-  const take_profit = toNum(payload.take_profit);
+  
+  // Handle Options Straddle specific fields
+  let entry, stop_loss, take_profit;
+  
+  if (payload.call_entry && payload.put_entry) {
+    // Options Straddle strategy - map specific fields
+    entry = toNum(payload.call_entry) || toNum(payload.put_entry) || 0;
+    stop_loss = toNum(payload.breakeven_lower) || 0;
+    take_profit = toNum(payload.breakeven_upper) || 0;
+  } else {
+    // Standard strategy fields
+    entry = toNum(payload.entry);
+    stop_loss = toNum(payload.stop_loss);
+    take_profit = toNum(payload.take_profit);
+  }
 
   // Minimal required fields to render nicely
   if (confidence === null || entry === null || stop_loss === null || take_profit === null) {

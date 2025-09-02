@@ -251,26 +251,16 @@ export function LiveTrading() {
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4 flex-shrink-0">
-          <div>
+          <div className="whitespace-nowrap">
             <div className="flex items-baseline mb-2">
               <h1 className="text-4xl font-bold text-foreground mr-3">Live Trading</h1>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <span className="text-sm opacity-75">powered by</span>
-                <img src="/yoforexai.png" alt="YoforexAI.com" className='h-7 w-auto'/>
-              </div>
             </div>
-            <p className="text-muted-foreground">AI-powered forex analysis and automated trading</p>
           </div>
-          <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-            <Badge variant="secondary" className="bg-gradient-profit text-white">
-              <Activity className="h-3 w-3 mr-1" />
-              Live Markets
-            </Badge>
-            {/* <Button className="bg-gradient-primary hover:bg-primary-hover whitespace-nowrap">
-              <Zap className="h-4 w-4 mr-2" />
-              Emergency Stop
-            </Button> */}
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <span className="text-sm opacity-75">powered by</span>
+            <img src="/yoforexai.png" alt="YoforexAI.com" className='h-7 w-auto'/>
           </div>
+          <p className="text-muted-foreground">AI-powered forex analysis and automated trading</p>
         </div>
 
         <Tabs defaultValue="automated" className="flex-1 flex flex-col min-h-0 overflow-hidden">

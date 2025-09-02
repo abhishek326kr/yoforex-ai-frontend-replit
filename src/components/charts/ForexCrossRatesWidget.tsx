@@ -66,8 +66,21 @@ function TradingViewWidget({
   }, [theme, width, height, currencies]);
 
   return (
-  <div className="tradingview-widget-container" ref={containerRef} style={{ width: typeof width === 'number' ? `${width}px` : width, minWidth: 300 }}>
-      {/* TradingView will replace / render inside the appended widget wrapper */}
+    <div className="relative w-full" style={{ minWidth: 300 }}>
+      <div 
+        className="tradingview-widget-container" 
+        ref={containerRef} 
+        style={{ 
+          width: typeof width === 'number' ? `${width}px` : width,
+          minHeight: height ? `${height}px` : '420px',
+          position: 'relative',
+          zIndex: 10,
+          overflow: 'visible',
+        }}
+      >
+        {/* TradingView will replace / render inside the appended widget wrapper */}
+        <div className="absolute top-0 left-0 right-0 bottom-0" style={{ overflow: 'visible' }} />
+      </div>
     </div>
   );
 }

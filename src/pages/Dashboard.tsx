@@ -176,7 +176,7 @@ export function Dashboard() {
 						</Badge>
 						<Button
 							className="bg-gradient-primary hover:bg-primary-hover"
-							onClick={() => navigate("")}
+							onClick={() => navigate("/trading")}
 						>
 							<Zap className="h-4 w-4 mr-2" />
 							Start AI Analysis

@@ -48,16 +48,18 @@ export function TradingLayout({ children }: TradingLayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-dark">
-      <TradingSidebar />
+    <div className="min-h-screen bg-gradient-dark flex flex-col overflow-hidden">
       <TradingHeader />
-      
-      {/* Main Content */}
-      <main className={compact ? "md:pl-60 pt-12" : "md:pl-60 pt-16"}>
-        <div className={compact ? "p-3 md:p-4" : "p-4 md:p-6"}>
-          {children}
-        </div>
-      </main>
+      <div className="flex flex-1 overflow-hidden">
+        <TradingSidebar />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto relative pt-16 transition-all duration-300 lg:ml-64">
+          <div className={compact ? "p-3 md:p-4" : "p-4 md:p-6 w-full max-w-[1440px] mx-auto"}>
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

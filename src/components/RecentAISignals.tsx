@@ -58,7 +58,7 @@ export default function RecentAISignals({
         // DEBUG: inspect backend shape if UI shows empty values
         // Remove or comment out in production
         // eslint-disable-next-line no-console
-        console.log("[RecentAISignals] fetched page", p, "response:", data);
+        // console.log("[RecentAISignals] fetched page", p, "response:", data);
 
         // backend uses total_analyses (from your sample), keep both fallbacks
         if (typeof data.total_analyses === "number") setTotalAnalyses(data.total_analyses);
