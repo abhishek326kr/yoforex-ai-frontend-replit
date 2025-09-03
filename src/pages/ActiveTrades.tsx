@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -28,66 +29,8 @@ import {
   Copy,
   BarChart3
 } from "lucide-react";
-
-const activeTrades = [
-  {
-    id: "POS-001",
-    pair: "EUR/USD",
-    direction: "BUY",
-    entryPrice: "1.0820",
-    currentPrice: "1.0847",
-    lotSize: "0.1",
-    unrealizedPL: "+$27.00",
-    profitable: true,
-    openTime: "2024-01-15 09:30:00",
-    duration: "4h 23m",
-    stopLoss: "1.0800",
-    takeProfit: "1.0870",
-    aiModel: "GPT-4.1",
-    confidence: 89,
-    strategy: "Breakout Strategy",
-    risk: "Low",
-    notes: "Strong bullish momentum with RSI divergence"
-  },
-  {
-    id: "POS-002",
-    pair: "GBP/JPY",
-    direction: "SELL",
-    entryPrice: "189.45",
-    currentPrice: "188.95",
-    lotSize: "0.05",
-    unrealizedPL: "+$25.00",
-    profitable: true,
-    openTime: "2024-01-15 11:20:00",
-    duration: "2h 33m",
-    stopLoss: "190.20",
-    takeProfit: "188.20",
-    aiModel: "Claude 4 Sonnet",
-    confidence: 82,
-    strategy: "SMC Strategy",
-    risk: "Medium",
-    notes: "Bearish engulfing pattern at key resistance"
-  },
-  {
-    id: "POS-003",
-    pair: "USD/JPY",
-    direction: "BUY",
-    entryPrice: "149.82",
-    currentPrice: "149.65",
-    lotSize: "0.1",
-    unrealizedPL: "-$17.00",
-    profitable: false,
-    openTime: "2024-01-15 12:15:00",
-    duration: "1h 38m",
-    stopLoss: "149.30",
-    takeProfit: "150.20",
-    aiModel: "Gemini 2.5 Pro",
-    confidence: 76,
-    strategy: "Trend Following",
-    risk: "Medium",
-    notes: "Waiting for breakout confirmation"
-  }
-];
+import { useActiveTrades } from "@/context/ActiveTradesContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const portfolioSummary = [
   { title: "Open Positions", value: "7", icon: Activity },
@@ -97,11 +40,26 @@ const portfolioSummary = [
 ];
 
 export function ActiveTrades() {
+  const { trades, updateTrade, removeTrade } = useActiveTrades();
+  const { toast } = useToast();
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closeTargetId, setCloseTargetId] = useState<string | null>(null);
+  // Modify dialog state
+  const [showModifyDialog, setShowModifyDialog] = useState(false);
+  const [modifyId, setModifyId] = useState<string | null>(null);
+  const [formDirection, setFormDirection] = useState<'BUY' | 'SELL'>('BUY');
+  const [formLot, setFormLot] = useState('0.10');
+  const [formEntry, setFormEntry] = useState('');
+  const [formSL, setFormSL] = useState('');
+  const [formTP, setFormTP] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+  const [formRisk, setFormRisk] = useState<'Low' | 'Medium' | 'High'>('Medium');
 
   // Find the selected trade data
-  const selectedTradeData = activeTrades.find(trade => trade.id === selectedTrade);
+  const selectedTradeData = trades.find(trade => trade.id === selectedTrade) as any;
+
+  const activeCount = trades.length;
 
   return (
     <TradingLayout>
@@ -189,7 +147,7 @@ export function ActiveTrades() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Badge variant="secondary" className="bg-gradient-profit text-white">
               <div className="h-2 w-2 rounded-full bg-white mr-2 animate-pulse" />
-              7 Active Positions
+              {activeCount} Active Position{activeCount === 1 ? '' : 's'}
             </Badge>
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-2" />
@@ -246,7 +204,7 @@ export function ActiveTrades() {
 
               <TabsContent value="all">
                 <div className="space-y-4">
-                  {activeTrades.map((trade) => (
+                  {trades.map((trade) => (
                     <Card 
                       key={trade.id} 
                       className="p-6 bg-gradient-dark border border-border/20 hover:border-border/40 transition-colors cursor-pointer"
@@ -275,15 +233,15 @@ export function ActiveTrades() {
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Lot Size:</span>
-                              <span className="font-medium text-foreground">{trade.lotSize}</span>
+                              <span className="font-medium text-foreground">{trade.lotSize || '0.10'}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Strategy:</span>
-                              <span className="font-medium text-foreground">{trade.strategy}</span>
+                              <span className="font-medium text-foreground">{trade.strategy || '-'}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">AI Model:</span>
-                              <span className="font-medium text-foreground">{trade.aiModel}</span>
+                              <span className="font-medium text-foreground">{trade.aiModel || '-'}</span>
                             </div>
                           </div>
                         </div>
@@ -297,11 +255,11 @@ export function ActiveTrades() {
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Current Price</p>
-                              <p className="text-lg font-bold text-foreground">{trade.currentPrice}</p>
+                              <p className="text-lg font-bold text-foreground">{trade.currentPrice || '-'}</p>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">{trade.duration}</span>
+                              <span className="text-xs text-muted-foreground">{trade.duration || '-'}</span>
                             </div>
                           </div>
                         </div>
@@ -311,11 +269,11 @@ export function ActiveTrades() {
                           <div className="space-y-3">
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Stop Loss</p>
-                              <p className="text-sm font-medium text-trading-loss">{trade.stopLoss}</p>
+                              <p className="text-sm font-medium text-trading-loss">{trade.stopLoss || '-'}</p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Take Profit</p>
-                              <p className="text-sm font-medium text-trading-profit">{trade.takeProfit}</p>
+                              <p className="text-sm font-medium text-trading-profit">{trade.takeProfit || '-'}</p>
                             </div>
                             <Badge 
                               variant={trade.risk === 'Low' ? 'secondary' : trade.risk === 'Medium' ? 'default' : 'destructive'}
@@ -334,15 +292,32 @@ export function ActiveTrades() {
                               <p className={`text-2xl font-bold ${
                                 trade.profitable ? 'text-profit' : 'text-loss'
                               }`}>
-                                {trade.unrealizedPL}
+                                {trade.unrealizedPL || '-'}
                               </p>
                               <div className="flex items-center justify-center space-x-1 mt-1">
                                 <div className="h-2 w-2 rounded-full bg-primary" />
-                                <span className="text-xs text-muted-foreground">{trade.confidence}% confidence</span>
+                                <span className="text-xs text-muted-foreground">{(trade.confidence ?? 0)}% confidence</span>
                               </div>
                             </div>
                             <div className="flex flex-col space-y-2">
-                              <Button size="sm" variant="outline" className="w-full">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // open modify with this trade
+                                  setModifyId(trade.id);
+                                  setFormDirection(trade.direction);
+                                  setFormLot(trade.lotSize || '0.10');
+                                  setFormEntry(trade.entryPrice || '');
+                                  setFormSL(trade.stopLoss || '');
+                                  setFormTP(trade.takeProfit || '');
+                                  setFormNotes(trade.notes || '');
+                                  setFormRisk((trade.risk as any) || 'Medium');
+                                  setShowModifyDialog(true);
+                                }}
+                              >
                                 <Edit3 className="h-3 w-3 mr-1" />
                                 Modify
                               </Button>
@@ -350,13 +325,20 @@ export function ActiveTrades() {
                                 <Copy className="h-3 w-3 mr-1" />
                                 Copy
                               </Button>
-                              <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+                              <Dialog open={showCloseDialog} onOpenChange={(open) => {
+                                setShowCloseDialog(open);
+                                if (!open) setCloseTargetId(null);
+                              }}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     size="sm" 
                                     variant="destructive" 
                                     className="w-full"
-                                    onClick={() => setSelectedTrade(trade.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCloseTargetId(trade.id);
+                                      setShowCloseDialog(true);
+                                    }}
                                   >
                                     <X className="h-3 w-3 mr-1" />
                                     Close
@@ -367,7 +349,7 @@ export function ActiveTrades() {
                                     <DialogTitle>Close Position</DialogTitle>
                                     <DialogDescription>
                                       Are you sure you want to close this {trade.pair} position? 
-                                      Current unrealized P&L: {trade.unrealizedPL}
+                                      Current unrealized P&L: {trade.unrealizedPL || '-'}
                                     </DialogDescription>
                                   </DialogHeader>
                                   <div className="flex justify-end space-x-2 mt-4">
@@ -377,12 +359,15 @@ export function ActiveTrades() {
                                     <Button 
                                       variant="destructive"
                                       onClick={() => {
-                                        // Handle close position
+                                        if (closeTargetId) {
+                                          removeTrade(closeTargetId);
+                                          toast({ title: "Position closed" });
+                                        }
                                         setShowCloseDialog(false);
-                                        setSelectedTrade(null);
+                                        setCloseTargetId(null);
                                       }}
                                     >
-                                      Close Position
+                                      Yes, close
                                     </Button>
                                   </div>
                                 </DialogContent>
@@ -406,6 +391,87 @@ export function ActiveTrades() {
             </Tabs>
           </div>
         </Card>
+
+        {/* Modify Position Dialog */}
+        <Dialog open={showModifyDialog} onOpenChange={(open) => {
+          setShowModifyDialog(open);
+          if (!open) setModifyId(null);
+        }}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Modify Position</DialogTitle>
+              <DialogDescription>Update the key fields of this trade.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Direction</p>
+                <Select value={formDirection} onValueChange={(v) => setFormDirection(v as 'BUY' | 'SELL')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BUY">BUY</SelectItem>
+                    <SelectItem value="SELL">SELL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Lot Size</p>
+                <Input value={formLot} onChange={(e) => setFormLot(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Entry</p>
+                <Input value={formEntry} onChange={(e) => setFormEntry(e.target.value)} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Stop Loss</p>
+                <Input value={formSL} onChange={(e) => setFormSL(e.target.value)} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Take Profit</p>
+                <Input value={formTP} onChange={(e) => setFormTP(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Risk</p>
+                <Select value={formRisk} onValueChange={(v) => setFormRisk(v as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                <Input value={formNotes} onChange={(e) => setFormNotes(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowModifyDialog(false)}>Cancel</Button>
+              <Button onClick={() => {
+                if (!modifyId) return;
+                updateTrade(modifyId, {
+                  direction: formDirection,
+                  lotSize: formLot,
+                  entryPrice: formEntry,
+                  stopLoss: formSL || undefined,
+                  takeProfit: formTP || undefined,
+                  risk: formRisk,
+                  notes: formNotes || undefined,
+                });
+                setShowModifyDialog(false);
+                setModifyId(null);
+              }}>Save Changes</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Risk Management Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

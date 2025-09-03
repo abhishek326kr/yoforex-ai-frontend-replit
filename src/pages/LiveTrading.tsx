@@ -37,6 +37,7 @@ import AIMultiPanel from '@/components/AIMultiPanel';
 import AIMultiResults from '@/components/AIMultiResults';
 import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { emitBillingUpdated } from '@/lib/billingEvents';
+import { TradeConfirmationDialog } from '@/components/TradeConfirmationDialog';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
 
 // Type definitions for Technical Analysis Card props
@@ -168,6 +169,8 @@ export function LiveTrading() {
   const [aiConfig, setAiConfig] = useState<{ provider: string; models: Record<string, string> } | null>(null);
   // Track last successful run signature to detect parameter changes
   const [lastRunSig, setLastRunSig] = useState<string | null>(null);
+  // Show confirmation to add trade after successful analysis
+  const [showTradeConfirm, setShowTradeConfirm] = useState(false);
   const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
   const STORAGE_KEY = 'live_trading_last_analysis_v1';
 
@@ -271,6 +274,8 @@ export function LiveTrading() {
       if ((result as any)?.billing) {
         emitBillingUpdated((result as any).billing);
       }
+      // Prompt user to add as Active Trade
+      setShowTradeConfirm(true);
     } catch (error: any) {
       console.error('Error fetching analysis:', error);
       const status = error?.response?.status;
@@ -340,6 +345,8 @@ export function LiveTrading() {
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
       setLastRunSig(sig);
+      // Prompt user to add as Active Trade
+      setShowTradeConfirm(true);
     } catch (e: any) {
       console.error('Error running multi analysis from Market Analysis:', e);
       const status = e?.response?.status;
@@ -360,6 +367,12 @@ export function LiveTrading() {
 
   return (
     <TradingLayout>
+      {/* Confirmation dialog to add an Active Trade */}
+      <TradeConfirmationDialog
+        open={showTradeConfirm}
+        onOpenChange={setShowTradeConfirm}
+        defaults={{ pair: selectedPair, timeframe: selectedTimeframe, strategy: selectedStrategy }}
+      />
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}
         <div className="relative z-10 my-4 sm:my-5 flex-shrink-0">
