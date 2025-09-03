@@ -36,6 +36,8 @@ import ActivePositions from '@/components/ActivePositions';
 import AIMultiPanel from '@/components/AIMultiPanel';
 import AIMultiResults from '@/components/AIMultiResults';
 import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
+import { emitBillingUpdated } from '@/lib/billingEvents';
+import { useBillingSummary } from '@/hooks/useBillingSummary';
 
 // Type definitions for Technical Analysis Card props
 interface TechnicalAnalysisCardProps {
@@ -148,6 +150,7 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
  
 
 export function LiveTrading() {
+  const { data: billing, refresh: refreshBilling } = useBillingSummary();
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
   const [selectedTimeframe, setSelectedTimeframe] = useState("1H");
   const [selectedStrategy, setSelectedStrategy] = useState<string>("");
@@ -165,6 +168,7 @@ export function LiveTrading() {
   const [aiConfig, setAiConfig] = useState<{ provider: string; models: Record<string, string> } | null>(null);
   // Track last successful run signature to detect parameter changes
   const [lastRunSig, setLastRunSig] = useState<string | null>(null);
+  const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
   
   // Handle strategy selection from StrategySelection component
   const handleStrategySelect = (strategy: string) => {
@@ -178,6 +182,11 @@ export function LiveTrading() {
 
   // Handle AI Analysis button click
   const handleAnalysis = async () => {
+    if (isDailyLocked) {
+      setAnalysis({ loading: false, error: 'Daily analysis limit reached. Please try again in 24 hours.', data: null, hasRun: true });
+      return;
+    }
+
     if (!selectedPair || !selectedTimeframe || !selectedStrategy) {
       setAnalysis({
         loading: false,
@@ -199,19 +208,37 @@ export function LiveTrading() {
       });
       
       setAnalysis({ loading: false, error: null, data: result, hasRun: true });
-    } catch (error) {
+      // Notify global listeners (e.g., header) to refresh billing if backend returned billing info
+      if ((result as any)?.billing) {
+        emitBillingUpdated((result as any).billing);
+      }
+    } catch (error: any) {
       console.error('Error fetching analysis:', error);
-      setAnalysis({ 
-        loading: false, 
-        error: 'Failed to fetch analysis. Please try again.', 
-        data: null,
-        hasRun: true
-      });
+      const status = error?.response?.status;
+      const detail = error?.response?.data?.detail || error?.response?.data;
+      let msg = 'Failed to fetch analysis. Please try again.';
+      if (status === 402) {
+        msg = typeof detail === 'object' && detail?.code === 'insufficient_credits'
+          ? 'Insufficient credits. Please top up to continue.'
+          : 'Payment required or insufficient credits.';
+      } else if (status === 429) {
+        msg = typeof detail === 'object' && detail?.code === 'daily_cap_reached'
+          ? 'Daily credit cap reached. Try again tomorrow.'
+          : 'Too many requests. Please wait and try again.';
+        // Ensure UI reflects the cap state immediately
+        refreshBilling?.();
+      }
+      setAnalysis({ loading: false, error: msg, data: null, hasRun: true });
     }
   };
 
   // Run the multi-provider AI analysis from the Market Analysis run button
   const runMultiFromConfig = async () => {
+    if (isDailyLocked) {
+      setAnalysis({ loading: false, error: 'Daily analysis limit reached. Please try again in 24 hours.', data: null, hasRun: true });
+      return;
+    }
+
     // Validate inputs; surface a helpful error instead of silently returning
     if (!selectedPair || !selectedTimeframe || !selectedStrategy) {
       setAnalysis({ loading: false, error: 'Please select a pair, timeframe, and strategy first', data: null, hasRun: true });
@@ -236,12 +263,28 @@ export function LiveTrading() {
       setMultiResult(data as MultiAnalysisResponse);
       // Wrap under data.analysis to reuse the existing rendering path
       setAnalysis({ loading: false, error: null, data: { analysis: data }, hasRun: true });
+      // Emit billing updated if present
+      if ((data as any)?.billing) {
+        emitBillingUpdated((data as any).billing);
+      }
+
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
       setLastRunSig(sig);
     } catch (e: any) {
       console.error('Error running multi analysis from Market Analysis:', e);
-      const msg = e?.message || 'Failed to run AI analysis';
+      const status = e?.response?.status;
+      const detail = e?.response?.data?.detail || e?.response?.data;
+      let msg = e?.message || 'Failed to run AI analysis';
+      if (status === 402) {
+        msg = typeof detail === 'object' && detail?.code === 'insufficient_credits'
+          ? 'Insufficient credits. Please top up to continue.'
+          : 'Payment required or insufficient credits.';
+      } else if (status === 429) {
+        msg = typeof detail === 'object' && detail?.code === 'daily_cap_reached'
+          ? 'Daily credit cap reached. Try again tomorrow.'
+          : 'Too many requests. Please wait and try again.';
+      }
       setAnalysis({ loading: false, error: msg, data: null, hasRun: true });
     }
   };
@@ -250,17 +293,17 @@ export function LiveTrading() {
     <TradingLayout>
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4 flex-shrink-0">
-          <div className="whitespace-nowrap">
-            <div className="flex items-baseline mb-2">
-              <h1 className="text-4xl font-bold text-foreground mr-3">Live Trading</h1>
+        <div className="relative z-10 my-4 sm:my-5 flex-shrink-0">
+          {/* First line: title + powered by (stack on mobile, inline on >=sm) */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 mb-2 sm:mb-3">
+            <h1 className="text-4xl font-bold text-foreground">Live Trading</h1>
+            <div className="flex items-center gap-2 text-muted-foreground mt-1 sm:mt-0">
+              <span className="text-sm opacity-75">powered by</span>
+              <img src="/yoforexai.png" alt="YoforexAI.com" className='h-6 sm:h-7 w-auto align-baseline inline-block relative z-10'/>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-sm opacity-75">powered by</span>
-            <img src="/yoforexai.png" alt="YoforexAI.com" className='h-7 w-auto'/>
-          </div>
-          <p className="text-muted-foreground">AI-powered forex analysis and automated trading</p>
+          {/* Second line: tagline */}
+          <p className="text-muted-foreground text-sm sm:text-base">AI-powered forex analysis and automated trading</p>
         </div>
 
         <Tabs defaultValue="automated" className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -326,10 +369,18 @@ export function LiveTrading() {
                 
                 {/* Market Analysis Card - Expanded to fill space */}
                 <div className="flex-1 min-h-[400px]">
+                  {isDailyLocked && (
+                    <div className="mb-3 p-3 rounded-md border border-border/30 bg-muted/20 flex items-center gap-2 text-sm">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Daily analysis limit reached. Please try again in 24 hours.
+                      </span>
+                    </div>
+                  )}
                   <TechnicalAnalysisCard 
                     analysis={analysis}
                     onRunAnalysis={runMultiFromConfig}
-                    disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
+                    disabled={isDailyLocked || !selectedPair || !selectedTimeframe || !selectedStrategy}
                     showRunNew={
                       Boolean(
                         analysis.hasRun &&

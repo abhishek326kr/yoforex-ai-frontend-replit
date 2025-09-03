@@ -16,6 +16,11 @@ export interface MultiAnalysisResponse {
   granularity: string;
   candles: any[];
   analysis: Record<string, any>; // keyed by provider
+  billing?: {
+    charged_credits: number;
+    monthly_credits_remaining: number;
+    daily_credits_spent: number;
+  };
 }
 
 export interface RunMultiParams {

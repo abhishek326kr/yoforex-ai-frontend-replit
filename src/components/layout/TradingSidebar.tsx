@@ -143,11 +143,11 @@ export function TradingSidebar() {
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-4 left-4 z-[60]">
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
           className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-200"
-          aria-expanded="false"
+          aria-expanded={isMobileOpen}
         >
           <span className="sr-only">Open main menu</span>
           {isMobileOpen ? (

@@ -37,6 +37,11 @@ export interface AnalysisResponse {
     };
     recommendation: string;
   };
+  billing?: {
+    charged_credits: number;
+    monthly_credits_remaining: number;
+    daily_credits_spent: number;
+  };
 }
 
 interface AnalysisParams {
@@ -146,7 +151,8 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
           headers: {
             'Accept': 'application/json',
           },
-          validateStatus: (status) => status < 500 // Don't retry on client errors
+          // Only treat 2xx as success; 4xx should throw and be handled by callers
+          validateStatus: (status) => status >= 200 && status < 300
         }
       );
 
