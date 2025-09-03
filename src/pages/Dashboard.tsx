@@ -16,14 +16,6 @@ import RecentAISignals from "@/components/RecentAISignals";
 
 const portfolioStats = [
 	{
-		title: "Portfolio Value",
-		value: "$12,847.92",
-		change: "+$1,247.83",
-		changePercent: "+10.8%",
-		positive: true,
-		icon: DollarSign,
-	},
-	{
 		title: "Active Trades",
 		value: "7",
 		change: "+3",
@@ -185,7 +177,7 @@ export function Dashboard() {
 				</div>
 
 				{/* Portfolio Stats Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{portfolioStats.map((stat, index) => {
 						const Icon = stat.icon;
 						// Example apiUrl mapping (replace with real endpoints)
