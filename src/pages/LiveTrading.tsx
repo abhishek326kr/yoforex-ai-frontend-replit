@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 // import { useToast } from '@/hooks/use-toast';
 import {
   Activity,
@@ -169,6 +169,55 @@ export function LiveTrading() {
   // Track last successful run signature to detect parameter changes
   const [lastRunSig, setLastRunSig] = useState<string | null>(null);
   const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
+  const STORAGE_KEY = 'live_trading_last_analysis_v1';
+
+  // Save last successful analysis to localStorage
+  const saveLastAnalysis = (params: {
+    analysisData: any;
+    multi?: MultiAnalysisResponse | null;
+    pair: string;
+    timeframe: string;
+    strategy: string;
+    ai?: { provider: string; models: Record<string, string> } | null;
+    sig?: string | null;
+  }) => {
+    try {
+      const payload = {
+        analysisData: params.analysisData,
+        multiResult: params.multi ?? null,
+        selectedPair: params.pair,
+        selectedTimeframe: params.timeframe,
+        selectedStrategy: params.strategy,
+        aiConfig: params.ai ?? null,
+        lastRunSig: params.sig ?? null,
+        ts: Date.now(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  // Restore last analysis on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const cached = JSON.parse(raw);
+      if (cached?.analysisData) {
+        setSelectedPair(cached.selectedPair || selectedPair);
+        setSelectedTimeframe(cached.selectedTimeframe || selectedTimeframe);
+        setSelectedStrategy(cached.selectedStrategy || '');
+        setAiConfig(cached.aiConfig || null);
+        setLastRunSig(cached.lastRunSig || null);
+        setMultiResult(cached.multiResult || null);
+        setAnalysis({ loading: false, error: null, data: cached.analysisData, hasRun: true });
+      }
+    } catch {
+      // ignore parse errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Handle strategy selection from StrategySelection component
   const handleStrategySelect = (strategy: string) => {
@@ -208,6 +257,16 @@ export function LiveTrading() {
       });
       
       setAnalysis({ loading: false, error: null, data: result, hasRun: true });
+      // Persist last successful single-provider analysis
+      saveLastAnalysis({
+        analysisData: result,
+        multi: null,
+        pair: selectedPair,
+        timeframe: selectedTimeframe,
+        strategy: selectedStrategy,
+        ai: aiConfig,
+        sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
+      });
       // Notify global listeners (e.g., header) to refresh billing if backend returned billing info
       if ((result as any)?.billing) {
         emitBillingUpdated((result as any).billing);
@@ -263,6 +322,16 @@ export function LiveTrading() {
       setMultiResult(data as MultiAnalysisResponse);
       // Wrap under data.analysis to reuse the existing rendering path
       setAnalysis({ loading: false, error: null, data: { analysis: data }, hasRun: true });
+      // Persist last successful multi-provider analysis
+      saveLastAnalysis({
+        analysisData: { analysis: data },
+        multi: data as MultiAnalysisResponse,
+        pair: selectedPair,
+        timeframe: selectedTimeframe,
+        strategy: selectedStrategy,
+        ai: aiConfig,
+        sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
+      });
       // Emit billing updated if present
       if ((data as any)?.billing) {
         emitBillingUpdated((data as any).billing);

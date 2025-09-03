@@ -63,12 +63,16 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
   const renderTechValue = (value: unknown) => {
     if (typeof value === 'number') {
       return (
-        <span className="text-lg font-bold text-foreground">{formatPrice(value)}</span>
+        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary font-semibold">
+          {formatPrice(value)}
+        </span>
       );
     }
     if (typeof value === 'string') {
       return (
-        <Badge variant="secondary" className="font-medium">{value}</Badge>
+        <p className="text-sm leading-relaxed text-foreground/85 bg-background/40 border border-border/20 rounded-md p-3 shadow-inner">
+          {value}
+        </p>
       );
     }
     if (Array.isArray(value)) {
@@ -77,47 +81,49 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
         return <span className="text-xs text-muted-foreground">No data</span>;
       }
       return (
-        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5 text-left">
-          {value.map((v, i) => {
-            if (typeof v === 'number') {
-              return (
-                <li key={i} className="break-words">{formatPrice(v)}</li>
-              );
-            }
-            if (typeof v === 'string') {
-              return (
-                <li key={i} className="break-words">{v}</li>
-              );
-            }
-            if (v && typeof v === 'object') {
-              const o = v as Record<string, unknown>;
-              // Common shape: { type: 'support'|'resistance', value/price/level: number }
-              const type = (o.type as string) || (o.kind as string) || '';
-              const num = (o.value as number) ?? (o.price as number) ?? (o.level as number);
-              if (type && typeof num === 'number') {
+        <div className="rounded-md border border-border/20 bg-background/40 p-3 hover:shadow-sm transition-shadow">
+          <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground space-y-1 text-left">
+            {value.map((v, i) => {
+              if (typeof v === 'number') {
+                return (
+                  <li key={i} className="break-words">{formatPrice(v)}</li>
+                );
+              }
+              if (typeof v === 'string') {
+                return (
+                  <li key={i} className="break-words">{v}</li>
+                );
+              }
+              if (v && typeof v === 'object') {
+                const o = v as Record<string, unknown>;
+                // Common shape: { type: 'support'|'resistance', value/price/level: number }
+                const type = (o.type as string) || (o.kind as string) || '';
+                const num = (o.value as number) ?? (o.price as number) ?? (o.level as number);
+                if (type && typeof num === 'number') {
+                  return (
+                    <li key={i} className="break-words">
+                      <span className="capitalize text-foreground/80 font-medium">{type}:</span> {formatPrice(num)}
+                    </li>
+                  );
+                }
+                // Fallback: key=value pairs
                 return (
                   <li key={i} className="break-words">
-                    <span className="capitalize text-foreground/80 font-medium">{type}:</span> {formatPrice(num)}
+                    {Object.entries(o).map(([k, val], idx) => (
+                      <span key={k}>
+                        {idx > 0 ? ', ' : ''}
+                        <span className="text-foreground/80 font-medium">{k}:</span> {typeof val === 'number' ? formatPrice(val) : String(val)}
+                      </span>
+                    ))}
                   </li>
                 );
               }
-              // Fallback: key=value pairs
               return (
-                <li key={i} className="break-words">
-                  {Object.entries(o).map(([k, val], idx) => (
-                    <span key={k}>
-                      {idx > 0 ? ', ' : ''}
-                      <span className="text-foreground/80 font-medium">{k}:</span> {typeof val === 'number' ? formatPrice(val) : String(val)}
-                    </span>
-                  ))}
-                </li>
+                <li key={i} className="break-words">{String(v)}</li>
               );
-            }
-            return (
-              <li key={i} className="break-words">{String(v)}</li>
-            );
-          })}
-        </ul>
+            })}
+          </ul>
+        </div>
       );
     }
     if (value && typeof value === 'object') {
@@ -126,7 +132,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
       const hasSupportResistance = 'support' in obj || 'resistance' in obj;
       if (hasSupportResistance) {
         return (
-          <div className="text-left space-y-2">
+          <div className="text-left rounded-md border border-border/20 bg-background/40 p-3 hover:shadow-sm transition-shadow">
             {/* Render Support(s) */}
             {(() => {
               const supportVal = (obj.support ?? obj.supports ?? (obj.levels as any)?.support) as unknown;
@@ -134,7 +140,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                 return (
                   <div>
                     <p className="text-xs font-medium text-foreground">Support</p>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground">
+                    <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground">
                       {supportVal.map((s: unknown, i: number) => (
                         <li key={`sup-${i}`}>{typeof s === 'number' ? formatPrice(s as number) : String(s)}</li>
                       ))}
@@ -148,7 +154,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                   return (
                     <div>
                       <p className="text-xs font-medium text-foreground">Support</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground">
+                      <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground">
                         {entries.map(([k, v]) => (
                           <li key={`sup-${k}`}>
                             <span className="text-foreground/80 font-medium">{k}:</span> {typeof v === 'number' ? formatPrice(v) : String(v)}
@@ -168,7 +174,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                 return (
                   <div>
                     <p className="text-xs font-medium text-foreground">Resistance</p>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground">
+                    <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground">
                       {resistanceVal.map((r: unknown, i: number) => (
                         <li key={`res-${i}`}>{typeof r === 'number' ? formatPrice(r as number) : String(r)}</li>
                       ))}
@@ -182,7 +188,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                   return (
                     <div>
                       <p className="text-xs font-medium text-foreground">Resistance</p>
-                      <ul className="list-disc list-inside text-sm text-muted-foreground">
+                      <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground">
                         {entries.map(([k, v]) => (
                           <li key={`res-${k}`}>
                             <span className="text-foreground/80 font-medium">{k}:</span> {typeof v === 'number' ? formatPrice(v) : String(v)}
@@ -211,8 +217,8 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
       }
       // Generic object rendering as key: value list
       return (
-        <div className="text-left">
-          <ul className="list-disc list-inside text-sm text-muted-foreground space-y-0.5">
+        <div className="text-left rounded-md border border-border/20 bg-background/40 p-3 hover:shadow-sm transition-shadow">
+          <ul className="list-disc list-inside marker:text-primary/70 text-sm text-muted-foreground space-y-1">
             {Object.entries(obj).map(([k, v]) => (
               <li key={k} className="break-words">
                 <span className="text-foreground/80 font-medium">{k}:</span>{' '}
@@ -369,7 +375,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
             // Generic styling for all parameters
             const getParameterStyling = () => {
               return {
-                bgColor: 'bg-muted/20 border-muted/40 hover:bg-muted/30',
+                bgColor: 'bg-gradient-to-br from-background/70 to-background/40 hover:from-background/80 hover:to-background/50 border-border/20 shadow-sm',
                 textColor: 'text-foreground',
                 dotColor: 'bg-primary',
                 icon: null
@@ -382,16 +388,14 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
             return (
               <div 
                 key={key} 
-                className={`p-4 rounded-xl border transition-colors ${styling.bgColor}`}
+                className={`p-4 rounded-lg border transition-colors hover:shadow-md ${styling.bgColor}`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {styling.icon || <div className={`w-3 h-3 rounded-full ${styling.dotColor}`}></div>}
-                    <span className="text-sm font-medium text-muted-foreground">{displayName}</span>
-                  </div>
-                  <div className="text-right max-w-[420px]">
-                    {renderTechValue(value)}
-                  </div>
+                <div className="flex items-center gap-2 mb-2">
+                  {styling.icon || <div className={`w-3 h-3 rounded-[5px] ${styling.dotColor}`}></div>}
+                  <span className="text-sm font-medium text-muted-foreground">{displayName}</span>
+                </div>
+                <div className="text-left">
+                  {renderTechValue(value)}
                 </div>
               </div>
             );
@@ -410,7 +414,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
           {/* Market Context */}
           <div className="space-y-2">
             <h4 className="font-medium text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              <span className="w-2 h-2 rounded-[5px] bg-blue-500"></span>
               Market Context
             </h4>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -422,7 +426,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
           {/* Key Technical Factors */}
           <div className="space-y-2">
             <h4 className="font-medium text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span className="w-2 h-2 rounded-[5px] bg-amber-500"></span>
               Key Technical Factors
             </h4>
             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
@@ -449,7 +453,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
               Trading Plan
             </h4>
             <div className="space-y-3">
-              <div className="p-3 bg-muted/20 rounded-lg">
+              <div className="p-3 bg-muted/20 rounded-sm">
                 <p className="text-sm font-medium text-foreground mb-1">Entry Strategy</p>
                 <p className="text-sm text-muted-foreground">
                   {analysis.call_entry && analysis.put_entry ? (
@@ -463,7 +467,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-sm">
                   <p className="text-sm font-medium text-red-500 mb-1">
                     {analysis.call_entry && analysis.put_entry ? 'Lower Breakeven' : 'Stop Loss'}
                   </p>
@@ -473,7 +477,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                       `Set stop loss at ${formatPrice(analysis.stop_loss)} to limit potential losses if the market moves against the position.`}
                   </p>
                 </div>
-                <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-sm">
                   <p className="text-sm font-medium text-emerald-500 mb-1">
                     {analysis.call_entry && analysis.put_entry ? 'Upper Breakeven' : 'Take Profit'}
                   </p>

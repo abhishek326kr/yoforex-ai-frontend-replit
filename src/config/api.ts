@@ -3,28 +3,53 @@
 
 const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
+const mode = import.meta.env.MODE;
+
+// Optional explicit toggle to force target backend in any mode
+// Set VITE_API_TARGET=dev or prod in .env to override Vite's DEV/PROD flags
+const target = (import.meta.env.VITE_API_TARGET as string | undefined)?.toLowerCase();
+
+// Prefer explicit environment variables in any mode
+const envBaseUrl =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+  (import.meta.env.VITE_PUBLIC_API_BASE_URL as string | undefined);
+
+// Optional explicit URLs per target
+const devEnvUrl =
+  (import.meta.env.VITE_API_BASE_URL_DEV as string | undefined) || 'http://localhost:8000';
+const prodEnvUrl =
+  (import.meta.env.VITE_API_BASE_URL_PROD as string | undefined) || envBaseUrl;
 
 // Get API base URL based on environment
 const getApiBaseUrl = (): string => {
-  // In development, always use localhost:8000
+  // 0) If an explicit target is provided, use it first
+  if (target === 'prod' || target === 'production') {
+    if (prodEnvUrl && prodEnvUrl.trim().length > 0) return prodEnvUrl;
+    console.warn(
+      'VITE_API_TARGET=prod set but no production URL provided. Define VITE_API_BASE_URL or VITE_API_BASE_URL_PROD. Falling back to https://backend.axiontrust.com'
+    );
+    return 'https://backend.axiontrust.com';
+  }
+  if (target === 'dev' || target === 'development') {
+    return devEnvUrl;
+  }
+
+  // 1) If explicitly provided, always honor env variable (dev or prod)
+  if (envBaseUrl && envBaseUrl.trim().length > 0) {
+    return envBaseUrl;
+  }
+
+  // 2) In development, default to localhost when no env var
   if (isDevelopment) {
-    return 'http://localhost:8000';
+    return devEnvUrl;
   }
-  
-  // In production, use environment variable or fallback
-  if (isProduction) {
-    const prodUrl =
-      // Prefer VITE_API_BASE_URL (matches .env.example), fallback to VITE_PUBLIC_API_BASE_URL
-      import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_PUBLIC_API_BASE_URL;
-    if (!prodUrl) {
-      console.warn('API base URL not set. Please define VITE_API_BASE_URL (preferred) or VITE_PUBLIC_API_BASE_URL in your environment. Falling back to https://backend.axiontrust.com');
-      return 'https://backend.axiontrust.com'; // Fallback for safety
-    }
-    return prodUrl as string;
-  }
-  
-  // Default fallback
-  return 'http://localhost:8000';
+
+  // 3) Safe production fallback
+  if (prodEnvUrl && prodEnvUrl.trim().length > 0) return prodEnvUrl;
+  console.warn(
+    'API base URL not set. Define VITE_API_BASE_URL (preferred), VITE_PUBLIC_API_BASE_URL, or VITE_API_BASE_URL_PROD. Falling back to https://backend.axiontrust.com'
+  );
+  return 'https://backend.axiontrust.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -36,6 +61,11 @@ export const apiConfig = {
   retries: 3,
   isDevelopment,
   isProduction,
+  mode,
+  envBaseUrl,
+  devEnvUrl,
+  prodEnvUrl,
+  target,
 };
 
 // Log current configuration in development
