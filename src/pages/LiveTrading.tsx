@@ -37,6 +37,7 @@ import AIMultiPanel from '@/components/AIMultiPanel';
 import AIMultiResults from '@/components/AIMultiResults';
 import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { TradeConfirmationDialog } from '@/components/TradeConfirmationDialog';
+import { useActiveTrades } from '@/context/ActiveTradesContext';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
 
 // Type definitions for Technical Analysis Card props
@@ -150,6 +151,7 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
  
 
 export function LiveTrading() {
+  const { addTrade } = useActiveTrades();
   const { data: billing, refresh: refreshBilling } = useBillingSummary();
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
   const [selectedTimeframe, setSelectedTimeframe] = useState("1H");
@@ -170,6 +172,7 @@ export function LiveTrading() {
   const [lastRunSig, setLastRunSig] = useState<string | null>(null);
   // Show confirmation to add trade after successful analysis
   const [showTradeConfirm, setShowTradeConfirm] = useState(false);
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
   const STORAGE_KEY = 'live_trading_last_analysis_v1';
   const ANALYSIS_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -222,6 +225,14 @@ export function LiveTrading() {
     }, ms);
   };
 
+  // Helper to clear any pending 2-minute popup timer
+  const clearPopupTimer = () => {
+    if (popupTimerRef.current) {
+      clearTimeout(popupTimerRef.current);
+      popupTimerRef.current = null;
+    }
+  };
+
   // Restore last analysis on mount (only if within TTL) and start expiry countdown
   useEffect(() => {
     try {
@@ -262,6 +273,7 @@ export function LiveTrading() {
       if (expiryTimerRef.current) {
         clearTimeout(expiryTimerRef.current);
       }
+      clearPopupTimer();
     };
   }, []);
   
@@ -319,8 +331,11 @@ export function LiveTrading() {
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
       // Billing updates are emitted by the Axios client interceptor automatically
-      // Prompt user to add as Active Trade
-      setShowTradeConfirm(true);
+      // Prompt user to add as Active Trade after 2 minutes delay
+      clearPopupTimer();
+      popupTimerRef.current = setTimeout(() => {
+        setShowTradeConfirm(true);
+      }, 2 * 60 * 1000);
       // Start 5-minute expiry countdown
       startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (error: any) {
@@ -394,8 +409,11 @@ export function LiveTrading() {
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
       setLastRunSig(sig);
-      // Prompt user to add as Active Trade
-      setShowTradeConfirm(true);
+      // Prompt user to add as Active Trade after 2 minutes delay
+      clearPopupTimer();
+      popupTimerRef.current = setTimeout(() => {
+        setShowTradeConfirm(true);
+      }, 2 * 60 * 1000);
       // Start 5-minute expiry countdown
       startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (e: any) {
@@ -416,13 +434,67 @@ export function LiveTrading() {
     }
   };
 
+  // Build and add a trade from current analysis
+  const confirmShareToActiveTrades = () => {
+    try {
+      const now = new Date().toISOString();
+      const pair = selectedPair;
+      const timeframe = selectedTimeframe;
+      const strategy = selectedStrategy;
+      let direction: 'BUY' | 'SELL' = 'BUY';
+      let entryPrice = '-';
+      let stopLoss: string | undefined = undefined;
+      let takeProfit: string | undefined = undefined;
+      let confidence: number | undefined = undefined;
+
+      const payload = analysis.data;
+      // Single provider payload shape: { analysis: { signal, entry, stop_loss, take_profit, confidence, timeframe, ... } }
+      const single = payload?.analysis && (payload.analysis.signal || payload.analysis.entry !== undefined);
+      if (single) {
+        const a = payload.analysis as any;
+        const sig = String(a.signal || '').toUpperCase();
+        if (sig.includes('SELL')) direction = 'SELL';
+        else direction = 'BUY';
+        if (typeof a.entry === 'number') entryPrice = a.entry.toFixed(5);
+        else if (typeof a.entry === 'string') entryPrice = a.entry;
+        if (a.stop_loss !== undefined) stopLoss = String(a.stop_loss);
+        if (a.take_profit !== undefined) takeProfit = String(a.take_profit);
+        if (typeof a.confidence === 'number') confidence = a.confidence;
+      }
+
+      addTrade({
+        pair,
+        direction,
+        entryPrice,
+        openTime: now,
+        stopLoss,
+        takeProfit,
+        aiModel: aiConfig?.provider,
+        confidence,
+        strategy,
+        timeframe,
+      });
+    } finally {
+      setShowTradeConfirm(false);
+    }
+  };
+
   return (
     <TradingLayout>
       {/* Confirmation dialog to add an Active Trade */}
       <TradeConfirmationDialog
         open={showTradeConfirm}
-        onOpenChange={setShowTradeConfirm}
-        defaults={{ pair: selectedPair, timeframe: selectedTimeframe, strategy: selectedStrategy }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTradeConfirm(false);
+            clearPopupTimer();
+          } else {
+            setShowTradeConfirm(true);
+          }
+        }}
+        onConfirm={confirmShareToActiveTrades}
+        title="Add this AI analysis to Active Trades?"
+        description="Share the full analysis snapshot to the Positions section."
       />
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}
