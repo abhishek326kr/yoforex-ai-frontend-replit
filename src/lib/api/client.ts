@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { emitBillingUpdated } from '../billingEvents';
 
 // Configuration
 const MAX_RETRIES = 3;
@@ -74,7 +75,19 @@ apiClient.interceptors.request.use(
 
 // Response interceptor for handling errors and retries
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    // If backend returns a billing summary, broadcast it so subscribers refresh
+    try {
+      const billing = (response?.data as any)?.billing;
+      if (billing) {
+        emitBillingUpdated({
+          monthly_credits_remaining: billing.monthly_credits_remaining,
+          daily_credits_spent: billing.daily_credits_spent,
+        });
+      }
+    } catch {}
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as (AxiosRequestConfig & { _retryCount?: number });
     originalRequest._retryCount = originalRequest._retryCount || 0;

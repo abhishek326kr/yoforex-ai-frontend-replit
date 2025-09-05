@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 // import { useToast } from '@/hooks/use-toast';
 import {
   Activity,
@@ -36,7 +36,6 @@ import ActivePositions from '@/components/ActivePositions';
 import AIMultiPanel from '@/components/AIMultiPanel';
 import AIMultiResults from '@/components/AIMultiResults';
 import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
-import { emitBillingUpdated } from '@/lib/billingEvents';
 import { TradeConfirmationDialog } from '@/components/TradeConfirmationDialog';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
 
@@ -173,6 +172,7 @@ export function LiveTrading() {
   const [showTradeConfirm, setShowTradeConfirm] = useState(false);
   const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
   const STORAGE_KEY = 'live_trading_last_analysis_v1';
+  const ANALYSIS_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   // Save last successful analysis to localStorage
   const saveLastAnalysis = (params: {
@@ -201,25 +201,68 @@ export function LiveTrading() {
     }
   };
 
-  // Restore last analysis on mount
+  // Clear analysis results and persisted cache
+  const clearAnalysisResults = () => {
+    setAnalysis({ loading: false, error: null, data: null, hasRun: false });
+    setMultiResult(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  };
+
+  // Timer to auto-expire analysis after TTL
+  const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startExpiryTimer = (ms: number) => {
+    if (expiryTimerRef.current) {
+      clearTimeout(expiryTimerRef.current);
+    }
+    expiryTimerRef.current = setTimeout(() => {
+      clearAnalysisResults();
+      expiryTimerRef.current = null;
+    }, ms);
+  };
+
+  // Restore last analysis on mount (only if within TTL) and start expiry countdown
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const cached = JSON.parse(raw);
-      if (cached?.analysisData) {
-        setSelectedPair(cached.selectedPair || selectedPair);
-        setSelectedTimeframe(cached.selectedTimeframe || selectedTimeframe);
-        setSelectedStrategy(cached.selectedStrategy || '');
-        setAiConfig(cached.aiConfig || null);
-        setLastRunSig(cached.lastRunSig || null);
-        setMultiResult(cached.multiResult || null);
-        setAnalysis({ loading: false, error: null, data: cached.analysisData, hasRun: true });
+      if (!cached?.analysisData) return;
+
+      const ts = typeof cached.ts === 'number' ? cached.ts : 0;
+      const age = Date.now() - ts;
+      const remaining = ANALYSIS_TTL_MS - age;
+
+      if (remaining <= 0) {
+        // Expired - clear persisted cache
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        return;
       }
+
+      setSelectedPair(cached.selectedPair || selectedPair);
+      setSelectedTimeframe(cached.selectedTimeframe || selectedTimeframe);
+      setSelectedStrategy(cached.selectedStrategy || '');
+      setAiConfig(cached.aiConfig || null);
+      setLastRunSig(cached.lastRunSig || null);
+      setMultiResult(cached.multiResult || null);
+      setAnalysis({ loading: false, error: null, data: cached.analysisData, hasRun: true });
+
+      // Start expiry timer with remaining time
+      startExpiryTimer(remaining);
     } catch {
       // ignore parse errors
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cleanup any running timer on unmount
+  useEffect(() => {
+    return () => {
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+      }
+    };
   }, []);
   
   // Handle strategy selection from StrategySelection component
@@ -250,6 +293,11 @@ export function LiveTrading() {
     }
     
     try {
+      // Cancel any existing expiry timer before starting a fresh run
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+        expiryTimerRef.current = null;
+      }
       setAnalysis({ loading: true, error: null, data: null, hasRun: true });
       
       const result = await fetchTradingAnalysis({
@@ -270,12 +318,11 @@ export function LiveTrading() {
         ai: aiConfig,
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
-      // Notify global listeners (e.g., header) to refresh billing if backend returned billing info
-      if ((result as any)?.billing) {
-        emitBillingUpdated((result as any).billing);
-      }
+      // Billing updates are emitted by the Axios client interceptor automatically
       // Prompt user to add as Active Trade
       setShowTradeConfirm(true);
+      // Start 5-minute expiry countdown
+      startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (error: any) {
       console.error('Error fetching analysis:', error);
       const status = error?.response?.status;
@@ -315,6 +362,11 @@ export function LiveTrading() {
 
     try {
       // show loading in the analysis card area
+      // Cancel any existing expiry timer before starting a fresh run
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+        expiryTimerRef.current = null;
+      }
       setAnalysis({ loading: true, error: null, data: null, hasRun: true });
       const { runMultiAnalysis } = await import('@/lib/api/aiMulti');
       const data = await runMultiAnalysis({
@@ -337,16 +389,15 @@ export function LiveTrading() {
         ai: aiConfig,
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
-      // Emit billing updated if present
-      if ((data as any)?.billing) {
-        emitBillingUpdated((data as any).billing);
-      }
+      // Billing updates are emitted by the Axios client interceptor automatically
 
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
       setLastRunSig(sig);
       // Prompt user to add as Active Trade
       setShowTradeConfirm(true);
+      // Start 5-minute expiry countdown
+      startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (e: any) {
       console.error('Error running multi analysis from Market Analysis:', e);
       const status = e?.response?.status;
