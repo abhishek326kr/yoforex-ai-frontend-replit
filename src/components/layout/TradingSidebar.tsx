@@ -107,7 +107,7 @@ export function TradingSidebar() {
               {(() => {
                 const remaining = data?.monthly_credits_remaining ?? 0;
                 const max = data?.monthly_credits_max ?? 0;
-                const percent = max > 0 ? Math.min(100, Math.round((remaining / max) * 100)) : 0;
+                const percent = max > 0 ? Math.min(100, Math.floor((remaining / max) * 100)) : 0;
                 return (
                   <>
                     <span className="text-sidebar-foreground/80">
@@ -122,7 +122,7 @@ export function TradingSidebar() {
               {(() => {
                 const remaining = data?.monthly_credits_remaining ?? 0;
                 const max = data?.monthly_credits_max ?? 0;
-                const percent = max > 0 ? Math.min(100, Math.round((remaining / max) * 100)) : 0;
+                const percent = max > 0 ? Math.min(100, Math.floor((remaining / max) * 100)) : 0;
                 return (
                   <div
                     className="h-full bg-gradient-primary rounded-full transition-all duration-500"

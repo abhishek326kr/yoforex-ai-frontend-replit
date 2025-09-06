@@ -460,6 +460,22 @@ export function LiveTrading() {
         if (a.stop_loss !== undefined) stopLoss = String(a.stop_loss);
         if (a.take_profit !== undefined) takeProfit = String(a.take_profit);
         if (typeof a.confidence === 'number') confidence = a.confidence;
+      } else {
+        // Multi-provider payload path: payload.analysis is MultiAnalysisResponse
+        // Prefer the currently selected provider from aiConfig; otherwise pick the first available
+        const multi = multiResult || (payload?.analysis as any);
+        const providerKey: string | undefined = aiConfig?.provider || (multi && multi.analysis && Object.keys(multi.analysis)[0]);
+        const providerAnalysis = providerKey ? multi?.analysis?.[providerKey] : undefined;
+        if (providerAnalysis) {
+          const sig = String(providerAnalysis.signal || '').toUpperCase();
+          if (sig.includes('SELL')) direction = 'SELL';
+          else direction = 'BUY';
+          if (typeof providerAnalysis.entry === 'number') entryPrice = providerAnalysis.entry.toFixed(5);
+          else if (typeof providerAnalysis.entry === 'string') entryPrice = providerAnalysis.entry;
+          if (providerAnalysis.stop_loss !== undefined) stopLoss = String(providerAnalysis.stop_loss);
+          if (providerAnalysis.take_profit !== undefined) takeProfit = String(providerAnalysis.take_profit);
+          if (typeof providerAnalysis.confidence === 'number') confidence = providerAnalysis.confidence;
+        }
       }
 
       addTrade({
@@ -493,8 +509,8 @@ export function LiveTrading() {
           }
         }}
         onConfirm={confirmShareToActiveTrades}
-        title="Add this AI analysis to Active Trades?"
-        description="Share the full analysis snapshot to the Positions section."
+        title="Have you taken the trade?"
+        description=""
       />
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}

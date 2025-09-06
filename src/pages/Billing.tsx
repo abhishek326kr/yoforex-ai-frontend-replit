@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import {
   CreditCard,
   Download,
@@ -37,6 +39,7 @@ import {
   ArrowDownLeft,
   Search
 } from "lucide-react";
+import { useBillingSummary } from "@/hooks/useBillingSummary";
 
 const currentPlan = {
   name: "Pro",
@@ -105,6 +108,7 @@ export function Billing() {
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
   const [creditAmount, setCreditAmount] = useState(1000);
+  const { data: billing, loading: billingLoading, error: billingError, refresh: refreshBilling } = useBillingSummary();
 
   const getCreditCost = (credits: number) => {
     const baseRate = currentPlan.name === "Max" ? 20 : 25;
@@ -119,8 +123,6 @@ export function Billing() {
       default: return "text-muted-foreground";
     }
   };
-
-
 
   return (
     <TradingLayout>
@@ -220,24 +222,72 @@ export function Billing() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Credits Remaining</h3>
-                <p className="text-sm text-muted-foreground">Today's allowance</p>
+                <p className="text-sm text-muted-foreground">Your monthly credits and daily usage</p>
               </div>
               <Wallet className="h-5 w-5 text-primary" />
             </div>
             <div className="space-y-3">
+              {billingError && (
+                <p className="text-sm text-destructive">{billingError}</p>
+              )}
               <div className="text-center">
-                <p className="text-3xl font-bold text-foreground">{currentPlan.creditsRemaining.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">of {currentPlan.creditsTotal.toLocaleString()} credits</p>
+                <p className="text-3xl font-bold text-foreground">
+                  {billingLoading && !billing ? (
+                    <span className="text-muted-foreground">…</span>
+                  ) : (
+                    (billing?.monthly_credits_remaining ?? 0).toLocaleString()
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  of {(billing?.monthly_credits_max ?? 0).toLocaleString()} credits
+                </p>
               </div>
-              <div className="w-full bg-muted/30 rounded-full h-2">
-                <div 
-                  className="bg-gradient-primary h-2 rounded-full" 
-                  style={{ width: `${(currentPlan.creditsRemaining / currentPlan.creditsTotal) * 100}%` }}
+              <div className="w-full bg-muted/30 rounded-full h-2" aria-label="credits-progress">
+                <div
+                  className="bg-gradient-primary h-2 rounded-full"
+                  style={{
+                    width: `${(() => {
+                      const max = billing?.monthly_credits_max ?? 0;
+                      const rem = billing?.monthly_credits_remaining ?? 0;
+                      if (!max) return 0;
+                      const pct = Math.floor((rem / max) * 100);
+                      return Math.min(100, Math.max(0, pct));
+                    })()}%`
+                  }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Resets in 6h 23m</span>
-                <span>{Math.round((currentPlan.creditsRemaining / currentPlan.creditsTotal) * 100)}%</span>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  Daily used: {(billing?.daily_credits_spent ?? 0).toLocaleString()}
+                  {typeof billing?.daily_cap === 'number' && (
+                    <>
+                      {" "}/ {(billing?.daily_cap ?? 0).toLocaleString()}
+                    </>
+                  )}
+                </span>
+                <span>
+                  {(() => {
+                    const max = billing?.monthly_credits_max ?? 0;
+                    const rem = billing?.monthly_credits_remaining ?? 0;
+                    if (!max) return '0%';
+                    const pct = Math.floor((rem / max) * 100);
+                    return `${Math.min(100, Math.max(0, pct))}%`;
+                  })()}
+                </span>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" variant="outline" onClick={() => refreshBilling?.()} disabled={billingLoading}>
+                  {billingLoading ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing
+                    </>
+                  ) : (
+                    'Refresh'
+                  )}
+                </Button>
+                <Button size="sm" className="btn-trading-primary" onClick={() => setShowAddCredits(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Buy Credits
+                </Button>
               </div>
             </div>
           </Card>
