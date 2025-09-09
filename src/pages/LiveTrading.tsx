@@ -225,7 +225,7 @@ export function LiveTrading() {
     }, ms);
   };
 
-  // Helper to clear any pending 2-minute popup timer
+  // Helper to clear any pending 30-second popup timer
   const clearPopupTimer = () => {
     if (popupTimerRef.current) {
       clearTimeout(popupTimerRef.current);
@@ -331,11 +331,11 @@ export function LiveTrading() {
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
       // Billing updates are emitted by the Axios client interceptor automatically
-      // Prompt user to add as Active Trade after 2 minutes delay
+      // Prompt user to add as Active Trade after 30 seconds delay
       clearPopupTimer();
       popupTimerRef.current = setTimeout(() => {
         setShowTradeConfirm(true);
-      }, 2 * 60 * 1000);
+      }, 30 * 1000);
       // Start 5-minute expiry countdown
       startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (error: any) {
@@ -409,11 +409,11 @@ export function LiveTrading() {
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
       setLastRunSig(sig);
-      // Prompt user to add as Active Trade after 2 minutes delay
+      // Prompt user to add as Active Trade after 30 seconds delay
       clearPopupTimer();
       popupTimerRef.current = setTimeout(() => {
         setShowTradeConfirm(true);
-      }, 2 * 60 * 1000);
+      }, 30 * 1000);
       // Start 5-minute expiry countdown
       startExpiryTimer(ANALYSIS_TTL_MS);
     } catch (e: any) {

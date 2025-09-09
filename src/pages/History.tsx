@@ -70,6 +70,44 @@ export function History() {
   const [total, setTotal] = useState<number | null>(null);
   const PAGE_SIZE = 5;
 
+  const toTitleCase = (s: string) =>
+    (s || "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const renderTAValue = (value: any) => {
+    if (value === null || value === undefined) return <span>—</span>;
+    if (Array.isArray(value)) {
+      if (!value.length) return <span>—</span>;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {value.map((v, i) => (
+            <Badge key={i} variant="outline" className="text-[10px] px-1.5 py-0.5">
+              {String(v)}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+    if (typeof value === "object") {
+      const entries = Object.entries(value as Record<string, any>);
+      if (!entries.length) return <span>—</span>;
+      return (
+        <div className="space-y-1">
+          {entries.map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between gap-3 text-xs">
+              <span className="text-muted-foreground">{toTitleCase(k)}</span>
+              <span className="font-medium text-foreground truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return <span className="text-sm font-medium">{String(value)}</span>;
+  };
+
   const resetAndLoad = (nextMode: "my" | "all") => {
     setMode(nextMode);
     setItems([]);
@@ -308,9 +346,16 @@ export function History() {
                       {(payload as any).technical_analysis && (
                         <div className="md:col-span-3 col-span-2">
                           <p className="text-xs text-muted-foreground mb-1">Technical Analysis</p>
-                          <pre className="text-xs bg-muted/30 p-2 rounded-md overflow-x-auto">
-{JSON.stringify((payload as any).technical_analysis, null, 2)}
-                          </pre>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {Object.entries((payload as any).technical_analysis as Record<string, any>).map(([k, v]) => (
+                              <div key={k} className="rounded-md border border-border/30 bg-muted/20 p-3">
+                                <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{toTitleCase(k)}</p>
+                                <div className="text-sm">
+                                  {renderTAValue(v)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

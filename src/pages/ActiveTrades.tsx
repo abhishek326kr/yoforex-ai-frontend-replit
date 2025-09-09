@@ -135,7 +135,12 @@ export function ActiveTrades() {
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">All Positions</h2>
             <div className="space-y-4">
-              {trades.map((trade) => (
+              {trades.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No active positions
+                </div>
+              ) : (
+              trades.map((trade) => (
                 <Card 
                   key={trade.id} 
                   className="p-6 bg-gradient-dark border border-border/20 hover:border-border/40 transition-colors cursor-pointer"
@@ -276,8 +281,9 @@ export function ActiveTrades() {
 
                       {/* AI Notes removed per requirement */}
                     </Card>
-                  ))}
-                </div>
+                  ))
+              )}
+              </div>
             </div>
           </Card>
 
