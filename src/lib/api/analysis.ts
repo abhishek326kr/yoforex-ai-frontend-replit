@@ -98,8 +98,8 @@ export default function formattedTimeframe(timeframe: string) {
     case '1H': return 'H1';
     case '4H': return 'H4';
     case '8H': return 'H8';
-    case '1D': return 'D1';
-    case '1W': return 'W1';
+    case '1D': return 'D';
+    case '1W': return 'W';
     case '1MO': return 'M';
   }
 
@@ -111,8 +111,8 @@ export default function formattedTimeframe(timeframe: string) {
     case '30': return 'M30';
     case '60': return 'H1';
     case '240': return 'H4';
-    case 'D': return 'D1';
-    case 'W': return 'W1';
+    case 'D': return 'D';
+    case 'W': return 'W';
     case 'M': return 'M';
     default: return 'H1'; // Fallback
   }
