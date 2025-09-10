@@ -20,6 +20,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import NotFound from "@/pages/NotFound";
 import HelpSupport from "./components/HelpSupport";
 import { Journal } from "./components/Journal";
+import UpgradeModal from "@/components/billing/UpgradeModal";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,8 @@ const App = () => (
           pauseOnHover
           theme="dark"
         />
+        {/* Global modals */}
+        <UpgradeModal />
         <Router>
           <AuthProvider>
           <Switch>

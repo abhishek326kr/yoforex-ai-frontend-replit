@@ -8,6 +8,7 @@ export type BillingSummary = {
   monthly_credits_max: number;
   daily_credits_spent?: number;
   daily_cap?: number;
+  daily_available?: number;
   allowed_models?: string[];
 };
 

@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { emitBillingUpdated } from '../billingEvents';
+import { emitBillingUpdated, emitUpgradeRequired } from '../billingEvents';
 
 // Configuration
 const MAX_RETRIES = 3;
@@ -162,7 +162,19 @@ apiClient.interceptors.response.use(
           enhancedError.message = 'Request timeout. Please try again.';
           break;
         case 429:
-          enhancedError.message = 'Too many requests. Please wait before trying again.';
+          {
+            // Detect daily cap and broadcast upgrade prompt
+            const detail = (data?.detail || data) as any;
+            const isDailyCap = typeof detail === 'object' && (detail?.code === 'daily_cap_reached');
+            if (isDailyCap) {
+              enhancedError.message = 'Daily credit cap reached. Try again tomorrow.';
+              try {
+                emitUpgradeRequired({ reason: 'daily_cap', message: enhancedError.message });
+              } catch {}
+            } else {
+              enhancedError.message = 'Too many requests. Please wait before trying again.';
+            }
+          }
           break;
         case 500:
           enhancedError.message = 'Internal server error. Please try again later.';

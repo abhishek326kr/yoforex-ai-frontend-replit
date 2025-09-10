@@ -132,6 +132,54 @@ export function TradingSidebar() {
               })()}
             </div>
           </div>
+          {/* Daily Cap Progress */}
+          {typeof data?.daily_cap === 'number' && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-sidebar-foreground/70">Daily Cap</span>
+                <span className="text-xs text-primary">
+                  {(() => {
+                    const cap = data?.daily_cap ?? 0;
+                    const availableRaw = (typeof data?.daily_available === 'number')
+                      ? (data?.daily_available ?? 0)
+                      : Math.max(0, cap - (data?.daily_credits_spent ?? 0));
+                    const available = Math.max(0, Math.min(cap, availableRaw));
+                    const pct = cap > 0 ? Math.min(100, Math.floor((available / cap) * 100)) : 0;
+                    return loading ? '-' : `${pct}%`;
+                  })()}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-sidebar-foreground/70">
+                  {(() => {
+                    if (loading) return '-';
+                    const cap = data?.daily_cap ?? 0;
+                    const availableRaw = (typeof data?.daily_available === 'number')
+                      ? (data?.daily_available ?? 0)
+                      : Math.max(0, cap - (data?.daily_credits_spent ?? 0));
+                    const available = Math.max(0, Math.min(cap, availableRaw));
+                    return `${available.toLocaleString()} / ${cap.toLocaleString()}`;
+                  })()}
+                </span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                {(() => {
+                  const cap = data?.daily_cap ?? 0;
+                  const availableRaw = (typeof data?.daily_available === 'number')
+                    ? (data?.daily_available ?? 0)
+                    : Math.max(0, cap - (data?.daily_credits_spent ?? 0));
+                  const available = Math.max(0, Math.min(cap, availableRaw));
+                  const pct = cap > 0 ? Math.min(100, Math.floor((available / cap) * 100)) : 0;
+                  return (
+                    <div
+                      className="h-full bg-secondary rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  );
+                })()}
+              </div>
+            </div>
+          )}
           {error && (
             <p className="text-xs text-red-500">Failed to load credits</p>
           )}
