@@ -145,7 +145,7 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
 
       {/* Provider (single-select) */}
       <div>
-        <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 gap-2">
           {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => {
             const lockedProv = isProviderLocked(p);
             return (

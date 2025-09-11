@@ -12,6 +12,7 @@ import { profileStorage } from "@/utils/profileStorage";
 import { useState, useEffect } from "react";
 import { navigate } from "wouter/use-browser-location";
 import RecentAISignals from "@/components/RecentAISignals";
+import { API_BASE_URL } from "@/config/api";
 
 
 const portfolioStats = [
@@ -183,8 +184,8 @@ export function Dashboard() {
 						// Example apiUrl mapping (replace with real endpoints)
 						const apiUrlMap: Record<string, string | undefined> = {
 							"Portfolio Value": undefined,
-							"Active Trades": undefined,
-							"Win Rate": undefined,
+							"Active Trades": `${API_BASE_URL}/analysis/trade/active/count`,
+							"Win Rate": `${API_BASE_URL}/analysis/history/winrate/overall`,
 							"AI Signals": "https://backend.axiontrust.com/analysis/history/all?page=1",
 						};
 

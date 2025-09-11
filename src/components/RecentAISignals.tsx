@@ -227,52 +227,58 @@ export default function RecentAISignals({
       </div>
 
       <div className="space-y-3">
-        {/* Table header (desktop) */}
-        <div className="hidden md:grid grid-cols-[140px_120px_120px_96px_96px_120px] gap-4 px-4 py-2 text-xs text-muted-foreground border-b border-border/10">
-          <div>Currency Pair</div>
-          <div className="text-center">Direction</div>
-          <div className="text-center">Entry / TP</div>
-          <div className="text-center">P&L</div>
-          <div className="text-center">Duration</div>
-          <div className="text-right">AI Model • Confidence</div>
-        </div>
+        <div className="-mx-2 md:mx-0">
+          <div className="overflow-x-auto px-2 md:px-0 scrollbar-thin scrollbar-primary">
+            <div className="min-w-[760px]">
+              {/* Table header (desktop) */}
+              <div className="hidden md:grid grid-cols-[140px_120px_120px_96px_96px_120px] gap-4 px-4 py-2 text-xs text-muted-foreground border-b border-border/10">
+                <div>Currency Pair</div>
+                <div className="text-center">Direction</div>
+                <div className="text-center">Entry / TP</div>
+                <div className="text-center">P&L</div>
+                <div className="text-center">Duration</div>
+                <div className="text-right">AI Model • Confidence</div>
+              </div>
 
-        {loading ? (
-          <div className="text-sm text-muted-foreground px-4 py-6">Loading signals…</div>
-        ) : paginated.length === 0 ? (
-          <div className="text-sm text-muted-foreground px-4 py-6">No signals found for this page.</div>
-        ) : (
-          paginated.map((rec, idx) => (
-            <div key={rec.id ?? idx} className="p-3 md:p-2 rounded-lg bg-card/30 border border-border/10 hover:shadow-lg transition-colors">
-              <div className="grid grid-cols-1 md:grid-cols-[140px_120px_120px_96px_96px_120px] gap-4 items-center">
-                <div>
-                  <div className="font-medium">{rec.pair}</div>
-                  <div className="text-xs text-muted-foreground">{rec.strategy}</div>
-                </div>
-                <div className="flex items-center justify-center">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${rec.signal === "BUY" ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600"}`}>
-                    {rec.signal}
-                  </span>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">{rec.entry}</div>
-                  <div className="text-xs text-muted-foreground">{rec.take_profit}</div>
-                </div>
-                <div className="text-center text-sm text-trading-profit">{/* placeholder P&L */}+${(Math.random()*100).toFixed(2)}</div>
-                <div className="text-center text-xs text-muted-foreground">{new Date(rec.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                <div className="text-right">
-                  <div className="flex items-center justify-end space-x-3">
-                    <div className="text-sm font-medium text-foreground">{rec.model}</div>
-                    <div className="flex items-center space-x-2">
-                      <div className={`h-2 w-2 rounded-full ${ (rec.confidence ?? 0) >= 75 ? 'bg-trading-profit' : 'bg-muted' }`} />
-                      <div className="text-sm font-medium">{rec.confidence ?? '—'}%</div>
+              {loading ? (
+                <div className="text-sm text-muted-foreground px-4 py-6">Loading signals…</div>
+              ) : paginated.length === 0 ? (
+                <div className="text-sm text-muted-foreground px-4 py-6">No signals found for this page.</div>
+              ) : (
+                paginated.map((rec, idx) => (
+                  <div key={rec.id ?? idx} className="p-3 md:p-2 rounded-lg bg-card/30 border border-border/10 hover:shadow-lg transition-colors">
+                    <div className="grid grid-cols-1 md:grid-cols-[140px_120px_120px_96px_96px_120px] gap-4 items-center">
+                      <div>
+                        <div className="font-medium">{rec.pair}</div>
+                        <div className="text-xs text-muted-foreground">{rec.strategy}</div>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${rec.signal === "BUY" ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600"}`}>
+                          {rec.signal}
+                        </span>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium">{rec.entry}</div>
+                        <div className="text-xs text-muted-foreground">{rec.take_profit}</div>
+                      </div>
+                      <div className="text-center text-sm text-trading-profit">{/* placeholder P&L */}+${(Math.random()*100).toFixed(2)}</div>
+                      <div className="text-center text-xs text-muted-foreground">{new Date(rec.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end space-x-3">
+                          <div className="text-sm font-medium text-foreground">{rec.model}</div>
+                          <div className="flex items-center space-x-2">
+                            <div className={`h-2 w-2 rounded-full ${ (rec.confidence ?? 0) >= 75 ? 'bg-trading-profit' : 'bg-muted' }`} />
+                            <div className="text-sm font-medium">{rec.confidence ?? '—'}%</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
-          ))
-        )}
+          </div>
+        </div>
       </div>
 
       {/* bottom pagination summary (always shown when using API) */}

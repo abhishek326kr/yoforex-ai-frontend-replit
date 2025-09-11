@@ -135,9 +135,17 @@ export const formatTradingViewSymbol = (pair: string): FormattedSymbol => {
 };
 
 export const getTradingPairs = () => ({
-  forex: MAJOR_FOREX_PAIRS.filter(pair => !pair.startsWith('X') || !pair.endsWith('/USD')),
+  // Exclude all commodity-style pairs from the forex list
+  // This filters out metals (XAU/USD, XAG/USD, XPT/USD, XPD/USD) and energy/metal commodities
+  // like WTICO/USD, BCO/USD, NATGAS/USD, COPPER/USD, PLATINUM/USD, PALLADIUM/USD
+  forex: MAJOR_FOREX_PAIRS.filter(pair => {
+    const isMetalStyle = pair.startsWith('X') && pair.endsWith('/USD');
+    const isCommodityKey = Object.prototype.hasOwnProperty.call(COMMODITY_SYMBOLS, pair);
+    return !isMetalStyle && !isCommodityKey;
+  }),
   crypto: Object.keys(CRYPTO_PAIRS),
-  indices: STOCK_INDICES,
+  // Remove all NIFTY indices from UI
+  indices: STOCK_INDICES.filter(name => !name.toUpperCase().includes('NIFTY')),
   indianStocks: Object.keys(INDIAN_STOCKS).sort(),
   commodities: Object.keys(COMMODITY_SYMBOLS)
 });

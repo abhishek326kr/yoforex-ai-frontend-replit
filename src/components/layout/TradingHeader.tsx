@@ -1,26 +1,19 @@
 import { useState } from "react";
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/useAuth";
-import { useBillingSummary } from "@/hooks/useBillingSummary";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+ 
+ 
+ 
 import LivePriceTracker from "@/components/LivePriceTracker";
 import { UserProfileDropdown } from "../user/UserProfileDropdown";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function TradingHeader() {
   const [searchQuery, setSearchQuery] = useState("");
-  const { logout } = useAuth();
-  const { data, loading } = useBillingSummary();
+  
+  
 
   return (
     <header className="fixed top-0 right-0 left-0 lg:left-64 bg-card/90 backdrop-blur-md border-b border-border/20 z-30">
@@ -54,21 +47,18 @@ export function TradingHeader() {
             <span className="sr-only">Search</span>
           </Button>
 
-          {/* Credit Display - Hidden on small screens */}
-          <div className="hidden sm:flex items-center space-x-2 px-2 sm:px-3 py-1.5 bg-gradient-glass backdrop-blur-sm rounded-lg border border-border/20">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse flex-shrink-0" />
-            <div className="hidden sm:inline-flex items-baseline space-x-1">
-              <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                {loading ? "-" : data?.monthly_credits_remaining?.toLocaleString?.() ?? "-"}
-              </span>
-              <span className="text-xs text-muted-foreground hidden xl:inline">
-                / {loading ? "-" : data?.monthly_credits_max?.toLocaleString?.() ?? "-"} credits
-              </span>
-            </div>
-            {data?.plan && (
-              <Badge variant="secondary" className="ml-1 hidden xl:inline-flex">{data.plan}</Badge>
-            )}
-          </div>
+          {/* Join Telegram Button - replaces credit display */}
+          <Button
+            className="hidden sm:inline-flex"
+            variant="secondary"
+            onClick={() => {
+              // TODO: replace with your Telegram URL
+              window.open("https://t.me/+n0jVrMKTReg0Y2M1", "_blank", "noopener,noreferrer");
+            }}
+          >
+            <img src="/telegram.png" alt="Telegram" width={20} height={20} />
+            Join Telegram
+          </Button>
 
           {/* Theme Toggle */}
           <ThemeToggle />

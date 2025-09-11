@@ -36,10 +36,20 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
         commodities: generateMarketData(commodities || [])
     };
 
-    // Filter pairs based on search query
-    const filteredMarketData = marketData[selectedMarket].filter(pair => 
-        pair.pair.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Exclude commodity-style pairs from Forex tab (UI safety net)
+    const forexExclusions = new Set([
+        'WTICO/USD',
+        'BCO/USD',
+        'NATGAS/USD',
+        'COPPER/USD',
+        'PLATINUM/USD',
+        'PALLADIUM/USD',
+    ]);
+
+    // Filter pairs based on search query (and forex exclusions when applicable)
+    const filteredMarketData = marketData[selectedMarket]
+        .filter(pair => selectedMarket !== 'forex' || !forexExclusions.has(pair.pair))
+        .filter(pair => pair.pair.toLowerCase().includes(searchQuery.toLowerCase()));
 
     
 
@@ -54,13 +64,13 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                     </div>
                     <AccordionContent className="px-4 pb-4 pt-2 relative z-20">
                         {/* Currency Pair Tabs */}
-                        {/* Market Type Selection - Responsive Button Group */}
-                        <div className="w-full overflow-x-auto pb-2 mb-4 scrollbar-thin scrollbar-primary">
-                            <div className="flex space-x-2 w-max min-w-full">
+                        {/* Market Type Selection - Grid (no horizontal scrollbar) */}
+                        <div className="mb-4">
+                            <div className="grid grid-cols-2 grid-rows-2 gap-2">
                                 <Button
                                     variant={selectedMarket === 'forex' ? 'default' : 'outline'}
                                     size="sm"
-                                    className="whitespace-nowrap flex-shrink-0"
+                                    className="w-full"
                                     onClick={() => setSelectedMarket('forex')}
                                 >
                                     Forex
@@ -68,7 +78,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                                 <Button
                                     variant={selectedMarket === 'crypto' ? 'default' : 'outline'}
                                     size="sm"
-                                    className="whitespace-nowrap flex-shrink-0"
+                                    className="w-full"
                                     onClick={() => setSelectedMarket('crypto')}
                                 >
                                     Crypto
@@ -76,7 +86,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                                 <Button
                                     variant={selectedMarket === 'indices' ? 'default' : 'outline'}
                                     size="sm"
-                                    className="whitespace-nowrap flex-shrink-0"
+                                    className="w-full"
                                     onClick={() => setSelectedMarket('indices')}
                                 >
                                     Indices
@@ -84,7 +94,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                                 <Button
                                     variant={selectedMarket === 'commodities' ? 'default' : 'outline'}
                                     size="sm"
-                                    className="whitespace-nowrap flex-shrink-0"
+                                    className="w-full"
                                     onClick={() => setSelectedMarket('commodities')}
                                 >
                                     Commodities

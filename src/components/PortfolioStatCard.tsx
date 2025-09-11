@@ -35,11 +35,39 @@ export default function PortfolioStatCard({
         const res = await fetch(apiUrl, { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        // Backend specific mapping: if response contains total_analyses or total, use that
+        // Backend specific mapping for common shapes
         let mapped: any = json;
-        if (json && typeof json === "object") {
-          if (typeof json.total_analyses === "number") mapped = { value: String(json.total_analyses) };
-          else if (typeof json.total === "number") mapped = { value: String(json.total) };
+        if (typeof json === "number") {
+          mapped = { value: String(json) };
+        } else if (json && typeof json === "object") {
+          // Prefer average_confidence for Win Rate card
+          if (title === "Win Rate" && typeof (json as any).average_confidence === "number") {
+            const unit = (json as any).unit || "%";
+            const val = (json as any).average_confidence;
+            mapped = { value: `${Number(val).toFixed(1)}${unit}` };
+          } else if (typeof (json as any).average_confidence === "number") {
+            // Fallback if title not matched but field exists
+            const unit = (json as any).unit || "%";
+            const val = (json as any).average_confidence;
+            mapped = { value: `${Number(val).toFixed(1)}${unit}` };
+          } else if (title === "Active Trades" && typeof (json as any).active_trades === "number") {
+            // Use explicit active_trades field for Active Trades card
+            mapped = { value: String((json as any).active_trades) };
+          } else if (typeof (json as any).active_trades === "number") {
+            // Generic support if field exists but title doesn't match for some reason
+            mapped = { value: String((json as any).active_trades) };
+          } else if (typeof json.count === "number") {
+            // e.g., { count: 5 }
+            mapped = { value: String(json.count) };
+          } else if (typeof json.win_rate === "number") {
+            // e.g., { win_rate: 73.4 } or { win_rate: 0.734 }
+            const rate = json.win_rate <= 1 ? json.win_rate * 100 : json.win_rate;
+            mapped = { value: `${Number(rate).toFixed(1)}%` };
+          } else if (typeof json.total_analyses === "number") {
+            mapped = { value: String(json.total_analyses) };
+          } else if (typeof json.total === "number") {
+            mapped = { value: String(json.total) };
+          }
         }
         // Expecting { value, change, changePercent, positive } or mapped shape
         if (mounted) setData(mapped ?? null);
