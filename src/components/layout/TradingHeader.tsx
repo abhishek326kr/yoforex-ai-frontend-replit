@@ -49,15 +49,16 @@ export function TradingHeader() {
 
           {/* Join Telegram Button - replaces credit display */}
           <Button
-            className="hidden sm:inline-flex"
+            className="inline-flex items-center gap-2 px-2 sm:px-3"
             variant="secondary"
+            aria-label="Join Telegram"
             onClick={() => {
               // TODO: replace with your Telegram URL
               window.open("https://t.me/+n0jVrMKTReg0Y2M1", "_blank", "noopener,noreferrer");
             }}
           >
             <img src="/telegram.png" alt="Telegram" width={20} height={20} />
-            Join Telegram
+            <span className="hidden sm:inline">Join Telegram</span>
           </Button>
 
           {/* Theme Toggle */}

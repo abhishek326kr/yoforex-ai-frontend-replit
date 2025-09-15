@@ -15,6 +15,7 @@ import {
 import { TrendingDown, Clock, AlertTriangle, X, Edit3, Copy } from "lucide-react";
 import { useActiveTrades } from "@/context/ActiveTradesContext";
 import { useToast } from "@/components/ui/use-toast";
+import { closeTrade as closeTradeApi } from "@/lib/api/trades";
 
 export function ActiveTrades() {
   const { trades, updateTrade, removeTrade } = useActiveTrades();
@@ -37,14 +38,37 @@ export function ActiveTrades() {
   const selectedTradeData = trades.find(trade => trade.id === selectedTrade) as any;
   const closeTargetTrade = trades.find(t => t.id === closeTargetId) as any;
 
-  // Close all positions with a toast
-  const handleCloseAll = () => {
+  // Close all positions: attempt backend close for numeric IDs, then clear locally
+  const handleCloseAll = async () => {
     if (!trades.length) {
       toast({ title: "No positions to close" });
       return;
     }
-    trades.forEach(t => removeTrade(t.id));
-    toast({ title: "All positions closed" });
+    try {
+      // Prefer serverTradeId when present; otherwise, try numeric parse of local id
+      const numericIds = trades
+        .map(t => (t as any).serverTradeId != null ? Number((t as any).serverTradeId) : Number(t.id))
+        .filter((n: number) => !Number.isNaN(n) && Number.isFinite(n));
+
+      if (numericIds.length) {
+        const results = await Promise.allSettled(
+          numericIds.map(id => closeTradeApi(id, { result: 'manual_close', hit_reason: 'manual' }))
+        );
+        const failed = results.filter(r => r.status === 'rejected').length;
+        const succeeded = results.length - failed;
+        // Remove all locally regardless of backend outcome to reflect closure in UI
+        trades.forEach(t => removeTrade(t.id));
+        toast({ title: `Closed ${succeeded}/${results.length} server trades`, description: failed ? `${failed} failed on server; removed locally.` : undefined });
+      } else {
+        // No numeric IDs; just clear locally
+        trades.forEach(t => removeTrade(t.id));
+        toast({ title: "All positions closed locally" });
+      }
+    } catch (e: any) {
+      // Even if something unexpected happened, clear locally so the user isn't blocked
+      trades.forEach(t => removeTrade(t.id));
+      toast({ title: "Closed positions (local)", description: e?.message || 'Some errors occurred while closing on server.' });
+    }
   };
 
   return (
@@ -307,13 +331,27 @@ export function ActiveTrades() {
               </Button>
               <Button 
                 variant="destructive"
-                onClick={() => {
-                  if (closeTargetId) {
-                    removeTrade(closeTargetId);
-                    toast({ title: "Position closed" });
+                onClick={async () => {
+                  try {
+                    if (closeTargetId) {
+                      // Prefer serverTradeId when available, else try to parse numeric id
+                      const target = trades.find(t => t.id === closeTargetId) as any;
+                      const candidateId: number | undefined = (target?.serverTradeId != null)
+                        ? Number(target.serverTradeId)
+                        : Number(closeTargetId);
+                      if (candidateId && !Number.isNaN(candidateId) && Number.isFinite(candidateId)) {
+                        await closeTradeApi(candidateId, { result: 'manual_close', hit_reason: 'manual' });
+                      }
+                      // Remove from local state regardless (to reflect closure)
+                      removeTrade(closeTargetId);
+                      toast({ title: "Position closed" });
+                    }
+                  } catch (err: any) {
+                    toast({ title: "Failed to close position", description: err?.message || 'Unknown error', variant: 'destructive' });
+                  } finally {
+                    setShowCloseDialog(false);
+                    setCloseTargetId(null);
                   }
-                  setShowCloseDialog(false);
-                  setCloseTargetId(null);
                 }}
               >
                 Yes, close

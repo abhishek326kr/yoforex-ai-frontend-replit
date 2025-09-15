@@ -6,12 +6,9 @@ import { Clock } from "lucide-react";
 import { RefreshCw } from "lucide-react";
 import { Minimize2 } from "lucide-react";
 import { Maximize2 } from "lucide-react";
-import { SlidersHorizontal } from "lucide-react";
-import { PencilRuler } from "lucide-react";
-import { LayoutGrid } from "lucide-react";
-import { Brain } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import TradingViewWidget from "./charts/TradingViewWidget";
+import { useTheme } from "@/hooks/useTheme";
 
 interface TradingChartProps {
     selectedPair: string;
@@ -21,7 +18,16 @@ interface TradingChartProps {
 
 export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartProps) {
     const [isChartExpanded, setIsChartExpanded] = useState(false);
-    
+    const { theme } = useTheme();
+
+    // Resolve theme to 'light' | 'dark' for the widget
+    const resolvedChartTheme = useMemo<"light" | "dark">(() => {
+        if (theme === "system") {
+            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        return theme === "dark" ? "dark" : "light";
+    }, [theme]);
+
     return (
         <div className={`transition-all duration-300 ${isChartExpanded ? 'fixed inset-0 z-50 m-4' : 'col-span-12 lg:col-span-6 flex flex-col'}`}>
             <Card className={`bg-gradient-glass backdrop-blur-sm border-border/20 flex flex-col ${isChartExpanded ? 'h-[calc(100vh-2rem)]' : 'h-[600px]'}`}>
@@ -104,7 +110,7 @@ export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartPr
                         <TradingViewWidget 
                             symbol={selectedPair}
                             interval={selectedTimeframe}
-                            theme="dark"
+                            theme={resolvedChartTheme}
                             style="1"
                             
                             

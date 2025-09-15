@@ -19,6 +19,8 @@ export type ActiveTrade = {
   risk?: 'Low' | 'Medium' | 'High';
   notes?: string;
   timeframe?: string;
+  // Optional numeric ID from backend Trade (for API operations)
+  serverTradeId?: number;
 };
 
 const STORAGE_KEY = 'active_trades_v1';
@@ -67,6 +69,7 @@ export const ActiveTradesProvider: React.FC<{ children: React.ReactNode }> = ({ 
         risk: t.risk ?? 'Medium',
         notes: t.notes,
         timeframe: t.timeframe,
+        serverTradeId: t.serverTradeId,
       },
       ...prev,
     ]);

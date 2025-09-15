@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Lock
 } from 'lucide-react';
-import { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
+import formattedTimeframe, { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,8 @@ import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { TradeConfirmationDialog } from '@/components/TradeConfirmationDialog';
 import { useActiveTrades } from '@/context/ActiveTradesContext';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
+import { createTrade } from '@/lib/api/trades';
+import { mapToOandaInstrument } from '@/utils/trading';
 
 // Type definitions for Technical Analysis Card props
 interface TechnicalAnalysisCardProps {
@@ -435,7 +437,7 @@ export function LiveTrading() {
   };
 
   // Build and add a trade from current analysis
-  const confirmShareToActiveTrades = () => {
+  const confirmShareToActiveTrades = async () => {
     try {
       const now = new Date().toISOString();
       const pair = selectedPair;
@@ -478,18 +480,52 @@ export function LiveTrading() {
         }
       }
 
-      addTrade({
-        pair,
-        direction,
-        entryPrice,
-        openTime: now,
-        stopLoss,
-        takeProfit,
-        aiModel: aiConfig?.provider,
-        confidence,
-        strategy,
-        timeframe,
-      });
+      // Create on backend first to get serverTradeId
+      try {
+        const side = direction === 'BUY' ? 'buy' : 'sell';
+        const ep = parseFloat(entryPrice);
+        const tp = takeProfit !== undefined ? parseFloat(takeProfit) : undefined;
+        const sl = stopLoss !== undefined ? parseFloat(stopLoss) : undefined;
+        const oandaPair = mapToOandaInstrument(pair);
+        const gran = formattedTimeframe(timeframe);
+        const created = await createTrade({
+          pair: oandaPair,
+          granularity: gran,
+          side,
+          entry_price: isNaN(ep) ? undefined : ep,
+          tp_price: tp && !isNaN(tp) ? tp : undefined,
+          sl_price: sl && !isNaN(sl) ? sl : undefined,
+          // size: could be added if available in UI
+        });
+        addTrade({
+          pair,
+          direction,
+          entryPrice,
+          openTime: now,
+          stopLoss,
+          takeProfit,
+          aiModel: aiConfig?.provider,
+          confidence,
+          strategy,
+          timeframe,
+          serverTradeId: typeof created?.id === 'number' ? created.id : undefined,
+          id: typeof created?.id === 'number' ? String(created.id) : undefined,
+        });
+      } catch (e) {
+        // Fallback to local-only add if backend create fails
+        addTrade({
+          pair,
+          direction,
+          entryPrice,
+          openTime: now,
+          stopLoss,
+          takeProfit,
+          aiModel: aiConfig?.provider,
+          confidence,
+          strategy,
+          timeframe,
+        });
+      }
     } finally {
       setShowTradeConfirm(false);
     }

@@ -53,9 +53,15 @@ export default function PortfolioStatCard({
           } else if (title === "Active Trades" && typeof (json as any).active_trades === "number") {
             // Use explicit active_trades field for Active Trades card
             mapped = { value: String((json as any).active_trades) };
+          } else if (title === "Closed Positions" && typeof (json as any).closed_trades === "number") {
+            // Use explicit closed_trades field for Closed Positions card
+            mapped = { value: String((json as any).closed_trades) };
           } else if (typeof (json as any).active_trades === "number") {
             // Generic support if field exists but title doesn't match for some reason
             mapped = { value: String((json as any).active_trades) };
+          } else if (typeof (json as any).closed_trades === "number") {
+            // Generic support for closed_trades if title doesn't match
+            mapped = { value: String((json as any).closed_trades) };
           } else if (typeof json.count === "number") {
             // e.g., { count: 5 }
             mapped = { value: String(json.count) };

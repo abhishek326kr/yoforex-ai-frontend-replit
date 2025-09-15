@@ -94,6 +94,13 @@ const TradingViewWidget = ({
     widgetContainer.style.height = '100%';
     containerElement.appendChild(widgetContainer);
 
+    // Theme-aware colors
+    const isDark = theme === 'dark';
+    const paneBg = isDark ? '#131722' : '#ffffff';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.08)';
+    const textColor = isDark ? '#d1d4dc' : '#4b5563';
+    const toolbarBg = isDark ? '#1e1e2d' : '#f3f4f6';
+
     // Initialize the widget
     const widgetOptions: any = {
       autosize,
@@ -103,7 +110,7 @@ const TradingViewWidget = ({
       theme,
       style,
       locale: 'en',
-      toolbar_bg: '#1e1e2d',
+      toolbar_bg: toolbarBg,
       enable_publishing: false,
       allow_symbol_change: !limitedTimeframes,
       hide_side_toolbar: hideSideToolbar,
@@ -113,11 +120,11 @@ const TradingViewWidget = ({
       container_id: containerId,
       ...(showVolume && { studies: ['Volume@tv-basicstudies'] }),
       overrides: {
-        'paneProperties.background': '#131722',
-        'paneProperties.vertGridProperties.color': 'rgba(255, 255, 255, 0.06)',
-        'paneProperties.horzGridProperties.color': 'rgba(255, 255, 255, 0.06)',
+        'paneProperties.background': paneBg,
+        'paneProperties.vertGridProperties.color': gridColor,
+        'paneProperties.horzGridProperties.color': gridColor,
         'symbolWatermarkProperties.transparency': 90,
-        'scalesProperties.textColor': '#d1d4dc',
+        'scalesProperties.textColor': textColor,
         'mainSeriesProperties.candleStyle.upColor': '#26a69a',
         'mainSeriesProperties.candleStyle.downColor': '#ef5350',
         'mainSeriesProperties.candleStyle.borderUpColor': '#26a69a',

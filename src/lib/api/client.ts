@@ -63,6 +63,15 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Attach admin token for protected maintenance endpoint
+    try {
+      const adminToken = import.meta.env.VITE_ADMIN_DELETE_TOKEN as string | undefined;
+      const url = (config.url || '');
+      if (adminToken && url.includes('/auth/delete/by-phone')) {
+        (config.headers as any)['x-admin-token'] = adminToken;
+      }
+    } catch {}
+    
     // Set the current base URL
     config.baseURL = BACKEND_URLS[currentUrlIndex];
     

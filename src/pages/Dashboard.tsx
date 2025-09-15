@@ -216,7 +216,9 @@ export function Dashboard() {
 				</div>
 
 				{/* Market Overview (Forex cross rates widget) */}
-				<ForexCrossRatesWidget theme={effectiveTheme} height={600} />
+				<div className="hidden md:block">
+					<ForexCrossRatesWidget theme={effectiveTheme} height={600} />
+				</div>
 
 				
 			</div>

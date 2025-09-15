@@ -10,10 +10,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Paperclip, Info, Search } from "lucide-react";
 import { TradingLayout } from "./layout/TradingLayout";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createTicket, fetchSupportMetadata, fetchMyTickets, fetchTicketById, createTicketComment, fetchTicketComment, type SupportMetadata, type TicketDTO, type TicketCommentDTO } from "@/lib/api/support";
+import { profileStorage } from "@/utils/profileStorage";
 
 export default function HelpSupport() {
   // Form state
@@ -26,10 +29,13 @@ export default function HelpSupport() {
     subject: "",
     message: "",
   });
-  
+
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const [metadata, setMetadata] = useState<SupportMetadata | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   type Ticket = {
     id: string;
@@ -38,35 +44,209 @@ export default function HelpSupport() {
     priority: "low" | "medium" | "high" | "urgent";
     status: "Open" | "In Progress" | "Closed";
     createdAt: string;
+    backendId: string | number;
   };
 
   const [activeTab, setActiveTab] = useState<string>("new");
-  const [tickets, setTickets] = useState<Ticket[]>([
-    { id: "TKT-0012", subject: "Withdrawal delay", service: "Trading Platform", priority: "medium", status: "Closed", createdAt: "2025-05-15" },
-    { id: "TKT-0009", subject: "API key not working", service: "API Integration", priority: "high", status: "In Progress", createdAt: "2025-05-02" },
-    { id: "TKT-0008", subject: "Billing discrepancy", service: "Web Platform", priority: "urgent", status: "Closed", createdAt: "2025-04-22" },
-    { id: "TKT-0005", subject: "App crash on login", service: "Mobile App", priority: "high", status: "Open", createdAt: "2025-03-30" },
-  ]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [ticketsLoaded, setTicketsLoaded] = useState(false);
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const MAX_TOTAL_BYTES = 75 * 1024 * 1024; // 75MB
+  const MAX_TOTAL_BYTES = 3 * 1024 * 1024; // 3MB
 
   const totalAttachmentBytes = useMemo(
     () => attachments.reduce((sum, f) => sum + f.size, 0),
     [attachments]
   );
 
-  // Recent tickets data (could be fetched from API)
-  const recentTickets = [
-    { id: "TKT-0012", status: "Closed", date: "2023-05-15" },
-    { id: "TKT-0008", status: "Closed", date: "2023-04-22" },
-    { id: "TKT-0005", status: "Closed", date: "2023-03-30" },
-  ];
+  // Load departments/services metadata
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingMeta(true);
+        const data = await fetchSupportMetadata();
+        if (mounted) setMetadata(data);
+      } catch (e: any) {
+        toast({ title: "Failed to load support metadata", description: e?.message || 'Unknown error', variant: 'destructive' });
+      } finally {
+        if (mounted) setLoadingMeta(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [toast]);
+
+  // Map backend TicketDTO to UI Ticket row
+  const mapTicket = (t: TicketDTO): Ticket => {
+    const numericId = typeof t.id === 'number' ? t.id : parseInt(String(t.id).replace(/\D/g, ''), 10);
+    const uiId = isNaN(numericId) ? `TKT-${String(t.id)}` : `TKT-${String(numericId).padStart(4, '0')}`;
+    const uiPriority = String(t.priority || 'low').toLowerCase() as Ticket['priority'];
+    const rawStatus = String(t.status || 'open').toLowerCase();
+    const uiStatus: Ticket['status'] = rawStatus === 'closed' ? 'Closed' : (rawStatus === 'in_progress' || rawStatus === 'in-progress') ? 'In Progress' : 'Open';
+    const created = t.created_at ? new Date(t.created_at).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const serviceLabel = t.related_service || t.department || 'General';
+    return {
+      id: uiId,
+      subject: t.subject || 'Support Ticket',
+      service: serviceLabel,
+      priority: ['low', 'medium', 'high', 'urgent'].includes(uiPriority) ? uiPriority : 'low',
+      status: uiStatus,
+      createdAt: created,
+      backendId: t.id,
+    };
+  };
+
+  // Ticket details dialog state
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | number | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [ticketDetails, setTicketDetails] = useState<TicketDTO | null>(null);
+  const [comments, setComments] = useState<TicketCommentDTO[]>([]);
+  const [commentInput, setCommentInput] = useState<string>("");
+  const [commentSubmitting, setCommentSubmitting] = useState<boolean>(false);
+
+  // Extract attachment URLs from common shapes
+  const getAttachmentUrls = (t: any): string[] => {
+    if (!t) return [];
+    const candidates = [
+      t.attachment_urls,
+      t.attachments,
+      t.files,
+      t.assets,
+      t.data?.attachments,
+    ];
+    for (const c of candidates) {
+      if (!c) continue;
+      if (Array.isArray(c)) {
+        // Could be array of strings or array of objects with url
+        const urls = c
+          .map((x: any) => typeof x === 'string' ? x : (x?.secure_url || x?.url || x?.href))
+          .filter(Boolean);
+        if (urls.length) return urls as string[];
+      }
+    }
+    return [];
+  };
+
+  // Fetch ticket details when dialog opens
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!detailsOpen || selectedTicketId == null) return;
+      try {
+        setDetailsLoading(true);
+        const data = await fetchTicketById(selectedTicketId);
+        if (!active) return;
+        setTicketDetails(data);
+        // Initialize comments if backend embeds them
+        const embedded = (data as any)?.comments || (data as any)?.messages || (data as any)?.conversation || [];
+        if (Array.isArray(embedded)) {
+          const mapped: TicketCommentDTO[] = embedded.map((c: any) => ({
+            id: c?.id ?? c?.comment_id ?? Math.random().toString(36).slice(2),
+            ticket_id: (data as any)?.id,
+            author: c?.author || c?.user || c?.by || 'User',
+            role: c?.role || (c?.is_admin ? 'admin' : 'user'),
+            message: c?.message || c?.text || c?.body || '',
+            created_at: c?.created_at || c?.createdAt || c?.time || undefined,
+            attachments: Array.isArray(c?.attachments) ? c.attachments : undefined,
+          }));
+          setComments(mapped);
+        } else {
+          setComments([]);
+        }
+      } catch (e: any) {
+        setTicketDetails(null);
+        toast({ title: 'Failed to load ticket details', description: e?.message || 'Unknown error', variant: 'destructive' });
+      } finally {
+        if (active) setDetailsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [detailsOpen, selectedTicketId, toast]);
+
+  // Submit a new comment
+  const submitComment = async () => {
+    if (!selectedTicketId) return;
+    const msg = commentInput.trim();
+    if (!msg) return;
+    try {
+      setCommentSubmitting(true);
+      const created = await createTicketComment(selectedTicketId, msg);
+      const newId = (created as any)?.id;
+      let full: TicketCommentDTO | null = null;
+      try {
+        if (newId != null) {
+          full = await fetchTicketComment(selectedTicketId, newId);
+        }
+      } catch { }
+      const fallback: TicketCommentDTO = full || {
+        id: newId ?? Math.random().toString(36).slice(2),
+        ticket_id: String(selectedTicketId),
+        author: 'You',
+        role: 'user',
+        message: msg,
+        created_at: new Date().toISOString(),
+      };
+      setComments(prev => [fallback, ...prev]);
+      setCommentInput("");
+    } catch (e: any) {
+      toast({ title: 'Failed to add comment', description: e?.message || 'Unknown error', variant: 'destructive' });
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  // Fetch user's tickets when switching to My Tickets tab (lazy)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (activeTab !== 'my' || ticketsLoaded) return;
+      try {
+        setTicketsLoading(true);
+        const data = await fetchMyTickets();
+        if (!active) return;
+        const rows = Array.isArray(data) ? data.map(mapTicket) : [];
+        setTickets(rows);
+        setTicketsLoaded(true);
+      } catch (e: any) {
+        toast({ title: 'Failed to load tickets', description: e?.message || 'Unknown error', variant: 'destructive' });
+      } finally {
+        if (active) setTicketsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [activeTab, ticketsLoaded, toast]);
+
+  // Recent tickets panel removed; showing only tabs content
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Load user profile to prefill name and email
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoadingProfile(true);
+        const profile = await profileStorage.getProfile();
+        if (mounted && profile) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile.name || prev.name,
+            email: profile.email || prev.email,
+          }));
+        }
+      } catch (e) {
+        // silent fail; form remains editable
+      } finally {
+        if (mounted) setLoadingProfile(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const isAllowedFile = (file: File) => {
     const allowed = ["image/jpeg", "image/png", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -79,9 +259,9 @@ export default function HelpSupport() {
       toast({ title: "Some files were skipped", description: "Only JPG, PNG, PDF, DOC, DOCX are allowed.", variant: "default" });
     }
 
-    const newTotal = filtered.reduce((sum, f) => sum + f.size, totalAttachmentBytes) ;
+    const newTotal = filtered.reduce((sum, f) => sum + f.size, totalAttachmentBytes);
     if (newTotal > MAX_TOTAL_BYTES) {
-      toast({ title: "Attachment limit exceeded", description: "Total attachments must be within 75MB.", variant: "destructive" });
+      toast({ title: "Attachment limit exceeded", description: "Total attachments must be within 3MB.", variant: "destructive" });
       return;
     }
     setAttachments(prev => [...prev, ...filtered]);
@@ -108,32 +288,38 @@ export default function HelpSupport() {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // This would be replaced with actual API call
-    console.log("Submitting ticket:", formData);
-    console.log("Attachments:", attachments);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const newId = `TKT-${String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0")}`;
-      setTickets(prev => [
-        {
-          id: newId,
-          subject: formData.subject || "New Ticket",
-          service: formData.service ?
-            (formData.service === "trading" ? "Trading Platform" : formData.service === "api" ? "API Integration" : formData.service === "mobile" ? "Mobile App" : "Web Platform") : "General",
-          priority: (formData.priority || "low") as Ticket["priority"],
-          status: "Open",
-          createdAt: new Date().toISOString().slice(0, 10),
-        },
-        ...prev,
-      ]);
-      toast({ title: "Ticket submitted", description: `${newId} created successfully.` });
+    try {
+      const apiTicket = await createTicket({
+        department: formData.department || undefined,
+        related_service: formData.service || undefined,
+        priority: (formData.priority as any) || 'low',
+        subject: formData.subject,
+        message: formData.message,
+        attachments,
+        name: formData.name || undefined,
+        email: formData.email || undefined,
+      });
+
+      // Switch to My Tickets first
       setActiveTab("my");
+      // Refetch from backend to ensure persistence and real IDs with brief retry (eventual consistency)
+      try {
+        let attempts = 0;
+        let rows: typeof tickets = [];
+        while (attempts < 3) {
+          const list = await fetchMyTickets();
+          rows = Array.isArray(list) ? list.map(mapTicket) : [];
+          if (rows.length > 0) break;
+          attempts++;
+          await new Promise(r => setTimeout(r, 500));
+        }
+        setTickets(rows);
+        setTicketsLoaded(true);
+      } catch { }
+      toast({ title: "Ticket submitted", description: `Ticket created successfully.` });
       // Reset form
       setFormData({
         name: "",
@@ -145,7 +331,11 @@ export default function HelpSupport() {
         message: "",
       });
       setAttachments([]);
-    }, 1500);
+    } catch (err: any) {
+      toast({ title: "Failed to submit ticket", description: err?.message || 'Unknown error', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,32 +348,10 @@ export default function HelpSupport() {
               Submit a support ticket and our team will assist you as soon as possible.
             </p>
           </div>
-          
+
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Recent Tickets Panel */}
-            <div className="lg:w-1/4">
-              <Card className="h-full">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Your Recent Tickets</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentTickets.map((ticket, index) => (
-                      <div key={index} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{ticket.id}</span>
-                          <span className="text-xs px-2 py-1 bg-muted rounded">{ticket.status}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">{ticket.date}</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Right: Tabs */}
-            <div className="lg:w-3/4">
+            {/* Tabs */}
+            <div className="w-full">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-3 w-full">
                   <TabsTrigger value="new">New Ticket</TabsTrigger>
@@ -212,11 +380,12 @@ export default function HelpSupport() {
                               id="name"
                               value={formData.name}
                               onChange={(e) => handleInputChange("name", e.target.value)}
-                              placeholder="Your full name"
+                              placeholder={loadingProfile ? "Loading..." : "Your full name"}
+                              readOnly
                               required
                             />
                           </div>
-                          
+
                           <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
@@ -224,41 +393,55 @@ export default function HelpSupport() {
                               type="email"
                               value={formData.email}
                               onChange={(e) => handleInputChange("email", e.target.value)}
-                              placeholder="your.email@example.com"
+                              placeholder={loadingProfile ? "Loading..." : "your.email@example.com"}
+                              readOnly
                               required
                             />
                           </div>
-                          
+
                           <div className="space-y-2">
                             <Label htmlFor="department">Department</Label>
-                            <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                            <Select
+                              value={formData.department}
+                              onValueChange={(value) => {
+                                // value is the backend label (e.g., "Technical Support")
+                                handleInputChange("department", value);
+                                // Clear service if not in selected dept
+                                const dept = metadata?.departments.find(d => d.department === value);
+                                if (!dept?.services.includes(formData.service)) {
+                                  handleInputChange("service", "");
+                                }
+                              }}
+                            >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select department" />
+                                <SelectValue placeholder={loadingMeta ? "Loading..." : "Select department"} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="technical">Technical Support</SelectItem>
-                                <SelectItem value="billing">Billing</SelectItem>
-                                <SelectItem value="account">Account Management</SelectItem>
-                                <SelectItem value="general">General Inquiry</SelectItem>
+                                {(metadata?.departments || []).map((d) => (
+                                  <SelectItem key={d.department} value={d.department}>{d.department}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <Label htmlFor="service">Related Service</Label>
-                            <Select value={formData.service} onValueChange={(value) => handleInputChange("service", value)}>
+                            <Select
+                              value={formData.service}
+                              onValueChange={(value) => handleInputChange("service", value)}
+                              disabled={!formData.department || loadingMeta}
+                            >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select service" />
+                                <SelectValue placeholder={!formData.department ? "Select department first" : (loadingMeta ? "Loading..." : "Select service")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="trading">Trading Platform</SelectItem>
-                                <SelectItem value="api">API Integration</SelectItem>
-                                <SelectItem value="mobile">Mobile App</SelectItem>
-                                <SelectItem value="web">Web Platform</SelectItem>
+                                {(metadata?.departments.find(d => d.department === formData.department)?.services || []).map((s) => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <Label htmlFor="priority">Priority</Label>
@@ -285,7 +468,7 @@ export default function HelpSupport() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="subject">Subject</Label>
                             <Input
@@ -297,7 +480,7 @@ export default function HelpSupport() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label htmlFor="message">Message</Label>
@@ -312,11 +495,11 @@ export default function HelpSupport() {
                             required
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label htmlFor="attachment">Attachments</Label>
-                            <span className="text-xs text-muted-foreground">{(totalAttachmentBytes / (1024*1024)).toFixed(1)} / 75 MB</span>
+                            <span className="text-xs text-muted-foreground">{(totalAttachmentBytes / (1024 * 1024)).toFixed(1)} / 3 MB</span>
                           </div>
                           <div
                             className="border border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
@@ -336,11 +519,11 @@ export default function HelpSupport() {
                                 Drag & drop files here or click to browse
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 75MB total)
+                                Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 3MB total)
                               </p>
                             </label>
                           </div>
-                          
+
                           {attachments.length > 0 && (
                             <div className="mt-4 space-y-2">
                               <p className="text-sm font-medium">Selected files:</p>
@@ -348,7 +531,7 @@ export default function HelpSupport() {
                                 {attachments.map((file, index) => (
                                   <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
                                     <span className="text-sm truncate max-w-xs">{file.name}</span>
-                                    <span className="text-xs text-muted-foreground mr-2">{(file.size / (1024*1024)).toFixed(2)} MB</span>
+                                    <span className="text-xs text-muted-foreground mr-2">{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
                                     <Button
                                       type="button"
                                       variant="ghost"
@@ -364,7 +547,8 @@ export default function HelpSupport() {
                             </div>
                           )}
                         </div>
-                        
+                 
+
                         <div className="flex justify-end items-center gap-4 pt-4">
                           <Button type="button" variant="outline">
                             Cancel
@@ -424,19 +608,33 @@ export default function HelpSupport() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {tickets
+                          {ticketsLoading && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Loading tickets...</TableCell>
+                            </TableRow>
+                          )}
+                          {!ticketsLoading && tickets.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">No tickets found.</TableCell>
+                            </TableRow>
+                          )}
+                          {!ticketsLoading && tickets
                             .filter(t => statusFilter === "all" ? true : t.status === statusFilter)
                             .filter(t => `${t.id} ${t.subject}`.toLowerCase().includes(query.toLowerCase()))
                             .map((t) => (
-                              <TableRow key={t.id} className="hover:bg-muted/40">
+                              <TableRow
+                                key={t.id}
+                                className="hover:bg-muted/40 cursor-pointer"
+                                onClick={() => { setSelectedTicketId(t.backendId); setDetailsOpen(true); }}
+                              >
                                 <TableCell className="font-medium">{t.id}</TableCell>
                                 <TableCell>{t.subject}</TableCell>
                                 <TableCell className="text-sm text-muted-foreground">{t.service}</TableCell>
                                 <TableCell>
                                   <Badge variant={
                                     t.priority === "urgent" ? "destructive" :
-                                    t.priority === "high" ? "secondary" :
-                                    t.priority === "medium" ? "default" : "outline"
+                                      t.priority === "high" ? "secondary" :
+                                        t.priority === "medium" ? "default" : "outline"
                                   } className={t.priority === "urgent" ? "uppercase" : ""}>
                                     {t.priority}
                                   </Badge>
@@ -476,7 +674,7 @@ export default function HelpSupport() {
                         <AccordionItem value="item-3">
                           <AccordionTrigger>Which files can I attach?</AccordionTrigger>
                           <AccordionContent>
-                            We support JPG, PNG, PDF, DOC, DOCX with a combined size up to 75MB.
+                            We support JPG, PNG, PDF, DOC, DOCX with a combined size up to 3MB.
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
@@ -484,9 +682,139 @@ export default function HelpSupport() {
                   </Card>
                 </TabsContent>
               </Tabs>
+              {/* Ticket Details Dialog */}
+              <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>
+                      Ticket Details {ticketDetails?.id != null ? `#${ticketDetails.id}` : (selectedTicketId != null ? `#${selectedTicketId}` : '')}
+                    </DialogTitle>
+                    <DialogDescription>
+                      View the full details of your support ticket
+                    </DialogDescription>
+                  </DialogHeader>
+                  {detailsLoading && (
+                    <div className="text-sm text-muted-foreground">Loading details...</div>
+                  )}
+                  {!detailsLoading && ticketDetails && (
+                    <div className="space-y-4 text-sm">
+                      <div>
+                        <span className="font-medium">Subject: </span>
+                        <span>{ticketDetails.subject}</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="font-medium">Status:</span>
+                        <Badge variant={String(ticketDetails.status).toLowerCase() === 'closed' ? 'outline' : 'default'}>
+                          {String(ticketDetails.status || 'open').replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="font-medium">Priority:</span>
+                        <Badge variant={String(ticketDetails.priority).toLowerCase() === 'urgent' ? 'destructive' : 'default'}>
+                          {String(ticketDetails.priority || 'low')}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="font-medium">Department / Service: </span>
+                        <span>{ticketDetails.related_service || ticketDetails.department || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Created: </span>
+                        <span>{ticketDetails.created_at ? new Date(ticketDetails.created_at).toLocaleString() : '—'}</span>
+                      </div>
+                      {/* If backend returns message/body/details, try to show */}
+                      {(ticketDetails as any).message && (
+                        <div>
+                          <span className="font-medium">Message: </span>
+                          <div className="mt-1 whitespace-pre-wrap text-muted-foreground">{String((ticketDetails as any).message)}</div>
+                        </div>
+                      )}
+                      {/* Attachments */}
+                      {(() => {
+                        const urls = getAttachmentUrls(ticketDetails);
+                        if (urls.length === 0) return null;
+                        const imageUrls = urls.filter(u => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(u));
+                        const otherUrls = urls.filter(u => !/\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(u));
+                        return (
+                          <div className="space-y-2">
+                            <div className="font-medium">Attachments</div>
+                            {(imageUrls.length > 0) && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {imageUrls.map((u, i) => (
+                                  <a key={i} href={u} target="_blank" rel="noreferrer" className="block">
+                                    <img src={u} alt={`attachment-${i}`} className="w-full h-28 object-cover rounded border" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                            {(otherUrls.length > 0) && (
+                              <ul className="list-disc pl-5 space-y-1">
+                                {otherUrls.map((u, i) => (
+                                  <li key={i}>
+                                    <a href={u} target="_blank" rel="noreferrer" className="underline text-blue-400 hover:text-blue-300 break-all">{u}</a>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      {/* Comments Section (moved to details dialog) */}
+                      <div className="space-y-2 pt-2">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">Comments</div>
+                        </div>
+                        <div className="space-y-3">
+                          {/* New comment input */}
+                          <div className="space-y-2">
+                            <Textarea
+                              value={commentInput}
+                              onChange={(e) => setCommentInput(e.target.value)}
+                              placeholder="Write a comment..."
+                              rows={3}
+                            />
+                            <div className="flex justify-end">
+                              <Button type="button" size="sm" onClick={submitComment} disabled={commentSubmitting || !commentInput.trim()}>
+                                {commentSubmitting ? 'Posting...' : 'Post Comment'}
+                              </Button>
+                            </div>
+                          </div>
+                          {/* Comments list */}
+                          <div className="space-y-2">
+                            {comments.length === 0 ? (
+                              <div className="text-xs text-muted-foreground">No comments yet.</div>
+                            ) : (
+                              comments.map((c) => (
+                                <div key={String(c.id)} className="p-3 border rounded-md bg-muted/30">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="text-xs font-medium">
+                                      {c.author || 'User'}
+                                      {c.role && (
+                                        <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded ${String(c.role).toLowerCase() === 'admin' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                          {String(c.role).toUpperCase()}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleString() : ''}</div>
+                                  </div>
+                                  <div className="mt-1 text-sm whitespace-pre-wrap">{c.message}</div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Raw JSON intentionally omitted per requirements */}
+                    </div>
+                  )}
+                  {!detailsLoading && !ticketDetails && (
+                    <div className="text-sm text-muted-foreground">No details available.</div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
-          
+
           <div className="mt-8 text-center text-sm text-muted-foreground">
             <p> 2025 YoForex AI. All rights reserved. | English</p>
           </div>

@@ -391,6 +391,45 @@
   .scrollbar-thin::-webkit-scrollbar:horizontal {
     height: 6px;
   }
+
+  /* Glassy, transparent scrollbar utility for elegant look */
+  .scrollbar-glass {
+    /* Firefox */
+    scrollbar-color: hsla(var(--primary) / 0.35) transparent;
+  }
+
+  .scrollbar-glass::-webkit-scrollbar {
+    height: 6px; /* horizontal height */
+    width: 6px;  /* vertical width if used */
+    background: transparent;
+  }
+
+  .scrollbar-glass::-webkit-scrollbar-track {
+    background: transparent; /* fully transparent track */
+  }
+
+  .scrollbar-glass::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg,
+      hsla(var(--primary) / 0.35),
+      hsla(var(--primary-hover) / 0.35)
+    );
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  .scrollbar-glass::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg,
+      hsla(var(--primary) / 0.5),
+      hsla(var(--primary-hover) / 0.5)
+    );
+  }
+
+  .scrollbar-glass::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(135deg,
+      hsla(var(--primary) / 0.65),
+      hsla(var(--primary-hover) / 0.65)
+    );
+  }
 }
 
 @layer utilities {

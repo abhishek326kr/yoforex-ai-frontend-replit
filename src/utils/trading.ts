@@ -2,10 +2,12 @@
 const MAJOR_FOREX_PAIRS = [
   'EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD',
   'USD/CHF', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
+  // Additional cross pairs
+  'AUD/CHF', 'AUD/NZD', 'AUD/JPY', 'EUR/AUD', 'EUR/CAD',
+  'EUR/NZD', 'EUR/CHF', 'GBP/AUD', 'GBP/CAD', 'GBP/NZD',
   // Major commodity forex-style pairs
-  'XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD', 'WTICO/USD', // WTI Crude
-  'BCO/USD', // Brent Crude
-  'NATGAS/USD', 'COPPER/USD', 'PLATINUM/USD', 'PALLADIUM/USD'
+  'XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD'// WTI Crude
+   // Brent Crude
 ];
 
 // Crypto pairs with their TradingView symbols
@@ -29,13 +31,10 @@ const CRYPTO_PAIRS: Record<string, string> = {
 
 // Stock indices list
 const STOCK_INDICES = [
-  'S&P 500', 'DOW', 'NASDAQ', 'FTSE 100', 'DAX',
-  'NIKKEI 225', 'HANG SENG', 'ASX 200', 'CAC 40',
+  'S&P 500', 'DOW', 'NASDAQ', 'DAX',
+  'NIKKEI 225'
   // Indian Indices
-  'SENSEX', 'NIFTY 50', 'NIFTY BANK', 'NIFTY NEXT 50',
-  'NIFTY IT', 'NIFTY AUTO', 'NIFTY PHARMA', 'NIFTY FIN SERVICE',
-  'NIFTY FMCG', 'NIFTY METAL', 'NIFTY REALTY', 'NIFTY PSU BANK',
-  'NIFTY MEDIA', 'NIFTY PVT BANK', 'NIFTY CONSUMER DURABLES'
+  
 ];
 
 // Indian stocks list
