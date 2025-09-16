@@ -90,9 +90,16 @@ export function useBillingSummary() {
       }
     };
     window.addEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
+    // also refresh when tab regains focus or becomes visible
+    const onFocus = () => { if (!cancelled) refresh(); };
+    const onVisibility = () => { if (!cancelled && document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       cancelled = true;
       window.removeEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [refresh]);
 

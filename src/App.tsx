@@ -10,6 +10,8 @@ import { ActiveTrades } from "@/pages/ActiveTrades";
 import { Settings } from "@/pages/Settings";
 import { Pricing } from "@/pages/Pricing";
 import { Billing } from "@/pages/Billing";
+import BillingSuccess from "@/pages/BillingSuccess";
+import BillingFailure from "@/pages/BillingFailure";
 import { Profile } from "@/pages/Profile";
 import { Auth } from "@/pages/Auth";
 // import { Landing } from "@/pages/Landing";
@@ -91,6 +93,16 @@ const App = () => (
             <Route path="/billing">
               <ProtectedRoute>
                 <Billing />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/billing/success">
+              <ProtectedRoute>
+                <BillingSuccess />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/billing/failure">
+              <ProtectedRoute>
+                <BillingFailure />
               </ProtectedRoute>
             </Route>
             <Route path="/help">

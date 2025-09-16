@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useBillingSummary } from "@/hooks/useBillingSummary";
+
 import {
   Check,
   X,
@@ -120,6 +122,9 @@ const plans = {
 
 export function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const { data: billing } = useBillingSummary();
+  const currentPlan = (billing?.plan || 'free').toLowerCase() as 'free' | 'pro' | 'max';
+  const rank: Record<'free' | 'pro' | 'max', number> = { free: 0, pro: 1, max: 2 };
 
   const getPrice = (basePrice: number) => {
     if (basePrice === 0) return 0;
@@ -275,11 +280,33 @@ export function Pricing() {
                       : 'border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground text-lg py-6'
                   }`}
                   variant={plan.buttonVariant}
+                  disabled={(() => {
+                    const k = key as 'free' | 'pro' | 'max';
+                    // Only allow selecting higher plans than current
+                    return !(k === 'pro' || k === 'max') || rank[k] <= rank[currentPlan];
+                  })()}
+                  onClick={() => {
+                    try {
+                      const k = key as 'free' | 'pro' | 'max';
+                      if (!(k === 'pro' || k === 'max')) { window.location.href = '/billing'; return; }
+                      if (rank[k] <= rank[currentPlan]) return; // no-op for same/lower plan
+                      const url = `/billing?plan=${k}`;
+                      window.location.href = url;
+                    } catch {
+                      window.location.href = '/billing';
+                    }
+                  }}
                 >
                   {key === 'free' && <Zap className="h-5 w-5 mr-2" />}
                   {key === 'pro' && <TrendingUp className="h-5 w-5 mr-2" />}
                   {key === 'max' && <Crown className="h-5 w-5 mr-2" />}
-                  {plan.buttonText}
+                  {(() => {
+                    const k = key as 'free' | 'pro' | 'max';
+                    if (k === currentPlan) return 'Current Plan';
+                    if ((k === 'pro' || k === 'max') && rank[k] > rank[currentPlan]) return `Upgrade to ${k.toUpperCase()}`;
+                    // lower plan
+                    return 'Not Available';
+                  })()}
                 </Button>
               </div>
             </Card>
