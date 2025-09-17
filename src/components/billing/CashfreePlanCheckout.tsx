@@ -101,7 +101,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
             const raw = typeof detail.error === 'string' ? detail.error : undefined;
             if (raw) {
               // Look for a JSON object in the error string
-              const match = raw.match(/\{\s*\"code\"[\s\S]*\}/);
+              const match = raw.match(/{\s*"code"[\s\S]*}/);
               if (match) {
                 try {
                   const parsed = JSON.parse(match[0]);
