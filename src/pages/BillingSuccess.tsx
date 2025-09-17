@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { CheckCircle, Download, ArrowRight, Loader2 } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
-import { downloadInvoice, listInvoices } from "@/lib/api/billing";
+import { downloadInvoice, listInvoices, checkCashfreeFinalized, finalizeCashfreeNow } from "@/lib/api/billing";
 import { emitBillingUpdated } from "@/lib/billingEvents";
 
 export default function BillingSuccess() {
@@ -28,7 +28,7 @@ export default function BillingSuccess() {
     if (!orderId) { setChecking(false); return; }
     const run = async () => {
       setChecking(true);
-      const maxTries = 12; // ~24s
+      const maxTries = 12; // ~24s total before attempting manual finalize
       const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
       for (let i = 0; i < maxTries && !cancelled; i++) {
         try {
@@ -40,10 +40,37 @@ export default function BillingSuccess() {
             try { emitBillingUpdated(); } catch {}
             break;
           }
+          // 1b) Ask backend if it considers the order finalized (invoice present or plan updated)
+          try {
+            const status = await checkCashfreeFinalized(orderId);
+            if (status?.finalized) {
+              setWebhookDone(true);
+              try { await refresh?.(); emitBillingUpdated(); } catch {}
+              break;
+            }
+          } catch {}
           // 2) Also refresh billing to pick up plan changes
           try { await refresh?.(); emitBillingUpdated(); } catch {}
         } catch {}
         await delay(2000);
+      }
+      // If still not finalized, attempt to finalize immediately (in case webhook was blocked)
+      if (!cancelled && !webhookDone) {
+        try {
+          await finalizeCashfreeNow(orderId);
+          // Re-check quickly after manual finalize
+          try { await refresh?.(); emitBillingUpdated(); } catch {}
+          const invs2 = await listInvoices();
+          const found2 = invs2.some(inv => inv.invoice_id === `INV-${orderId}`);
+          if (found2) {
+            setWebhookDone(true);
+          } else {
+            try {
+              const status2 = await checkCashfreeFinalized(orderId);
+              if (status2?.finalized) setWebhookDone(true);
+            } catch {}
+          }
+        } catch {}
       }
       if (!cancelled) setChecking(false);
     };
