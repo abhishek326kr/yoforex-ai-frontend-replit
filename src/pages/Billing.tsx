@@ -57,6 +57,12 @@ const creditUsage = [
 ];
 
 export function Billing() {
+  // Lock billing UI in production by default unless explicitly unlocked
+  const isProd = import.meta.env.MODE === 'production';
+  const LOCKED_FLAG = String(import.meta.env.VITE_BILLING_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase();
+  const UNLOCK_FLAG = String(import.meta.env.VITE_BILLING_UNLOCK ?? 'false').toLowerCase();
+  const billingLocked = (LOCKED_FLAG === 'true') && (UNLOCK_FLAG !== 'true');
+
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
   const [creditAmount, setCreditAmount] = useState(1000);
@@ -224,6 +230,23 @@ export function Billing() {
       default: return "text-muted-foreground";
     }
   };
+
+  if (billingLocked) {
+    return (
+      <TradingLayout>
+        <div className="max-w-2xl mx-auto">
+          <Card className="trading-card p-8 text-center">
+            <div className="space-y-3">
+              <h1 className="text-2xl font-bold heading-trading">Billing Temporarily Locked</h1>
+              <p className="text-muted-foreground text-sm">
+                Billing operations are disabled in production at the moment. Please try again later or contact support.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </TradingLayout>
+    );
+  }
 
   return (
     <TradingLayout>
