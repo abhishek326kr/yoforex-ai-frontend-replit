@@ -183,11 +183,11 @@ export function Dashboard() {
 						const Icon = stat.icon;
 						// Example apiUrl mapping (replace with real endpoints)
 						const apiUrlMap: Record<string, string | undefined> = {
-							"Portfolio Value": undefined,
-							"Active Trades": `${API_BASE_URL}/analysis/trade/active/count`,
-							"Win Rate": `${API_BASE_URL}/analysis/history/winrate/overall`,
-							"AI Signals": "https://backend.axiontrust.com/analysis/history/all?page=1",
-						};
+						"Portfolio Value": undefined,
+						"Active Trades": `${API_BASE_URL}/analysis/trade/summary/active-trades/me?window_hours=24`,
+						"Win Rate": `${API_BASE_URL}/analysis/trade/summary/winrate/overall?window_hours=24`,
+						"AI Signals": `${API_BASE_URL}/analysis/trade/summary/ai-signals/all?window_hours=24`,
+					};
 
 						return (
 							<div key={stat.title} style={{ animationDelay: `${index * 100}ms` }}>

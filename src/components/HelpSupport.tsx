@@ -15,10 +15,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { Paperclip, Info, Search } from "lucide-react";
 import { TradingLayout } from "./layout/TradingLayout";
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { createTicket, fetchSupportMetadata, fetchMyTickets, fetchTicketById, createTicketComment, fetchTicketComment, type SupportMetadata, type TicketDTO, type TicketCommentDTO } from "@/lib/api/support";
 import { profileStorage } from "@/utils/profileStorage";
 
 export default function HelpSupport() {
+  const [, navigate] = useLocation();
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -54,7 +56,7 @@ export default function HelpSupport() {
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const MAX_TOTAL_BYTES = 3 * 1024 * 1024; // 3MB
+  const MAX_TOTAL_BYTES = 7.5 * 1024 * 1024; // 7.5MB (matches backend)
 
   const totalAttachmentBytes = useMemo(
     () => attachments.reduce((sum, f) => sum + f.size, 0),
@@ -261,7 +263,7 @@ export default function HelpSupport() {
 
     const newTotal = filtered.reduce((sum, f) => sum + f.size, totalAttachmentBytes);
     if (newTotal > MAX_TOTAL_BYTES) {
-      toast({ title: "Attachment limit exceeded", description: "Total attachments must be within 3MB.", variant: "destructive" });
+      toast({ title: "Attachment limit exceeded", description: "Total attachments must be within 7.5MB.", variant: "destructive" });
       return;
     }
     setAttachments(prev => [...prev, ...filtered]);
@@ -499,7 +501,7 @@ export default function HelpSupport() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label htmlFor="attachment">Attachments</Label>
-                            <span className="text-xs text-muted-foreground">{(totalAttachmentBytes / (1024 * 1024)).toFixed(1)} / 3 MB</span>
+                            <span className="text-xs text-muted-foreground">{(totalAttachmentBytes / (1024 * 1024)).toFixed(1)} / 7.5 MB</span>
                           </div>
                           <div
                             className="border border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
@@ -519,7 +521,7 @@ export default function HelpSupport() {
                                 Drag & drop files here or click to browse
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 3MB total)
+                                Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 7.5MB total)
                               </p>
                             </label>
                           </div>
@@ -625,7 +627,7 @@ export default function HelpSupport() {
                               <TableRow
                                 key={t.id}
                                 className="hover:bg-muted/40 cursor-pointer"
-                                onClick={() => { setSelectedTicketId(t.backendId); setDetailsOpen(true); }}
+                                onClick={() => navigate(`/help/tickets/${t.backendId}`)}
                               >
                                 <TableCell className="font-medium">{t.id}</TableCell>
                                 <TableCell>{t.subject}</TableCell>
@@ -674,7 +676,7 @@ export default function HelpSupport() {
                         <AccordionItem value="item-3">
                           <AccordionTrigger>Which files can I attach?</AccordionTrigger>
                           <AccordionContent>
-                            We support JPG, PNG, PDF, DOC, DOCX with a combined size up to 3MB.
+                            We support JPG, PNG, PDF, DOC, DOCX with a combined size up to 7.5MB.
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
@@ -682,7 +684,7 @@ export default function HelpSupport() {
                   </Card>
                 </TabsContent>
               </Tabs>
-              {/* Ticket Details Dialog */}
+              {/* Ticket Details Dialog (kept for backward compatibility but navigation is preferred) */}
               <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
                 <DialogContent className="sm:max-w-lg">
                   <DialogHeader>

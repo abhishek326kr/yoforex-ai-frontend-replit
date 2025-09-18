@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import TradingViewWidget from "@/components/charts/TradingViewWidget";
 import { useTheme } from "@/hooks/useTheme";
+import axios from "axios";
 
 type MarketItem = {
   pair: string;
@@ -51,9 +52,8 @@ export default function MarketOverview({ items }: { items?: MarketItem[] }) {
       const base = pair.slice(0, 3);
       const quote = pair.slice(3);
       const url = `https://api.exchangerate.host/convert?from=${base}&to=${quote}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const res = await axios.get(url);
+      const json = res.data;
       // json.result holds the rate
       return Number(json.result ?? null);
     } catch (err) {

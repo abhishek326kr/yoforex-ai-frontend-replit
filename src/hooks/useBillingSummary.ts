@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { API_BASE_URL } from "@/config/api";
 import { BILLING_UPDATED_EVENT } from "@/lib/billingEvents";
+import apiClient from "@/lib/api/client";
 
 export type BillingSummary = {
   plan: string;
@@ -21,19 +22,8 @@ export function useBillingSummary() {
     setLoading(true);
     setError(null);
     try {
-      const token = typeof window !== 'undefined'
-        ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
-        : null;
-      const res = await fetch(`${API_BASE_URL}/billing/summary`, {
-        credentials: 'include',
-        headers: {
-          "accept": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as BillingSummary;
-      setData(json);
+      const res = await apiClient.get(`${API_BASE_URL}/billing/summary`);
+      setData(res.data as BillingSummary);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load billing summary");
     } finally {

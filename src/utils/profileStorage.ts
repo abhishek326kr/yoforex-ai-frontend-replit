@@ -3,6 +3,7 @@
 
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../config/api';
+import apiClient from '@/lib/api/client';
 
 export interface ProfileData {
   id?: number;
@@ -51,42 +52,41 @@ class ProfileStorageService {
   
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
-    
-    const token =
-      typeof window !== 'undefined'
-        ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
-        : null;
-
-    const defaultHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(url, {
-      ...options,
-      credentials: 'include', // Always include cookies for HTTP-only cookie authentication
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Clear any stale auth state and redirect to login
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userPreferences');
-        localStorage.removeItem('userSecurity');
+    const method = (options.method || 'GET') as any;
+    const body = (options as any).body;
+    const headers = (options.headers as any) || {};
+    try {
+      const res = await apiClient.request({
+        url,
+        method,
+        data: body,
+        headers,
+        withCredentials: true,
+      });
+      // Response-like shim
+      const data = res.data;
+      const status = res.status;
+      const ok = status >= 200 && status < 300;
+      return {
+        ok,
+        status,
+        json: async () => data,
+        text: async () => (typeof data === 'string' ? data : JSON.stringify(data)),
+      } as unknown as Response;
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        try {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userProfile');
+          localStorage.removeItem('userPreferences');
+          localStorage.removeItem('userSecurity');
+        } catch {}
         throw new Error('Not authenticated');
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const statusText = typeof status === 'number' ? `HTTP error! status: ${status}` : (err?.message || 'Request failed');
+      throw new Error(statusText);
     }
-
-    return response;
   }
 
   // --- Phone change with WATI OTP ---

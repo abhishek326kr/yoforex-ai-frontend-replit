@@ -38,7 +38,7 @@ export const CountryPhoneInput: React.FC<CountryPhoneInputProps> = ({
   preferredCountries = ["in", "us", "gb", "ae", "sa"],
   id,
   name,
-  placeholder = "E.g. +919812345678",
+  placeholder = "E.g.  9876543210",
   className,
 }) => {
   const initialCountry: Country = useMemo(() => {

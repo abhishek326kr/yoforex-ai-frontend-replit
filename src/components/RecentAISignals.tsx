@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import apiClient from "@/lib/api/client";
 
 type HistoryRaw = {
   id: number;
@@ -51,9 +52,8 @@ export default function RecentAISignals({
       const controller = new AbortController();
       try {
         const url = `${API_BASE}?page=${p}`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const res = await apiClient.get(url, { signal: controller.signal as any });
+        const data = res.data;
 
         // DEBUG: inspect backend shape if UI shows empty values
         // Remove or comment out in production
@@ -65,8 +65,9 @@ export default function RecentAISignals({
         else if (typeof data.total === "number") setTotalAnalyses(data.total);
 
         setHistory(Array.isArray(data.history) ? data.history : []);
-      } catch (err) {
-        if ((err as any).name !== "AbortError") console.error("Failed to load analysis history:", err);
+      } catch (err: any) {
+        const isAborted = err?.code === "ERR_CANCELED" || err?.name === "CanceledError" || err?.name === "AbortError";
+        if (!isAborted) console.error("Failed to load analysis history:", err);
         setHistory([]);
       } finally {
         setLoading(false);

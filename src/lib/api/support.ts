@@ -1,5 +1,4 @@
 import apiClient from './client';
-import { uploadImageToCloudinary } from '../cloudinary';
 
 export type CreateTicketPayload = {
   department?: string; // e.g. 'Billing', 'Technical Support', 'Account'
@@ -14,60 +13,22 @@ export type CreateTicketPayload = {
 };
 
 export async function createTicket(payload: CreateTicketPayload) {
-  // If there are attachments, use multipart/form-data; otherwise send JSON
-  const hasFiles = Array.isArray(payload.attachments) && payload.attachments.length > 0;
-  if (hasFiles) {
-    // Try Cloudinary upload first; if it fails, fall back to multipart
-    try {
-      const uploads = await Promise.all(
-        (payload.attachments || []).map((f) => uploadImageToCloudinary(f))
-      );
-      const urls = uploads.map(u => u.secure_url || u.url).filter(Boolean);
-      const body = {
-        department: payload.department,
-        related_service: payload.related_service,
-        priority: payload.priority || 'low',
-        subject: payload.subject,
-        message: payload.message,
-        name: payload.name,
-        email: payload.email,
-        // send in multiple common shapes for compatibility
-        attachment_urls: urls,
-        attachments: urls,
-      } as any;
-      const res = await apiClient.post('/support/tickets', body);
-      return res.data;
-    } catch (cloudErr) {
-      // Fallback to multipart form-data with raw files
-    }
-    const form = new FormData();
-    if (payload.department) form.append('department', payload.department);
-    if (payload.related_service) form.append('related_service', payload.related_service);
-    form.append('priority', payload.priority || 'low');
-    form.append('subject', payload.subject);
-    form.append('message', payload.message);
-    if (payload.name) form.append('name', payload.name);
-    if (payload.email) form.append('email', payload.email);
-    for (const file of payload.attachments!) {
-      form.append('attachments', file, file.name);
-    }
-    const res = await apiClient.post('/support/tickets', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return res.data;
-  } else {
-    const body = {
-      department: payload.department,
-      related_service: payload.related_service,
-      priority: payload.priority || 'low',
-      subject: payload.subject,
-      message: payload.message,
-      name: payload.name,
-      email: payload.email,
-    };
-    const res = await apiClient.post('/support/tickets', body);
-    return res.data;
+  // Always use multipart/form-data so backend persists file attachments and metadata reliably
+  const form = new FormData();
+  if (payload.department) form.append('department', payload.department);
+  if (payload.related_service) form.append('related_service', payload.related_service);
+  form.append('priority', payload.priority || 'low');
+  form.append('subject', payload.subject);
+  form.append('message', payload.message);
+  if (payload.name) form.append('name', payload.name);
+  if (payload.email) form.append('email', payload.email);
+  for (const file of (payload.attachments || [])) {
+    form.append('attachments', file, file.name);
   }
+  const res = await apiClient.post('/support/tickets', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
 }
 
 // --- Support metadata ---
@@ -89,6 +50,7 @@ export async function fetchSupportMetadata(): Promise<SupportMetadata> {
 export type TicketDTO = {
   id: number | string;
   subject: string;
+  message?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent' | string;
   status?: 'open' | 'in_progress' | 'closed' | string;
   created_at?: string;

@@ -23,6 +23,7 @@ import NotFound from "@/pages/NotFound";
 import HelpSupport from "./components/HelpSupport";
 import { Journal } from "./components/Journal";
 import UpgradeModal from "@/components/billing/UpgradeModal";
+import TicketView from "@/pages/TicketView";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,11 @@ const App = () => (
             <Route path="/help">
               <ProtectedRoute>
                 <HelpSupport />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/help/tickets/:id">
+              <ProtectedRoute>
+                <TicketView />
               </ProtectedRoute>
             </Route>
             <Route path="/journal">
