@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CashfreePlanCheckout } from "@/components/billing/CashfreePlanCheckout";
+import { CoinPaymentsPlanCheckout } from "@/components/billing/CoinPaymentsPlanCheckout";
 
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -82,6 +83,9 @@ export function Billing() {
   const [finalizedInvoiceId, setFinalizedInvoiceId] = useState<string | null>(null);
   const [finalizeRunning, setFinalizeRunning] = useState<boolean>(false);
   const [bannerVisible, setBannerVisible] = useState<boolean>(true);
+  // Provider selection modal state
+  const [showProvider, setShowProvider] = useState<boolean>(false);
+  const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
   // Auto-start plan checkout if URL contains ?plan=pro|max
   const planParam = (() => {
     try {
@@ -91,6 +95,16 @@ export function Billing() {
     } catch { }
     return undefined;
   })();
+
+  // Choose payment provider from URL (?provider=coinpayments) else default to cashfree
+  const providerParam = useMemo(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const prov = (sp.get('provider') || '').toLowerCase();
+      if (prov === 'coinpayments') return 'coinpayments' as const;
+    } catch {}
+    return 'cashfree' as const;
+  }, []);
 
   // Parse payment status banner
   const paymentBanner = useMemo(() => {
@@ -325,7 +339,11 @@ export function Billing() {
             </div>
           </Card>
         )}
-        {planParam ? <CashfreePlanCheckout plan={planParam} /> : null}
+        {planParam ? (
+          providerParam === 'coinpayments'
+            ? <CoinPaymentsPlanCheckout plan={planParam} />
+            : <CashfreePlanCheckout plan={planParam} />
+        ) : null}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -428,7 +446,8 @@ export function Billing() {
                     disabled={disabled}
                     onClick={() => {
                       if (!nextPlan) return;
-                      try { window.location.href = `/billing?plan=${nextPlan}`; } catch { window.location.href = '/billing'; }
+                      setPendingPlan(nextPlan);
+                      setShowProvider(true);
                     }}
                   >
                     <ArrowUpRight className="h-4 w-4 mr-2" />
@@ -721,7 +740,33 @@ export function Billing() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Provider selection modal */}
+        <Dialog open={showProvider} onOpenChange={setShowProvider}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Choose payment method</DialogTitle>
+              <DialogDescription>
+                Select how you want to pay for the {pendingPlan ? pendingPlan.toUpperCase() : ''} plan.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              <Button className="w-full btn-trading-primary" onClick={() => {
+                if (!pendingPlan) return;
+                try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
+              }}>
+                Pay with Card / UPI (Cashfree)
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => {
+                if (!pendingPlan) return;
+                try { window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments`; } catch { window.location.href = '/billing'; }
+              }}>
+                Pay with Crypto (CoinPayments)
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </TradingLayout>
-  );
+);
 }

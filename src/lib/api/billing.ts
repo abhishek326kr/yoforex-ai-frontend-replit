@@ -17,6 +17,23 @@ export async function startCashfreePlanOrder(params: {
   return res.data;
 }
 
+// CoinPayments (Crypto) Checkout
+export type CoinPaymentsCheckoutStartResponse = {
+  txn_id: string;
+  checkout_url: string;
+};
+
+export async function startCoinpaymentsCheckout(params: {
+  plan: 'pro' | 'max';
+  frontend_base?: string;
+}): Promise<CoinPaymentsCheckoutStartResponse> {
+  const res = await apiClient.post<CoinPaymentsCheckoutStartResponse>(
+    '/billing/coinpayments/checkout/start',
+    params
+  );
+  return res.data;
+}
+
 // Transactions
 export type TransactionInfo = {
   id: string;
