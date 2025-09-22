@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import {
   Check,
@@ -122,6 +129,8 @@ const plans = {
 
 export function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const [showProvider, setShowProvider] = useState<boolean>(false);
+  const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
   const { data: billing } = useBillingSummary();
   const currentPlan = (billing?.plan || 'free').toLowerCase() as 'free' | 'pro' | 'max';
   const rank: Record<'free' | 'pro' | 'max', number> = { free: 0, pro: 1, max: 2 };
@@ -290,8 +299,8 @@ export function Pricing() {
                       const k = key as 'free' | 'pro' | 'max';
                       if (!(k === 'pro' || k === 'max')) { window.location.href = '/billing'; return; }
                       if (rank[k] <= rank[currentPlan]) return; // no-op for same/lower plan
-                      const url = `/billing?plan=${k}`;
-                      window.location.href = url;
+                      setPendingPlan(k);
+                      setShowProvider(true);
                     } catch {
                       window.location.href = '/billing';
                     }
@@ -420,6 +429,31 @@ export function Pricing() {
             </div>
           </div>
         </Card>
+        {/* Provider selection modal */}
+        <Dialog open={showProvider} onOpenChange={setShowProvider}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Choose payment method</DialogTitle>
+              <DialogDescription>
+                Select how you want to pay for the {(pendingPlan ?? '').toUpperCase()} plan.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              <Button className="w-full btn-trading-primary" onClick={() => {
+                if (!pendingPlan) return;
+                try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
+              }}>
+                Pay with Card / UPI (Cashfree)
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => {
+                if (!pendingPlan) return;
+                try { window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments`; } catch { window.location.href = '/billing'; }
+              }}>
+                Pay with Crypto (CoinPayments)
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </TradingLayout>
   );

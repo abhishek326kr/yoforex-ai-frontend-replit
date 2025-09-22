@@ -17,22 +17,69 @@ export default function BillingSuccess() {
   // Refresh billing on mount
   useEffect(() => { try { refresh?.(); emitBillingUpdated(); } catch {} }, [refresh]);
 
+  const spInit = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""), []);
+  const provider = useMemo(() => (spInit.get('provider') || '').toLowerCase(), [spInit]);
   const orderId = useMemo(() => {
-    const sp = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "");
+    const sp = spInit;
     return sp.get("order_id") || undefined;
-  }, []);
+  }, [spInit]);
+  const [cpChecking, setCpChecking] = useState<boolean>(false);
 
-  // Poll webhook completion by checking if an invoice exists for this order
+  // Poll webhook completion
+  // Cashfree: check invoice INV-<orderId> or finalized status.
+  // CoinPayments: no orderId query by default; poll for plan change and recent invoice with provider coinpayments.
   useEffect(() => {
     let cancelled = false;
-    if (!orderId) { setChecking(false); return; }
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    // CoinPayments flow
+    if (provider === 'coinpayments') {
+      const runCp = async () => {
+        setChecking(true);
+        setCpChecking(true);
+        const maxTries = 15; // ~30s
+        // expected plan from localStorage (optional hint)
+        let expected: 'pro' | 'max' | undefined;
+        try {
+          const s = localStorage.getItem('cp_last_plan');
+          if (s === 'pro' || s === 'max') expected = s;
+        } catch {}
+
+        for (let i = 0; i < maxTries && !cancelled; i++) {
+          try {
+            // Refresh billing summary and check plan
+            try { await refresh?.(); emitBillingUpdated(); } catch {}
+            const planNow = (billing?.plan || '').toLowerCase();
+            if ((expected && planNow === expected) || (planNow === 'pro' || planNow === 'max')) {
+              setWebhookDone(true);
+              break;
+            }
+            // Check invoices for any recent CoinPayments invoice
+            try {
+              const invs = await listInvoices();
+              const recentCoin = invs.find(inv => (inv.provider || '').toLowerCase() === 'coinpayments');
+              if (recentCoin) {
+                setWebhookDone(true);
+                break;
+              }
+            } catch {}
+          } catch {}
+          await delay(2000);
+        }
+        setCpChecking(false);
+        setChecking(false);
+      };
+      void runCp();
+      return () => { cancelled = true; };
+    }
+
+    // Cashfree flow (default)
     const run = async () => {
+      if (!orderId) { setChecking(false); return; }
       setChecking(true);
       const maxTries = 12; // ~24s total before attempting manual finalize
-      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
       for (let i = 0; i < maxTries && !cancelled; i++) {
         try {
-          // 1) Check invoices for INV-<orderId>
           const invs = await listInvoices();
           const found = invs.some(inv => inv.invoice_id === `INV-${orderId}`);
           if (found) {
@@ -40,7 +87,6 @@ export default function BillingSuccess() {
             try { emitBillingUpdated(); } catch {}
             break;
           }
-          // 1b) Ask backend if it considers the order finalized (invoice present or plan updated)
           try {
             const status = await checkCashfreeFinalized(orderId);
             if (status?.finalized) {
@@ -49,16 +95,13 @@ export default function BillingSuccess() {
               break;
             }
           } catch {}
-          // 2) Also refresh billing to pick up plan changes
           try { await refresh?.(); emitBillingUpdated(); } catch {}
         } catch {}
         await delay(2000);
       }
-      // If still not finalized, attempt to finalize immediately (in case webhook was blocked)
-      if (!cancelled && !webhookDone) {
+      if (!cancelled && !webhookDone && orderId) {
         try {
           await finalizeCashfreeNow(orderId);
-          // Re-check quickly after manual finalize
           try { await refresh?.(); emitBillingUpdated(); } catch {}
           const invs2 = await listInvoices();
           const found2 = invs2.some(inv => inv.invoice_id === `INV-${orderId}`);
@@ -76,7 +119,7 @@ export default function BillingSuccess() {
     };
     void run();
     return () => { cancelled = true; };
-  }, [orderId, refresh]);
+  }, [provider, orderId, refresh, billing]);
 
   return (
     <TradingLayout>
@@ -88,7 +131,7 @@ export default function BillingSuccess() {
             <p className="text-muted-foreground">{orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.'}</p>
             {checking && (
               <div className="flex items-center justify-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Finalizing your upgrade…
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {provider === 'coinpayments' ? 'Waiting for crypto confirmation…' : 'Finalizing your upgrade…'}
               </div>
             )}
             {!checking && !webhookDone && (
