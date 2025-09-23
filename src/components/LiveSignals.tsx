@@ -11,30 +11,60 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 // Foreign names for more global feel
 const foreignNames = [
-  "Lucas", "Emma", "Noah", "Olivia", "Liam", "Sophia", "Mason", "Isabella", "Jacob", "Mia",
-  "William", "Charlotte", "Ethan", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Elijah", "Abigail",
-  "Logan", "Emily", "Alexander", "Ella", "Oliver", "Avery", "Daniel", "Sofia", "Matthew", "Camila",
-  "Aiden", "Aria", "Henry", "Scarlett", "Joseph", "Victoria", "Jackson", "Madison", "Samuel", "Luna",
-  "Sebastian", "Grace", "David", "Chloe", "Carter", "Penelope", "Wyatt", "Layla", "John", "Riley",
-  "Owen", "Zoey", "Dylan", "Nora", "Luke", "Lily", "Gabriel", "Eleanor", "Anthony", "Hannah",
-  "Isaac", "Lillian", "Grayson", "Addison", "Jack", "Aubrey", "Julian", "Ellie", "Levi", "Stella",
-  "Christopher", "Natalie", "Joshua", "Zoe", "Andrew", "Leah", "Lincoln", "Hazel", "Mateo", "Violet",
-  "Ryan", "Aurora", "Jaxon", "Savannah", "Nathan", "Audrey", "Aaron", "Brooklyn", "Isaiah", "Bella",
-  "Thomas", "Claire", "Charles", "Skylar", "Caleb", "Lucy", "Josiah", "Paisley", "Christian", "Everly"
+  // Middle East (Arabic, Persian, Turkish, Hebrew)
+  "Muhammad", "Ahmed", "Omar", "Youssef", "Hassan", "Ali", "Khalid", "Ibrahim", "Tariq", "Bilal",
+  "Fatima", "Aisha", "Zainab", "Maryam", "Nour", "Layla", "Amira", "Salma", "Noor", "Huda",
+  "Reza", "Hossein", "Amir", "Navid", "Saeed", "Parsa", "Shirin", "Neda", "Leyla", "Darya",
+  "Mehmet", "Mustafa", "Emre", "Can", "Kerem", "Ayşe", "Elif", "Zeynep", "Merve", "Selin",
+  "David", "Yossi", "Avi", "Noam", "Eitan", "Yael", "Shira", "Tamar", "Leah", "Rivka",
+
+  // South Asia & Southeast Asia (India, Pakistan, Bangladesh, Sri Lanka, Nepal, Indonesia, Malaysia, Singapore, Thailand, Vietnam, Philippines, Myanmar, Cambodia, Laos)
+  "Arjun", "Rahul", "Rohan", "Vikram", "Ravi", "Amit", "Sanjay", "Kunal", "Naveen", "Aditya",
+  "Priya", "Ananya", "Aisha", "Kavya", "Sneha", "Nisha", "Ishita", "Pooja", "Meera", "Riya",
+  "Aarav", "Vihaan", "Ishaan", "Advait", "Vivaan", "Aanya", "Dia", "Myra", "Anika", "Kiara",
+  "Hassan", "Zain", "Hamza", "Usman", "Imran", "Mariam", "Areeba", "Hiba", "Sana", "Iqra",
+  "Abdullah", "Owais", "Shoaib", "Aqsa", "Emaan",
+  "Hasan", "Tanvir", "Shakib", "Mashrur", "Nayeem", "Tahsin", "Mahiya", "Nusrat", "Sabina", "Moumita",
+  "Kamal", "Ruwan", "Dilshan", "Nadeesha", "Tharindu", "Ishara", "Thilini", "Sachini", "Sanduni", "Kavindi",
+  "Sujan", "Prakash", "Nabin", "Dipesh", "Sanjiv", "Sunita", "Pabitra", "Asmita", "Sita", "Anjali",
+  "Putra", "Budi", "Agus", "Hendra", "Rizky", "Dewi", "Sari", "Ayu", "Intan", "Wulan",
+  "Ahmad", "Syafiq", "Hafiz", "Iskandar", "Farid", "Nurul", "Aisyah", "Siti", "Hani", "Zulaikha",
+  "Wei Ling", "Jia Hui", "Hui Min", "Yong Jun", "Minhui", "Shawn", "Aishwarya", "Suresh", "Kiran", "Liyana",
+  "Somchai", "Nattapong", "Anan", "Apichai", "Somporn", "Suda", "Narumon", "Kanya", "Malee", "Chanya",
+  "Nguyen", "Minh", "Anh", "Duc", "Quang", "Trang", "Linh", "Thao", "Huong", "Ngoc",
+  "Juan", "Jose", "Miguel", "Carlos", "Maria", "Isabela", "Sofia", "Camila", "Ana", "Lucia",
+  "Juanito", "Aljon", "Mark", "Christian", "Joshua", "Angelica", "Jessa", "Kristine", "Rochelle", "Aubrey",
+  "Aung", "Ko Ko", "Min", "Hlaing", "Zaw", "Thazin", "Ei Mon", "Su Su", "Nandar", "Hnin",
+  "Sok", "Vannak", "Piseth", "Rith", "Srey", "Pisey", "Chanthou", "Dara", "Sophea", "Malis",
+  "Somphong", "Khamla", "Phouthone", "Bounmy", "Seng", "Noy", "Ketsana", "Alisa", "Manivanh", "Daovone",
+
+  // East Asia (balance)
+  "Wei", "Liang", "Chen", "Jia", "Yue", "Mei", "Hiroshi", "Yuki", "Sora", "Aiko",
+
+  // Africa (MENA balance + broader)
+  "Omar", "Karim", "Samir", "Nadia", "Laila", "Rania", "Yara", "Farah", "Amal", "Hanin",
+  "Amina", "Kofi", "Kwame", "Ade", "Chinonso", "Ngozi", "Zanele", "Naledi", "Thabo", "Sipho",
+
+  // Europe & Americas (to keep global variety)
+  "Lucas", "Emma", "Noah", "Olivia", "Liam", "Sophia", "Isabella", "Mia", "Charlotte", "Amelia",
+  "Mateo", "Santiago", "Valentina", "Martina", "Thiago", "Benjamín", "Franco", "Giulia", "Luca", "Sofia",
+  "Jakub", "Zuzanna", "Anna", "Tomas", "Marek", "Elena", "Eva", "Nina", "Maja", "Anja"
 ];
 
-const userProfiles = Array.from({ length: 100 }, (_, i) => ({
-  name: foreignNames[i % foreignNames.length],
-  avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? "men" : "women"}/${i % 50}.jpg`,
-  strategy: [
-    "Breakout Strategy", "Fibonacci Retracement", "Trend Following", "ICT Concept", "SMC Strategy",
-    "Advanced SMC", "Volatility Breakout", "Carry Trade", "Options Straddle", "Momentum"
-  ][getRandomInt(0, 9)],
-  tier: ["Free", "Pro", "Max"][getRandomInt(0, 2)],
-  winRate: [68, 72, 75, 81, 79, 84, 86][getRandomInt(0, 6)],
-  credits: [2, 5, 8, 10][getRandomInt(0, 3)],
-  risk: ["Low", "Medium", "High", "Variable"][getRandomInt(0, 3)],
-}));
+const userProfiles = Array.from({ length: 100 }, (_, i) => {
+  const name = foreignNames[i % foreignNames.length];
+  return {
+    name,
+    strategy: [
+      "Breakout Strategy", "Fibonacci Retracement", "Trend Following", "ICT Concept", "SMC Strategy",
+      "Advanced SMC", "Volatility Breakout", "Carry Trade", "Options Straddle", "Momentum"
+    ][getRandomInt(0, 9)],
+    tier: ["Free", "Pro", "Max"][getRandomInt(0, 2)],
+    winRate: [68, 72, 75, 81, 79, 84, 86][getRandomInt(0, 6)],
+    credits: [2, 5, 8, 10][getRandomInt(0, 3)],
+    risk: ["Low", "Medium", "High", "Variable"][getRandomInt(0, 3)],
+  };
+});
 
 function getRandomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -42,6 +72,12 @@ function getRandomInt(min: number, max: number) {
 
 function getRandomTradeType() {
   return ["Scalping", "Swing", "Day Trading", "Position"][getRandomInt(0, 3)];
+}
+
+function getInitial(name: string): string {
+  if (!name || typeof name !== 'string') return '?';
+  const trimmed = name.trim();
+  return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : '?';
 }
 
 function LiveSignals() {
@@ -148,12 +184,10 @@ function LiveSignals() {
       </div>
       <div className="w-full flex flex-col items-center justify-center mb-6">
         <div className="relative flex flex-col items-center bg-gradient-dark rounded-xl px-5 py-6 shadow-lg w-full border border-primary/20 hover:shadow-2xl hover:border-primary/60 transition-all duration-300 group">
-          <div className="w-20 h-20 rounded-full border-4 border-primary shadow-lg mb-3 bg-white overflow-hidden animate-bounce-slow group-hover:scale-105 transition">
-            <img
-              src={popupUser.avatar}
-              alt={popupUser.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-20 h-20 rounded-full border-4 border-primary shadow-lg mb-3 bg-white overflow-hidden animate-bounce-slow group-hover:scale-105 transition flex items-center justify-center">
+            <span className="text-3xl font-bold text-primary">
+              {getInitial(popupUser.name)}
+            </span>
           </div>
           <div className="flex flex-col items-center text-center w-full">
             <span className="font-semibold text-lg text-foreground mb-1">{popupUser.name}</span>

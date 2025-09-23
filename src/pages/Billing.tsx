@@ -25,7 +25,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { listInvoices, downloadInvoice, type InvoiceInfo, listTransactions, type TransactionInfo, checkCashfreeFinalized, finalizeCashfreeNow, getPlanDetails, type PlanDetailsResponse } from "@/lib/api/billing";
+import { listInvoices, downloadInvoice, type InvoiceInfo, listTransactions, type TransactionInfo, checkCashfreeFinalized, finalizeCashfreeNow, getPlanDetails, type PlanDetailsResponse, startCashfreeTokensOrder, getCashfreeOrderStatus } from "@/lib/api/billing";
+import { load } from "@cashfreepayments/cashfree-js";
+import type { Cashfree } from "@cashfreepayments/cashfree-js";
+import { CASHFREE_MODE } from "@/config/payments";
+import { toast } from "@/components/ui/use-toast";
 import { emitBillingUpdated } from "@/lib/billingEvents";
 
 import {
@@ -66,7 +70,7 @@ export function Billing() {
 
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
-  const [creditAmount, setCreditAmount] = useState(1000);
+  const [creditAmount, setCreditAmount] = useState(100000);
   const { data: billing, loading: billingLoading, error: billingError, refresh: refreshBilling } = useBillingSummary();
   const [planDetails, setPlanDetails] = useState<PlanDetailsResponse | null>(null);
   const [planLoading, setPlanLoading] = useState<boolean>(false);
@@ -102,7 +106,7 @@ export function Billing() {
       const sp = new URLSearchParams(window.location.search);
       const prov = (sp.get('provider') || '').toLowerCase();
       if (prov === 'coinpayments') return 'coinpayments' as const;
-    } catch {}
+    } catch { }
     return 'cashfree' as const;
   }, []);
 
@@ -231,9 +235,16 @@ export function Billing() {
   }, [paymentBanner, refreshBilling, toast]);
 
   const getCreditCost = (credits: number) => {
-    const currentPlanName = (planDetails?.plan || billing?.plan || 'free').toLowerCase();
-    const baseRate = currentPlanName === 'max' ? 20 : 25;
-    return (credits / 1000) * baseRate;
+    // Bundle-based USD pricing for token top-ups
+    const bundlePricesUSD: Record<number, number> = {
+      100000: 1.0,      // 100k tokens
+      500000: 4.0,      // 500k tokens
+      1000000: 7.5,     // 1M tokens
+      5000000: 30.0,    // 5M tokens
+    };
+    if (credits in bundlePricesUSD) return bundlePricesUSD[credits];
+    // Fallback: linear scaling based on 1M = $7.5
+    return (credits / 1_000_000) * 7.5;
   };
 
   const getStatusColor = (status: string) => {
@@ -296,15 +307,15 @@ export function Billing() {
                         try {
                           const stored = localStorage.getItem('cf_last_plan');
                           if (stored === 'pro' || stored === 'max') hintPlan = stored as 'pro' | 'max';
-                        } catch {}
+                        } catch { }
                       }
                       const res = await finalizeCashfreeNow(paymentBanner.orderId!, hintPlan ? { plan: hintPlan } : undefined);
                       if (res?.finalized) {
                         setFinalized(true);
                         if (res.invoice_id) setFinalizedInvoiceId(res.invoice_id);
                         try { await refreshBilling?.(); } catch { }
-                        try { localStorage.removeItem('cf_last_plan'); } catch {}
-                        try { emitBillingUpdated(); } catch {}
+                        try { localStorage.removeItem('cf_last_plan'); } catch { }
+                        try { emitBillingUpdated(); } catch { }
                       } else {
                         // Invoice generation can lag by a second; poll briefly
                         try {
@@ -315,8 +326,8 @@ export function Billing() {
                               setFinalized(true);
                               if (chk.invoice_id) setFinalizedInvoiceId(chk.invoice_id);
                               try { await refreshBilling?.(); } catch { }
-                              try { localStorage.removeItem('cf_last_plan'); } catch {}
-                              try { emitBillingUpdated(); } catch {}
+                              try { localStorage.removeItem('cf_last_plan'); } catch { }
+                              try { emitBillingUpdated(); } catch { }
                               break;
                             }
                             await delay(1000);
@@ -349,7 +360,7 @@ export function Billing() {
           <div>
             <h1 className="text-3xl font-bold heading-trading">Billing & Payments</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your subscription, credits, and payment history
+              Manage your subscription, tokens, and payment history
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
@@ -357,28 +368,28 @@ export function Billing() {
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Plus className="h-4 w-4 mr-2" />
-                  Buy Credits
+                  Buy Tokens
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Purchase Additional Credits</DialogTitle>
+                  <DialogTitle>Purchase Additional Tokens</DialogTitle>
                   <DialogDescription>
-                    Add more credits to your account for additional AI analyses
+                    Add more tokens to your account for additional AI analyses
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="credits">Number of Credits</Label>
+                    <Label htmlFor="credits">Number of Tokens</Label>
                     <Select onValueChange={(value) => setCreditAmount(parseInt(value))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select credit amount" />
+                        <SelectValue placeholder="Select token amount" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1000">1,000 credits - ${getCreditCost(1000)}</SelectItem>
-                        <SelectItem value="2500">2,500 credits - ${getCreditCost(2500)}</SelectItem>
-                        <SelectItem value="5000">5,000 credits - ${getCreditCost(5000)}</SelectItem>
-                        <SelectItem value="10000">10,000 credits - ${getCreditCost(10000)}</SelectItem>
+                        <SelectItem value="100000">100,000 tokens - ${getCreditCost(100000)}</SelectItem>
+                        <SelectItem value="500000">500,000 tokens - ${getCreditCost(500000)}</SelectItem>
+                        <SelectItem value="1000000">1,000,000 tokens - ${getCreditCost(1000000)}</SelectItem>
+                        <SelectItem value="5000000">5,000,000 tokens - ${getCreditCost(5000000)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -386,9 +397,91 @@ export function Billing() {
                     <span>Total Cost:</span>
                     <span className="text-xl font-bold text-foreground">${getCreditCost(creditAmount)}</span>
                   </div>
-                  <Button className="w-full btn-trading-primary">
+                  <Button className="w-full btn-trading-primary" onClick={async () => {
+                    try {
+                      const isDev = import.meta.env.MODE === 'development';
+                      const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
+                      const returnUrl = `${frontendBase}/billing`;
+                      let order = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: returnUrl });
+                      const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
+                      const doCheckout = async (sessionId: string) => cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_modal" });
+                      try {
+                        await doCheckout(order.payment_session_id);
+                      } catch (checkoutErr: any) {
+                        const msg = checkoutErr?.message || checkoutErr?.toString?.() || "";
+                        const code = checkoutErr?.code || checkoutErr?.response?.data?.code;
+                        const looksSessionInvalid = /payment_session_id/i.test(String(code)) || /payment_session_id.*invalid/i.test(msg);
+                        if (looksSessionInvalid) {
+                          // Regenerate a fresh session once and retry checkout
+                          const fresh = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: undefined });
+                          order = fresh;
+                          await doCheckout(fresh.payment_session_id);
+                        } else {
+                          throw checkoutErr;
+                        }
+                      }
+                      // Poll order status and redirect
+                      const maxTries = 10;
+                      const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+                      for (let i = 0; i < maxTries; i++) {
+                        try {
+                          const status = await getCashfreeOrderStatus(order.order_id, frontendBase);
+                          if (status.status === 'paid') {
+                            window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                            return;
+                          }
+                          if (status.status === 'failed') {
+                            window.location.href = `${frontendBase}/billing/failure?order_id=${encodeURIComponent(order.order_id)}`;
+                            return;
+                          }
+                        } catch { }
+                        await delay(2000);
+                      }
+                      // Fallback to success page which will poll/finalize
+                      window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                    } catch (e: any) {
+                      try {
+                        const respData = e?.response?.data;
+                        const detail = respData?.detail ?? respData;
+                        let friendly = "Payment could not be started. Please try again.";
+                        if (detail) {
+                          const code = detail.code || e?.code;
+                          // Attempt to extract nested Cashfree JSON from backend error string, if present
+                          let cfMessage: string | undefined;
+                          let cfCode: string | undefined;
+                          let cfHelp: string | undefined;
+                          const raw = typeof detail.error === 'string' ? detail.error : undefined;
+                          if (raw) {
+                              const match = raw.match(/{\s*"code"[\s\S]*}/);
+                              if (match) {
+                                try {
+                                  const parsed = JSON.parse(match[0]);
+                                  cfMessage = parsed?.message;
+                                  cfCode = parsed?.code;
+                                  cfHelp = parsed?.help;
+                                } catch {}
+                              }
+                              if (/return_url_invalid/i.test(raw) || /url should be https/i.test(raw)) {
+                                cfMessage = cfMessage || "Cashfree requires an HTTPS return_url.";
+                              }
+                          }
+                          const parts: string[] = [];
+                          if (code) parts.push(`[${code}]`);
+                          if (cfCode && cfCode !== code) parts.push(`[${cfCode}]`);
+                          if (cfMessage) parts.push(cfMessage);
+                          else if (detail.error && typeof detail.error === 'string') parts.push(detail.error);
+                          else if (e?.message) parts.push(String(e.message));
+                          friendly = parts.join(' ');
+                          if (cfHelp) friendly += `\nHelp: ${cfHelp}`;
+                        }
+                        toast.error({ title: 'Cashfree Error', description: friendly, variant: 'destructive' });
+                      } catch {
+                        toast.error({ title: 'Cashfree Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
+                      }
+                    }
+                  }}>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Purchase Credits
+                    Purchase Tokens
                   </Button>
                 </div>
               </DialogContent>
@@ -461,8 +554,8 @@ export function Billing() {
           <Card className="trading-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Credits Remaining</h3>
-                <p className="text-sm text-muted-foreground">Your monthly credits and daily usage</p>
+                <h3 className="text-lg font-semibold text-foreground">Tokens Remaining</h3>
+                <p className="text-sm text-muted-foreground">Your monthly tokens</p>
               </div>
               <Wallet className="h-5 w-5 text-primary" />
             </div>
@@ -479,10 +572,10 @@ export function Billing() {
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  of {(billing?.monthly_credits_max ?? 0).toLocaleString()} credits
+                  of {(billing?.monthly_credits_max ?? 0).toLocaleString()} tokens
                 </p>
               </div>
-              <div className="w-full bg-muted/30 rounded-full h-2" aria-label="credits-progress">
+              <div className="w-full bg-muted/30 rounded-full h-2" aria-label="tokens-progress">
                 <div
                   className="bg-gradient-primary h-2 rounded-full"
                   style={{
@@ -496,15 +589,7 @@ export function Billing() {
                   }}
                 />
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  Daily used: {(billing?.daily_credits_spent ?? 0).toLocaleString()}
-                  {typeof billing?.daily_cap === 'number' && (
-                    <>
-                      {" "}/ {(billing?.daily_cap ?? 0).toLocaleString()}
-                    </>
-                  )}
-                </span>
+              <div className="flex items-center justify-end text-xs text-muted-foreground">
                 <span>
                   {(() => {
                     const max = billing?.monthly_credits_max ?? 0;
@@ -515,6 +600,7 @@ export function Billing() {
                   })()}
                 </span>
               </div>
+              
               <div className="flex gap-2 pt-1">
                 <Button size="sm" variant="outline" onClick={() => refreshBilling?.()} disabled={billingLoading}>
                   {billingLoading ? (
@@ -526,7 +612,7 @@ export function Billing() {
                   )}
                 </Button>
                 <Button size="sm" className="btn-trading-primary" onClick={() => setShowAddCredits(true)}>
-                  <Plus className="h-3 w-3 mr-1" /> Buy Credits
+                  <Plus className="h-3 w-3 mr-1" /> Buy Tokens
                 </Button>
               </div>
             </div>
@@ -563,7 +649,7 @@ export function Billing() {
         <Tabs defaultValue="transactions" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="credits">Credit Usage</TabsTrigger>
+            <TabsTrigger value="credits">Token Usage</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
 
@@ -638,14 +724,14 @@ export function Billing() {
             </Card>
           </TabsContent>
 
-          {/* Credit Usage */}
+          {/* Token Usage */}
           <TabsContent value="credits">
             <Card className="trading-card">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Credit Usage Analytics</h3>
-                    <p className="text-sm text-muted-foreground">Daily credit consumption breakdown</p>
+                    <h3 className="text-lg font-semibold text-foreground">Token Usage Analytics</h3>
+                    <p className="text-sm text-muted-foreground">Daily token consumption breakdown</p>
                   </div>
                   <Select defaultValue={selectedPeriod} onValueChange={setSelectedPeriod}>
                     <SelectTrigger className="w-32">
@@ -677,7 +763,7 @@ export function Billing() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">{usage.total.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">credits used</p>
+                        <p className="text-sm text-muted-foreground">tokens used</p>
                       </div>
                     </div>
                   ))}
@@ -768,5 +854,5 @@ export function Billing() {
         </Dialog>
       </div>
     </TradingLayout>
-);
+  );
 }

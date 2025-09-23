@@ -62,21 +62,18 @@ const plans = {
   },
   pro: {
     name: "Pro",
-    price: 69,
+    price: 35,
     period: "month",
-    tagline: "Advanced AI trading analysis for serious traders",
+    tagline: "Advanced AI trading analysis with generous monthly tokens",
     popular: true,
     credits: {
-      daily: 2500,
-      analyses: "16 single AI analyses OR 3 multi-AI consensus OR 8 single + 1 multi-AI",
-      additional: "$25/1,000 credits"
+      daily: 10000000,
+      analyses: "Includes 10,000,000 tokens/month • ~100 analyses at 100,000 tokens each",
+      additional: "Each analysis uses 100,000 tokens"
     },
     features: [
-      "2,500 credits per day for Multi AI Consensus Engine",
-      "Single AI analysis: 150 credits",
-      "Multi-AI analysis (5 AIs): 750 credits",
-      "Text analysis: 150 credits, Image: 300 credits",
-      "Combined text + image: 450 credits",
+      "10,000,000 tokens per month",
+      "Each analysis deducts 100,000 tokens",
       "All Free plan features unlocked",
       "Premium AI models with frequent updates",
       "Multi-timeframe analysis (H1, H4, D1, W1)",
@@ -93,21 +90,18 @@ const plans = {
   },
   max: {
     name: "Max (Premium)",
-    price: 139,
+    price: 80,
     period: "month",
-    tagline: "Unlimited AI power for professional traders",
+    tagline: "Massive monthly tokens for professional traders",
     popular: false,
     credits: {
-      daily: 10000,
-      analyses: "100 single AI analyses OR 20 multi-AI consensus OR 50 single + 10 multi-AI",
-      additional: "$20/1,000 credits"
+      daily: 50000000,
+      analyses: "Includes 50,000,000 tokens/month • ~500 analyses at 100,000 tokens each",
+      additional: "Each analysis uses 100,000 tokens"
     },
     features: [
-      "10,000 credits per day (effectively unlimited)",
-      "Reduced credit consumption rates:",
-      "Single AI analysis: 100 credits",
-      "Multi-AI analysis (5 AIs): 500 credits",
-      "Text + Image analysis: 100 credits (combined rate)",
+      "50,000,000 tokens per month",
+      "Each analysis deducts 100,000 tokens",
       "All Pro plan features included",
       "Multi-timeframe analysis capabilities",
       "Correlation analysis (XAGUSD, XAUUSD, etc.)",
@@ -227,21 +221,21 @@ export function Pricing() {
                   </p>
                 </div>
 
-                {/* Credits Section */}
+                {/* Token Allowance Section */}
                 <div className="p-4 rounded-lg bg-gradient-dark border border-border/20">
                   <div className="flex items-center space-x-2 mb-3">
                     <Brain className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">Daily Credit Allowance</span>
+                    <span className="text-sm font-medium text-foreground">Monthly Token Allowance</span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Credits:</span>
+                      <span className="text-muted-foreground">Tokens:</span>
                       <span className="font-medium text-foreground">{plan.credits.daily.toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-foreground/80">{plan.credits.analyses}</p>
                     {'additional' in plan.credits && plan.credits.additional && (
                       <p className="text-xs text-trading-profit">
-                        Additional credits: {plan.credits.additional}
+                        {plan.credits.additional}
                       </p>
                     )}
                   </div>

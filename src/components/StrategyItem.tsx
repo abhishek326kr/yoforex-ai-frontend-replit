@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
 
 interface StrategyItemProps {
   // Old props structure (for backward compatibility)
@@ -58,7 +59,18 @@ export function StrategyItem({
           ? 'border-border/10 bg-muted/30 opacity-50 cursor-not-allowed'
           : 'border-border/20 hover:border-border/40 cursor-pointer'
       }`}
-      onClick={() => !isDisabled && handleClick()}
+      onClick={() => {
+        if (isDisabled) {
+          const tierLabel = strategyTier ? strategyTier.toUpperCase() : 'higher';
+          const nameLabel = strategyName || 'This strategy';
+          toast.info({
+            title: 'Upgrade required',
+            description: `${nameLabel} is available on the ${tierLabel} plan. Upgrade to unlock.`,
+          });
+          return;
+        }
+        handleClick();
+      }}
     >
       <div className="flex items-center justify-between mb-1">
         <span className="text-sm font-medium text-foreground">{strategyName}</span>

@@ -17,6 +17,16 @@ export async function startCashfreePlanOrder(params: {
   return res.data;
 }
 
+// Cashfree Tokens Top-up
+export async function startCashfreeTokensOrder(params: {
+  tokens: number;
+  currency?: string;
+  return_url?: string;
+}): Promise<CashfreeOrderResponse> {
+  const res = await apiClient.post<CashfreeOrderResponse>('/billing/cashfree/tokens/order', params);
+  return res.data;
+}
+
 // CoinPayments (Crypto) Checkout
 export type CoinPaymentsCheckoutStartResponse = {
   txn_id: string;
