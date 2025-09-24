@@ -64,9 +64,10 @@ const creditUsage = [
 export function Billing() {
   // Lock billing UI in production by default unless explicitly unlocked
   const isProd = import.meta.env.MODE === 'production';
-  const LOCKED_FLAG = String(import.meta.env.VITE_BILLING_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase();
-  const UNLOCK_FLAG = String(import.meta.env.VITE_BILLING_UNLOCK ?? 'false').toLowerCase();
-  const billingLocked = (LOCKED_FLAG === 'true') && (UNLOCK_FLAG !== 'true');
+  // New: lock only Cashfree in production by default; CoinPayments remains available
+  const CASHFREE_LOCKED = String(import.meta.env.VITE_CASHFREE_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase() === 'true';
+  // Billing page itself is unlocked
+  const billingLocked = false;
 
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
@@ -107,8 +108,8 @@ export function Billing() {
       const prov = (sp.get('provider') || '').toLowerCase();
       if (prov === 'coinpayments') return 'coinpayments' as const;
     } catch { }
-    return 'cashfree' as const;
-  }, []);
+    return CASHFREE_LOCKED ? 'coinpayments' as const : 'cashfree' as const;
+  }, [CASHFREE_LOCKED]);
 
   // Parse payment status banner
   const paymentBanner = useMemo(() => {
@@ -366,7 +367,7 @@ export function Billing() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled={CASHFREE_LOCKED} title={CASHFREE_LOCKED ? 'Token purchase via Cashfree is temporarily unavailable' : undefined}>
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
                 </Button>
@@ -375,10 +376,10 @@ export function Billing() {
                 <DialogHeader>
                   <DialogTitle>Purchase Additional Tokens</DialogTitle>
                   <DialogDescription>
-                    Add more tokens to your account for additional AI analyses
+                    {CASHFREE_LOCKED ? 'Cashfree is temporarily unavailable. Token purchases will be re-enabled soon.' : 'Add more tokens to your account for additional AI analyses'}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className={`space-y-4 ${CASHFREE_LOCKED ? 'opacity-50 pointer-events-none select-none' : ''}`}>
                   <div>
                     <Label htmlFor="credits">Number of Tokens</Label>
                     <Select onValueChange={(value) => setCreditAmount(parseInt(value))}>
@@ -397,7 +398,7 @@ export function Billing() {
                     <span>Total Cost:</span>
                     <span className="text-xl font-bold text-foreground">${getCreditCost(creditAmount)}</span>
                   </div>
-                  <Button className="w-full btn-trading-primary" onClick={async () => {
+                  <Button className="w-full btn-trading-primary" disabled={CASHFREE_LOCKED} onClick={async () => {
                     try {
                       const isDev = import.meta.env.MODE === 'development';
                       const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
@@ -837,7 +838,7 @@ export function Billing() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Button className="w-full btn-trading-primary" onClick={() => {
+              <Button className="w-full btn-trading-primary" disabled={CASHFREE_LOCKED} title={CASHFREE_LOCKED ? 'Cashfree is temporarily locked in production' : undefined} onClick={() => {
                 if (!pendingPlan) return;
                 try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
               }}>
@@ -849,6 +850,9 @@ export function Billing() {
               }}>
                 Pay with Crypto (CoinPayments)
               </Button>
+              {CASHFREE_LOCKED && (
+                <p className="text-xs text-muted-foreground text-center">Cashfree checkout is temporarily disabled. CoinPayments remains available.</p>
+              )}
             </div>
           </DialogContent>
         </Dialog>
