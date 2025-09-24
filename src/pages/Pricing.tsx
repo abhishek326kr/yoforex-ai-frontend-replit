@@ -54,7 +54,6 @@ const plans = {
     limitations: [
       "Premium strategies locked",
       "Basic explanations only",
-      "No multi-AI consensus",
       "Limited timeframe analysis"
     ],
     buttonText: "Start Free",
@@ -68,12 +67,10 @@ const plans = {
     popular: true,
     credits: {
       daily: 10000000,
-      analyses: "Includes 10,000,000 tokens/month • ~100 analyses at 100,000 tokens each",
-      additional: "Each analysis uses 100,000 tokens"
+      analyses: "Includes 10,000,000 tokens/month"
     },
     features: [
       "10,000,000 tokens per month",
-      "Each analysis deducts 100,000 tokens",
       "All Free plan features unlocked",
       "Premium AI models with frequent updates",
       "Multi-timeframe analysis (H1, H4, D1, W1)",
@@ -96,12 +93,10 @@ const plans = {
     popular: false,
     credits: {
       daily: 50000000,
-      analyses: "Includes 50,000,000 tokens/month • ~500 analyses at 100,000 tokens each",
-      additional: "Each analysis uses 100,000 tokens"
+      analyses: "Includes 50,000,000 tokens/month"
     },
     features: [
       "50,000,000 tokens per month",
-      "Each analysis deducts 100,000 tokens",
       "All Pro plan features included",
       "Multi-timeframe analysis capabilities",
       "Correlation analysis (XAGUSD, XAUUSD, etc.)",
@@ -233,11 +228,6 @@ export function Pricing() {
                       <span className="font-medium text-foreground">{plan.credits.daily.toLocaleString()}</span>
                     </div>
                     <p className="text-xs text-foreground/80">{plan.credits.analyses}</p>
-                    {'additional' in plan.credits && plan.credits.additional && (
-                      <p className="text-xs text-trading-profit">
-                        {plan.credits.additional}
-                      </p>
-                    )}
                   </div>
                 </div>
 

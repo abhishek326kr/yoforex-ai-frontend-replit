@@ -17,16 +17,16 @@ export default function StrategySelection({ selectedStrategy, onStrategySelect }
   const tierAllowed = (tier: 'free' | 'pro' | 'max') => planRank[currentPlan] >= planRank[tier];
 
   const strategies = [
-    { name: "Breakout Strategy", credits: 2, winRate: 68, risk: "Medium", tier: "free" as const },
-    { name: "Fibonacci Retracement", credits: 2, winRate: 72, risk: "Low", tier: "free" as const },
-    { name: "Trend Following", credits: 2, winRate: 75, risk: "Low", tier: "free" as const },
-    { name: "ICT Concept", credits: 5, winRate: 81, risk: "Medium", tier: "pro" as const },
-    { name: "SMC Strategy", credits: 5, winRate: 79, risk: "Medium", tier: "pro" as const },
-    { name: "Advanced SMC", credits: 8, winRate: 84, risk: "High", tier: "max" as const },
-    { name: "Volatility Breakout", credits: 10, winRate: 86, risk: "Variable", tier: "max" as const },
-    { name: "Carry Trade", credits: 10, winRate: 86, risk: "Variable", tier: "max" as const },
-    { name: "Options Straddle", credits: 10, winRate: 86, risk: "Variable", tier: "max" as const },
-    { name: "Momentum", credits: 10, winRate: 86, risk: "Variable", tier: "max" as const },
+    { name: "Breakout Strategy", winRate: 68, risk: "Medium", tier: "free" as const },
+    { name: "Fibonacci Retracement", winRate: 72, risk: "Low", tier: "free" as const },
+    { name: "Trend Following", winRate: 75, risk: "Low", tier: "free" as const },
+    { name: "ICT Concept", winRate: 81, risk: "Medium", tier: "pro" as const },
+    { name: "SMC Strategy", winRate: 79, risk: "Medium", tier: "pro" as const },
+    { name: "Advanced SMC", winRate: 84, risk: "High", tier: "max" as const },
+    { name: "Volatility Breakout", winRate: 86, risk: "Variable", tier: "max" as const },
+    { name: "Carry Trade", winRate: 86, risk: "Variable", tier: "max" as const },
+    { name: "Options Straddle", winRate: 86, risk: "Variable", tier: "max" as const },
+    { name: "Momentum", winRate: 86, risk: "Variable", tier: "max" as const },
   ];
 
   const handleStrategyClick = (strategyName: string) => {
@@ -58,7 +58,6 @@ export default function StrategySelection({ selectedStrategy, onStrategySelect }
                   <StrategyItem
                     key={strategy.name}
                     name={strategy.name}
-                    credits={strategy.credits}
                     winRate={strategy.winRate}
                     risk={strategy.risk}
                     tier={strategy.tier}
@@ -89,7 +88,6 @@ export default function StrategySelection({ selectedStrategy, onStrategySelect }
                   <StrategyItem
                     key={strategy.name}
                     name={strategy.name}
-                    credits={strategy.credits}
                     winRate={strategy.winRate}
                     risk={strategy.risk}
                     tier={strategy.tier}
