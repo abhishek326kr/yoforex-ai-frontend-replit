@@ -75,7 +75,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{COMPANY.LEGAL_NAME}</span> • © {new Date().getFullYear()}
+            <span className="font-medium text-foreground">YoForex</span> • © {new Date().getFullYear()}
           </div>
           <div className="text-xs text-muted-foreground">
             Crafted with care for traders. Please review our policies before using the platform.

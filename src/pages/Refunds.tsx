@@ -8,43 +8,41 @@ export function Refunds() {
       <div className="space-y-6 text-muted-foreground">
         <section>
           <p>
-            We aim to provide a frictionless experience. If you face any issues with a purchase or subscription,
-            please contact us and we will assist promptly.
+            All purchases and subscriptions made with <span className="font-medium text-foreground">{COMPANY.LEGAL_NAME}</span>
+            {" "}are final and non-refundable. We do not accept refund requests or mid-term cancellation requests for
+            active billing periods.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-2">1. Cancellations</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">1. No Refunds</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>You may cancel your subscription at any time from your account settings.</li>
-            <li>Cancellation takes effect at the end of the current billing period.</li>
-            <li>No further charges will apply after cancellation confirmation.</li>
+            <li>Payments successfully processed are non-refundable.</li>
+            <li>Partial-period refunds for subscriptions are not provided.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-2">2. Refund Eligibility</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">2. No Mid‑Term Cancellations</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>Refunds may be considered in cases of duplicate charges or confirmed technical issues.</li>
-            <li>Requests must be made within 7 days of the charge, unless required otherwise by law.</li>
-            <li>Refunds are not typically granted for change-of-mind on already-used subscription periods.</li>
+            <li>Subscriptions cannot be cancelled during an active billing cycle.</li>
+            <li>Access to paid features remains available until the end of the current term.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-2">3. Exceptions</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">3. Managing Renewals</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>Evidence of fraud, abuse, or violation of Terms may void eligibility for refunds.</li>
-            <li>Promotional or trial plans may have special terms noted at signup.</li>
+            <li>You may disable auto‑renewal in your billing settings prior to the next renewal date.</li>
+            <li>Turning off auto‑renew stops future charges but does not refund or shorten the current term.</li>
           </ul>
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-2">4. How to Request a Refund</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">4. Legal Requirements</h2>
           <p>
-            Email <span className="font-medium text-foreground">{COMPANY.CONTACT_EMAIL}</span> with your account email,
-            transaction reference, and a brief description of the issue. You may also reach us at
-            {" "}<span className="font-medium text-foreground">{COMPANY.CONTACT_PHONE}</span>.
+            Where mandatory consumer protection laws apply and grant you additional rights, those rights remain
+            unaffected by this policy.
           </p>
         </section>
       </div>

@@ -3,7 +3,8 @@ import { COMPANY } from "@/config/company";
 export function Terms() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-5xl font-bold mb-6">Terms and Conditions</h1>
+      <h1 className="text-3xl font-bold mb-2">Terms and Conditions</h1>
+      <div className="text-xs text-muted-foreground mb-6">Last updated: {new Date().toLocaleDateString()}</div>
 
       <div className="space-y-6 text-muted-foreground">
         <section>
@@ -43,11 +44,11 @@ export function Terms() {
 
         <section>
           <h2 className="text-lg font-semibold text-foreground mb-2">4. Cancellations & Refunds</h2>
-          <p>
-            You may cancel at any time from your account settings; access continues until the end of the current billing
-            period. Refund eligibility is governed by our separate Refunds & Cancellations policy available via Quick
-            Links.
-          </p>
+          <ul className="list-disc ml-6 space-y-2">
+            <li>All payments are final and non-refundable. We do not accept refund requests.</li>
+            <li>Subscriptions cannot be cancelled mid-term; access continues until the end of the current billing cycle.</li>
+            <li>You can disable auto-renewal in your billing settings to prevent future charges.</li>
+          </ul>
         </section>
 
         <section>
