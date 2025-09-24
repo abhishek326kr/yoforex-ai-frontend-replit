@@ -24,6 +24,14 @@ import HelpSupport from "./components/HelpSupport";
 import { Journal } from "./components/Journal";
 import UpgradeModal from "@/components/billing/UpgradeModal";
 import TicketView from "@/pages/TicketView";
+import Footer from "@/components/layout/Footer";
+import { About } from "@/pages/About";
+import { Terms } from "@/pages/Terms";
+import { Privacy } from "@/pages/Privacy";
+import { Refunds } from "@/pages/Refunds";
+import { Contact } from "@/pages/Contact";
+import { Legal } from "@/pages/Legal";
+import { TradingLayout } from "@/components/layout/TradingLayout";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +61,38 @@ const App = () => (
               <PublicRoute>
                 <Auth />
               </PublicRoute>
+            </Route>
+
+            {/* Public legal/info routes */}
+            <Route path="/about">
+              <TradingLayout>
+                <About />
+              </TradingLayout>
+            </Route>
+            <Route path="/terms">
+              <TradingLayout>
+                <Terms />
+              </TradingLayout>
+            </Route>
+            <Route path="/privacy">
+              <TradingLayout>
+                <Privacy />
+              </TradingLayout>
+            </Route>
+            <Route path="/refunds">
+              <TradingLayout>
+                <Refunds />
+              </TradingLayout>
+            </Route>
+            <Route path="/contact">
+              <TradingLayout>
+                <Contact />
+              </TradingLayout>
+            </Route>
+            <Route path="/legal">
+              <TradingLayout>
+                <Legal />
+              </TradingLayout>
             </Route>
 
             {/* Protected routes */}
@@ -132,6 +172,7 @@ const App = () => (
           </Switch>
           </AuthProvider>
         </Router>
+        <Footer />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
