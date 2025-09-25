@@ -17,7 +17,7 @@ export function Legal() {
         <section>
           <h2 className="text-lg font-semibold text-foreground mb-2">1. Company Details</h2>
           <ul className="list-disc ml-6 space-y-2">
-            <li>Registered legal name: {COMPANY.LEGAL_NAME}</li>
+            <li>Registered legal name: YoForex</li>
             <li>Website: {COMPANY.WEBSITE}</li>
             <li>Primary contact: {COMPANY.CONTACT_EMAIL} / {COMPANY.CONTACT_PHONE}</li>
             <li>Operating address: {COMPANY.ADDRESS_LINES.join(", ")}</li>

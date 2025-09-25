@@ -39,6 +39,7 @@ import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { TradeConfirmationDialog } from '@/components/TradeConfirmationDialog';
 import { useActiveTrades } from '@/context/ActiveTradesContext';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
+import { emitBillingUpdated } from '@/lib/billingEvents';
 import { createTrade } from '@/lib/api/trades';
 import { mapToOandaInstrument } from '@/utils/trading';
 
@@ -332,7 +333,18 @@ export function LiveTrading() {
         ai: aiConfig,
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
-      // Billing updates are emitted by the Axios client interceptor automatically
+      // Broadcast billing update instantly (optimistic), and also trigger a refresh for authoritative sync
+      try {
+        const b = (result as any)?.billing;
+        if (b && (typeof b.monthly_credits_remaining === 'number' || typeof b.daily_credits_spent === 'number')) {
+          emitBillingUpdated({
+            monthly_credits_remaining: b.monthly_credits_remaining,
+            daily_credits_spent: b.daily_credits_spent,
+            charged_credits: b.charged_credits,
+          });
+        }
+      } catch {}
+      try { refreshBilling?.(); } catch {}
       // Prompt user to add as Active Trade after 30 seconds delay
       clearPopupTimer();
       popupTimerRef.current = setTimeout(() => {
@@ -406,7 +418,18 @@ export function LiveTrading() {
         ai: aiConfig,
         sig: JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
       });
-      // Billing updates are emitted by the Axios client interceptor automatically
+      // Broadcast billing update instantly (optimistic), and also trigger a refresh for authoritative sync
+      try {
+        const b = (data as any)?.billing;
+        if (b && (typeof b.monthly_credits_remaining === 'number' || typeof b.daily_credits_spent === 'number')) {
+          emitBillingUpdated({
+            monthly_credits_remaining: b.monthly_credits_remaining,
+            daily_credits_spent: b.daily_credits_spent,
+            charged_credits: b.charged_credits,
+          });
+        }
+      } catch {}
+      try { refreshBilling?.(); } catch {}
 
       // Update last run signature
       const sig = JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig });
