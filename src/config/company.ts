@@ -1,5 +1,5 @@
 export const COMPANY = {
-  LEGAL_NAME: "Yoforex AI",
+  LEGAL_NAME: "YoForex",
   CONTACT_EMAIL: "support@yoforex.net",
   CONTACT_PHONE: "+91-74494-54349",
   ADDRESS_LINES: [
