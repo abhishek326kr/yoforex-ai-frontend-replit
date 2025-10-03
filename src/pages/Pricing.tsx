@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
+import { getUserPricing, getUserPricingFromPhone, formatPriceUSDToLocal, refreshUsdInrRate } from "@/lib/pricing";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -37,17 +39,17 @@ const plans = {
     tagline: "Perfect for getting started with AI trading analysis",
     popular: false,
     credits: {
-      daily: 750,
-      analyses: "5 AI analyses per day",
+      daily: 1000000,
+      analyses:"Includes 1,000,000 tokens/month",
       resetTimer: true
     },
     features: [
-      "5 AI analyses per day (hard limit with reset timer)",
+      "1,000,000 tokens per month",
       "Access to free AI models (Mistral, Claude Sonnet, DeepSeek)",
       "10+ professional strategies (premium strategies locked)",
       "Basic SL/TP recommendations",
       "AI trade explanations for basic strategies only",
-      "Access to public Discord & Telegram channels",
+      "Access to our public Telegram channel",
       "Basic market alerts",
       "Standard customer support (48-hour response)"
     ],
@@ -77,7 +79,7 @@ const plans = {
       "AI explains every trade with full rationale",
       "Personalized training (upload history, journal, PDFs)",
       "Multi-AI consensus engine",
-      "Private Discord & Telegram channels",
+      "Private Telegram channels",
       "Priority customer support (24-hour response)",
       "Advanced market alerts with customization"
     ],
@@ -121,8 +123,32 @@ export function Pricing() {
   const [showProvider, setShowProvider] = useState<boolean>(false);
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
   const { data: billing } = useBillingSummary();
+  const { user } = useAuth();
   const currentPlan = (billing?.plan || 'free').toLowerCase() as 'free' | 'pro' | 'max';
   const rank: Record<'free' | 'pro' | 'max', number> = { free: 0, pro: 1, max: 2 };
+  const [pricingTick, setPricingTick] = useState(0);
+  const userPricing = useMemo(() => {
+    const phone = (user as any)?.phone as string | undefined;
+    return phone ? getUserPricingFromPhone(phone) : getUserPricing();
+  }, [user, pricingTick]);
+
+  useEffect(() => {
+    // Prime FX cache (non-blocking)
+    void refreshUsdInrRate().catch(() => {});
+    const onFx = () => setPricingTick((x) => x + 1);
+    const onStorage = (e: StorageEvent) => {
+      if (!e || e.key === 'userProfile') setPricingTick((x) => x + 1);
+    };
+    const onProfile = () => setPricingTick((x) => x + 1);
+    window.addEventListener('fx:updated', onFx as EventListener);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('profile:updated', onProfile as EventListener);
+    return () => {
+      window.removeEventListener('fx:updated', onFx as EventListener);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('profile:updated', onProfile as EventListener);
+    };
+  }, []);
 
   const getPrice = (basePrice: number) => {
     if (basePrice === 0) return 0;
@@ -198,7 +224,7 @@ export function Pricing() {
                   <div className="space-y-1">
                     <div className="flex items-baseline justify-center space-x-1">
                       <span className="text-4xl font-bold text-foreground">
-                        ${getPrice(plan.price)}
+                        {formatPriceUSDToLocal(getPrice(plan.price), userPricing)}
                       </span>
                       <span className="text-muted-foreground">
                         /{isAnnual ? 'year' : plan.period}
@@ -206,7 +232,7 @@ export function Pricing() {
                     </div>
                     {isAnnual && plan.price > 0 && (
                       <p className="text-sm text-trading-profit">
-                        Save ${getSavings(plan.price)} annually
+                        Save {formatPriceUSDToLocal(getSavings(plan.price), userPricing)} annually
                       </p>
                     )}
                   </div>
@@ -423,15 +449,21 @@ export function Pricing() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Button className="w-full btn-trading-primary" onClick={() => {
+              <Button className="w-full btn-trading-primary" disabled title="Temporarily locked" onClick={() => {
                 if (!pendingPlan) return;
-                try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
+                try {
+                  const iv = isAnnual ? '&interval=yearly' : '';
+                  window.location.href = `/billing?plan=${pendingPlan}${iv}`;
+                } catch { window.location.href = '/billing'; }
               }}>
-                Pay with Card / UPI (Cashfree)
+                Pay with Card / UPI (Cashfree — Locked)
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 if (!pendingPlan) return;
-                try { window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments`; } catch { window.location.href = '/billing'; }
+                try {
+                  const iv = isAnnual ? '&interval=yearly' : '';
+                  window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments${iv}`;
+                } catch { window.location.href = '/billing'; }
               }}>
                 Pay with Crypto (CoinPayments)
               </Button>

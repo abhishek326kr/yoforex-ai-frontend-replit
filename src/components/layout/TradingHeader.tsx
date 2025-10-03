@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,35 @@ import { Badge } from "@/components/ui/badge";
 import LivePriceTracker from "@/components/LivePriceTracker";
 import { UserProfileDropdown } from "../user/UserProfileDropdown";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getPlanDetails, type PlanDetailsResponse } from "@/lib/api/billing";
 
 export function TradingHeader() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [planBanner, setPlanBanner] = useState<{ kind: 'expired' | 'expiring'; message: string } | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(false);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const d: PlanDetailsResponse = await getPlanDetails();
+        if (cancelled) return;
+        if (d?.plan && d.plan !== 'free') {
+          if (d.is_expired) {
+            setPlanBanner({ kind: 'expired', message: 'Your plan has expired. Recharge to continue analysis.' });
+          } else if (d.is_expiring_soon) {
+            const days = typeof d.days_until_expiry === 'number' ? d.days_until_expiry : undefined;
+            setPlanBanner({ kind: 'expiring', message: `Plan expires ${days !== undefined ? `in ${days} day${days === 1 ? '' : 's'}` : 'soon'}. Please recharge.` });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+    run();
+    // Refresh occasionally (e.g., every login/navigation); lightweight call
+    const t = setInterval(run, 6 * 60 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
   
   
 
@@ -80,6 +106,19 @@ export function TradingHeader() {
           <UserProfileDropdown />
         </div>
       </div>
+      {/* Expiry banner */}
+      {planBanner && !bannerDismissed && (
+        <div className={`px-4 py-2 text-sm flex items-center justify-between ${planBanner.kind === 'expired' ? 'bg-trading-loss/15 text-trading-loss' : 'bg-yellow-500/10 text-yellow-500'}`}>
+          <div>
+            <strong>{planBanner.kind === 'expired' ? 'Plan expired: ' : 'Plan notice: '}</strong>
+            <span>{planBanner.message}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" className="btn-trading-primary" onClick={() => { window.location.href = '/billing'; }}>Recharge</Button>
+            <Button size="sm" variant="ghost" onClick={() => setBannerDismissed(true)}>Dismiss</Button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -48,6 +48,7 @@ import {
   Search
 } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
+import { getUserPricing, formatPriceUSDToLocal } from "@/lib/pricing";
 
 // removed hardcoded currentPlan; using API-driven plan details
 
@@ -88,6 +89,8 @@ export function Billing() {
   const [finalizedInvoiceId, setFinalizedInvoiceId] = useState<string | null>(null);
   const [finalizeRunning, setFinalizeRunning] = useState<boolean>(false);
   const [bannerVisible, setBannerVisible] = useState<boolean>(true);
+  const [pricingTick, setPricingTick] = useState(0);
+  const userPricing = getUserPricing();
   // Provider selection modal state
   const [showProvider, setShowProvider] = useState<boolean>(false);
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
@@ -100,6 +103,23 @@ export function Billing() {
     } catch { }
     return undefined;
   })();
+
+  // Re-render prices when FX is updated or when userProfile (phone) changes
+  useEffect(() => {
+    const onFx = () => setPricingTick((x) => x + 1);
+    const onStorage = (e: StorageEvent) => {
+      if (!e || e.key === 'userProfile') setPricingTick((x) => x + 1);
+    };
+    const onProfile = () => setPricingTick((x) => x + 1);
+    window.addEventListener('fx:updated', onFx as EventListener);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('profile:updated', onProfile as EventListener);
+    return () => {
+      window.removeEventListener('fx:updated', onFx as EventListener);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('profile:updated', onProfile as EventListener);
+    };
+  }, []);
 
   // Choose payment provider from URL (?provider=coinpayments) else default to cashfree
   const providerParam = useMemo(() => {
@@ -387,16 +407,16 @@ export function Billing() {
                         <SelectValue placeholder="Select token amount" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="100000">100,000 tokens - ${getCreditCost(100000)}</SelectItem>
-                        <SelectItem value="500000">500,000 tokens - ${getCreditCost(500000)}</SelectItem>
-                        <SelectItem value="1000000">1,000,000 tokens - ${getCreditCost(1000000)}</SelectItem>
-                        <SelectItem value="5000000">5,000,000 tokens - ${getCreditCost(5000000)}</SelectItem>
+                        <SelectItem value="100000">100,000 tokens - {formatPriceUSDToLocal(getCreditCost(100000), userPricing)}</SelectItem>
+                        <SelectItem value="500000">500,000 tokens - {formatPriceUSDToLocal(getCreditCost(500000), userPricing)}</SelectItem>
+                        <SelectItem value="1000000">1,000,000 tokens - {formatPriceUSDToLocal(getCreditCost(1000000), userPricing)}</SelectItem>
+                        <SelectItem value="5000000">5,000,000 tokens - {formatPriceUSDToLocal(getCreditCost(5000000), userPricing)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-gradient-dark rounded-lg">
                     <span>Total Cost:</span>
-                    <span className="text-xl font-bold text-foreground">${getCreditCost(creditAmount)}</span>
+                    <span className="text-xl font-bold text-foreground">{formatPriceUSDToLocal(getCreditCost(creditAmount), userPricing)}</span>
                   </div>
                   <Button className="w-full btn-trading-primary" disabled={CASHFREE_LOCKED} onClick={async () => {
                     try {
@@ -515,12 +535,32 @@ export function Billing() {
               )}
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Monthly Cost:</span>
-                <span className="font-medium text-foreground">{planLoading ? '…' : `$${(planDetails?.monthly_price_usd ?? 0).toFixed(0)}`}</span>
+                <span className="font-medium text-foreground">
+                  {planLoading ? '…' : formatPriceUSDToLocal(Math.round(planDetails?.monthly_price_usd ?? 0), userPricing)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Next Billing:</span>
                 <span className="font-medium text-foreground">{planLoading ? '…' : (planDetails?.next_billing_date_iso || '')}</span>
               </div>
+              {(() => {
+                const endIso = planDetails?.current_period_end_iso;
+                const days = planDetails?.days_until_expiry;
+                const expired = !!planDetails?.is_expired;
+                if (!endIso) return null;
+                return (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Plan Expiry:</span>
+                      <span className={`font-medium ${expired ? 'text-trading-loss' : 'text-foreground'}`}>{endIso}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Days Remaining:</span>
+                      <span className={`font-medium ${expired ? 'text-trading-loss' : (typeof days === 'number' && days <= 7 ? 'text-yellow-500' : 'text-foreground')}`}>{typeof days === 'number' ? days : '—'}</span>
+                    </div>
+                  </>
+                );
+              })()}
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Status:</span>
                 <div className="flex items-center space-x-1">

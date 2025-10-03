@@ -12,6 +12,7 @@ export async function startCashfreePlanOrder(params: {
   plan: 'pro' | 'max';
   currency?: string;
   return_url?: string;
+  interval?: 'monthly' | 'yearly';
 }): Promise<CashfreeOrderResponse> {
   const res = await apiClient.post<CashfreeOrderResponse>('/billing/cashfree/plan/order', params);
   return res.data;
@@ -135,6 +136,12 @@ export type PlanDetailsResponse = {
   monthly_price_usd: number;
   next_billing_date_iso: string;
   provider?: string;
+  // Expiry info
+  current_period_start_iso?: string | null;
+  current_period_end_iso?: string | null;
+  is_expired?: boolean | null;
+  days_until_expiry?: number | null;
+  is_expiring_soon?: boolean | null;
 };
 
 export async function getPlanDetails(): Promise<PlanDetailsResponse> {

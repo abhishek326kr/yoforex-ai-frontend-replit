@@ -175,6 +175,68 @@ export function Profile() {
     allowApiAccess: false
   });
 
+  // Password change form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    // Basic validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing fields',
+        description: 'Please fill in all password fields.',
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Passwords do not match',
+        description: 'New password and confirmation must match.',
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({
+        variant: 'destructive',
+        title: 'Weak password',
+        description: 'New password must be at least 8 characters.',
+      });
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'No change detected',
+        description: 'New password must be different from current password.',
+      });
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await profileStorage.changePassword(currentPassword, newPassword);
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been changed successfully.',
+      });
+      // Clear fields after success
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      // Errors are surfaced via toast in service, but ensure UI feedback as fallback
+      if (err?.message) {
+        toast({ variant: 'destructive', title: 'Update failed', description: err.message });
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
       await profileStorage.initializeTables();
@@ -689,30 +751,43 @@ export function Profile() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword" className="text-sm font-medium text-foreground">Current Password</Label>
-                    <Input id="currentPassword" type="password" />
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">New Password</Label>
-                    <Input id="newPassword" type="password" />
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm New Password</Label>
-                    <Input id="confirmPassword" type="password" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-border/20">
-                  <Button 
-                    onClick={() => toast({
-                      title: "Password Updated",
-                      description: "Your password has been changed successfully.",
-                    })}
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={changingPassword}
                     className="btn-trading-primary w-full"
                   >
                     <Lock className="h-4 w-4 mr-2" />
-                    Update Password
+                    {changingPassword ? 'Updating...' : 'Update Password'}
                   </Button>
                 </div>
               </Card>

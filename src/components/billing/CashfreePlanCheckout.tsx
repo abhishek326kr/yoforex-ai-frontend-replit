@@ -19,7 +19,14 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
         const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
         const returnUrl = `${frontendBase}/billing`;
         try { localStorage.setItem('cf_last_plan', props.plan); } catch {}
-        let order = await startCashfreePlanOrder({ plan: props.plan, currency: props.currency, return_url: returnUrl });
+        // Read optional interval from query (?interval=monthly|yearly)
+        let interval: 'monthly' | 'yearly' | undefined = undefined;
+        try {
+          const sp = new URLSearchParams(window.location.search);
+          const iv = (sp.get('interval') || '').toLowerCase();
+          if (iv === 'monthly' || iv === 'yearly') interval = iv as any;
+        } catch {}
+        let order = await startCashfreePlanOrder({ plan: props.plan, currency: props.currency, return_url: returnUrl, interval });
 
         // 2) Load Cashfree SDK
         const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
@@ -42,7 +49,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
           if (looksSessionInvalid) {
             // Try to regenerate a fresh session once and retry checkout
             try {
-              const fresh = await startCashfreePlanOrder({ plan: props.plan, currency: props.currency, return_url: undefined });
+              const fresh = await startCashfreePlanOrder({ plan: props.plan, currency: props.currency, return_url: undefined, interval });
               order = fresh; // Use the fresh order for subsequent status polling and redirects
               await doCheckout(fresh.payment_session_id);
             } catch (retryErr: any) {

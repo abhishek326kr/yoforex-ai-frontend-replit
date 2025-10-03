@@ -9,6 +9,7 @@ import { AlertCircle, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react
 import { fetchTradingAnalysis, CandleData } from "@/lib/api/analysis";
 import formattedTimeframe from "@/lib/api/analysis";
 import { mapToOandaInstrument } from "@/utils/trading";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface TechnicalAnalysis {
   Support_Level: number;
@@ -46,6 +47,7 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [candleData] = useState<any[]>([]);
+  const [expiredModalOpen, setExpiredModalOpen] = useState(false);
 
   const analyzeMarket = async () => {
 
@@ -69,14 +71,31 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
         title: "Analysis Complete",
         description: "Market analysis has been successfully generated.",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error analyzing market:", err);
-      setError("Failed to analyze market. Please try again.");
-      toast({
-        title: "Analysis Failed",
-        description: "There was an error analyzing the market. Please try again.",
-        variant: "destructive",
-      });
+      const code = err?.response?.data?.detail?.code;
+      if (code === 'plan_expired') {
+        setError("Your plan has expired. Please recharge to continue analysis.");
+        toast({
+          title: "Plan Expired",
+          description: "Your subscription has expired. Go to Billing to recharge.",
+          variant: "destructive",
+        });
+        setExpiredModalOpen(true);
+      } else if (code === 'insufficient_credits') {
+        setError("Not enough tokens remaining. Please buy tokens or upgrade.");
+        toast({ title: "Insufficient Tokens", description: "Purchase tokens in Billing to continue.", variant: "destructive" });
+      } else if (code === 'model_not_allowed') {
+        setError("Selected models are not allowed on your plan.");
+        toast({ title: "Model Not Allowed", description: "Upgrade your plan to use this model.", variant: "destructive" });
+      } else {
+        setError("Failed to analyze market. Please try again.");
+        toast({
+          title: "Analysis Failed",
+          description: "There was an error analyzing the market. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -161,6 +180,21 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
             </p>
           )}
         </CardContent>
+        {/* Plan expired modal */}
+        <Dialog open={expiredModalOpen} onOpenChange={setExpiredModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Plan Expired</DialogTitle>
+              <DialogDescription>
+                Your subscription has expired. Recharge to continue running analyses.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => { setExpiredModalOpen(false); }}>Close</Button>
+              <Button className="btn-trading-primary" onClick={() => { window.location.href = '/billing'; }}>Go to Billing</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   }

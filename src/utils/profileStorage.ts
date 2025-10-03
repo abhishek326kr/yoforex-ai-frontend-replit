@@ -119,6 +119,7 @@ class ProfileStorageService {
             const parsed = JSON.parse(cached);
             parsed.phone = data.phone;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
+            try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { field: 'phone' } })); } catch {}
           }
         } catch {
           toast.error("No phone number found!")
@@ -161,6 +162,7 @@ class ProfileStorageService {
             const parsed = JSON.parse(cached);
             parsed.email = data.email;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
+            try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { field: 'email' } })); } catch {}
           }
         } catch {
           toast.error("No email is found!")
@@ -169,6 +171,23 @@ class ProfileStorageService {
       return data;
     } catch (error: any) {
       console.error('Failed to verify email change:', error.message);
+      toast.error(error.message);
+      throw error;
+    }
+  }
+
+  // --- Password change ---
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    try {
+      await this.makeRequest('/auth/password/change', {
+        method: 'POST',
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      });
+    } catch (error: any) {
+      console.error('Failed to change password:', error.message);
       toast.error(error.message);
       throw error;
     }
@@ -252,6 +271,7 @@ class ProfileStorageService {
           ...updatedProfile,
           ...normalized,
         }));
+        try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { source: 'saveProfile' } })); } catch {}
       } catch {
         toast.error('Failed to update local cache after saving profile');
       }
@@ -308,6 +328,7 @@ class ProfileStorageService {
       
       // Cache the response for future use
       localStorage.setItem('userProfile', JSON.stringify(data));
+      try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { source: 'getProfile' } })); } catch {}
       
       return data;
     } catch (error) {

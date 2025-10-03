@@ -128,19 +128,8 @@ export function Dashboard() {
 							Welcome back, {firstName}!
 						</h1>
 						<p className="text-muted-foreground mt-1">
-							{userProfile ? (
-								<span>
-									Here's your AI-powered trading overview.
-									{userProfile.trading_experience && (
-										<span className="ml-2 text-primary font-medium">
-											Experience: {userProfile.trading_experience}
-										</span>
-									)}
-								</span>
-							) : (
-								"Here's your AI-powered trading overview."
-							)}
-						</p>
+							"Here's your AI-powered trading overview."
+		                </p>
 					</div>
 					<div className="flex items-center space-x-3 mt-4 sm:mt-0">
 						{userProfile && (

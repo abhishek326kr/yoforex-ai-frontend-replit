@@ -170,9 +170,9 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
 
       const isNetworkError = !error.response && error.request;
 
-      // If it's the last attempt, throw the error
+      // If it's the last attempt, rethrow original error to preserve response details
       if (attempt === retries) {
-        throw new Error(`Failed to fetch analysis after ${retries} attempts: ${error.message}`);
+        throw error;
       }
 
       // If not a retryable error, throw the error
