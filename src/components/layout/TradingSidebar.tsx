@@ -4,8 +4,6 @@ import {
   TrendingUp,
   History,
   Target,
-  BookOpen,
-  Settings,
   CreditCard,
   HelpCircle,
   Menu,
@@ -22,8 +20,8 @@ const navigation = [
   { name: "Live Trading", href: "/trading", icon: TrendingUp },
   { name: "History", href: "/history", icon: History },
   { name: "Active Trades", href: "/active", icon: Activity },
-  { name: "Journal", href: "/journal", icon: BookOpen },
-  { name: "Settings", href: "/settings", icon: Settings },
+  // { name: "Journal", href: "/journal", icon: BookOpen }, // hidden
+  // { name: "Settings", href: "/settings", icon: Settings }, // hidden
   { name: "Pricing", href: "/pricing", icon: CreditCard },
   { name: "Billing", href: "/billing", icon: Target },
   { name: "Help & Support", href: "/help", icon: HelpCircle },
