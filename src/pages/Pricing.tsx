@@ -134,7 +134,7 @@ export function Pricing() {
 
   useEffect(() => {
     // Prime FX cache (non-blocking)
-    void refreshUsdInrRate().catch(() => {});
+    void refreshUsdInrRate().catch(() => { /* ignore fx refresh errors */ });
     const onFx = () => setPricingTick((x) => x + 1);
     const onStorage = (e: StorageEvent) => {
       if (!e || e.key === 'userProfile') setPricingTick((x) => x + 1);

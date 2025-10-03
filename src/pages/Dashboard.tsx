@@ -129,7 +129,7 @@ export function Dashboard() {
 						</h1>
 						<p className="text-muted-foreground mt-1">
 							"Here's your AI-powered trading overview."
-		                </p>
+						</p>
 					</div>
 					<div className="flex items-center space-x-3 mt-4 sm:mt-0">
 						{userProfile && (
