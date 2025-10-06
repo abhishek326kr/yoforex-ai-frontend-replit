@@ -63,7 +63,7 @@ const plans = {
   },
   pro: {
     name: "Pro",
-    price: 35,
+    price: 69,
     period: "month",
     tagline: "Advanced AI trading analysis with generous monthly tokens",
     popular: true,
@@ -89,7 +89,7 @@ const plans = {
   },
   max: {
     name: "Max (Premium)",
-    price: 80,
+    price: 139,
     period: "month",
     tagline: "Massive monthly tokens for professional traders",
     popular: false,

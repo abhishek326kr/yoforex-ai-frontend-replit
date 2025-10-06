@@ -48,13 +48,12 @@ export function Auth() {
     password: "",
   });
   const { toast } = useToast();
-  const SIGNUP_LOCKED = true;
+  const SIGNUP_LOCKED = false;
   const { login } = useAuth();
 
   const handleInputChange = (field: keyof AuthFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
   useEffect(() => {
     const timer = setInterval(() => {
       setResendSignupIn((s) => (s > 0 ? s - 1 : 0));
@@ -209,10 +208,6 @@ export function Auth() {
   };
 
   const handleSignup = async () => {
-    if (SIGNUP_LOCKED) {
-      toast({ title: 'Signups are disabled', description: 'Account creation is currently locked. Please login.', variant: 'destructive' });
-      return;
-    }
     if (!formData.name || !formData.email || !formData.phone || !formData.password) {
       const missing: string[] = [];
       if (!formData.name || !formData.name.trim()) missing.push('name');
