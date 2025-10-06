@@ -37,6 +37,7 @@ export type CoinPaymentsCheckoutStartResponse = {
 export async function startCoinpaymentsCheckout(params: {
   plan: 'pro' | 'max';
   frontend_base?: string;
+  currency?: string;
 }): Promise<CoinPaymentsCheckoutStartResponse> {
   const res = await apiClient.post<CoinPaymentsCheckoutStartResponse>(
     '/billing/coinpayments/checkout/start',

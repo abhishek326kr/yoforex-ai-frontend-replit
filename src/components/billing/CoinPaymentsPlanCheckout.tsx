@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { startCoinpaymentsCheckout } from "@/lib/api/billing";
 import { toast } from "@/components/ui/use-toast";
 
-export function CoinPaymentsPlanCheckout(props: { plan: "pro" | "max" }) {
+export function CoinPaymentsPlanCheckout(props: { plan: "pro" | "max"; currency?: string }) {
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -14,7 +14,11 @@ export function CoinPaymentsPlanCheckout(props: { plan: "pro" | "max" }) {
         const isDev = import.meta.env.MODE === 'development';
         const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
         try { localStorage.setItem('cp_last_plan', props.plan); } catch {}
-        const res = await startCoinpaymentsCheckout({ plan: props.plan, frontend_base: frontendBase });
+        const res = await startCoinpaymentsCheckout({ 
+          plan: props.plan, 
+          frontend_base: frontendBase,
+          currency: props.currency 
+        });
         const url = res?.checkout_url;
         if (!url) throw new Error('No checkout_url returned');
         // Redirect user to CoinPayments hosted checkout
@@ -32,7 +36,7 @@ export function CoinPaymentsPlanCheckout(props: { plan: "pro" | "max" }) {
     };
 
     void run();
-  }, [props.plan]);
+  }, [props.plan, props.currency]);
 
   return null;
 }

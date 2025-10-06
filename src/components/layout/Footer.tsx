@@ -1,11 +1,17 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { COMPANY } from "@/config/company";
 import { Mail, Phone, MapPin, ExternalLink, ChevronRight } from "lucide-react";
 
 export default function Footer() {
+  const [location] = useLocation();
+  
+  // Pages that use TradingLayout (have sidebar)
+  const sidebarPages = ['/dashboard', '/trading', '/history', '/active', '/pricing', '/billing', '/help'];
+  const hasSidebar = sidebarPages.some(page => location.startsWith(page));
+  
   return (
-    <footer className="w-full mt-10 border-t border-border/20 bg-gradient-to-b from-background/60 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <footer className={`w-full mt-10 border-t border-border/20 transition-all duration-300 relative z-10 ${hasSidebar ? 'lg:ml-40 bg-gradient-to-b from-background to-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/95' : 'bg-gradient-to-b from-background/60 to-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60'}`}>
+      <div className={`mx-auto py-8 transition-all duration-300 ${hasSidebar ? 'max-w-[1200px] px-6 lg:px-12' : 'max-w-6xl px-4'}`}>
         {/* Top section: Links + Contact + Address */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {/* Quick Links */}

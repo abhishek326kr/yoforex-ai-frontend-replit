@@ -880,7 +880,7 @@ export function Auth() {
 
                 <Button
                   onClick={handleSignup}
-                  disabled
+                  
                   className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
                 >
                   {isLoading ? (

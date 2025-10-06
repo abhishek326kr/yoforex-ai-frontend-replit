@@ -49,6 +49,8 @@ import {
 } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
 import { getUserPricing, formatPriceUSDToLocal } from "@/lib/pricing";
+import { useAuth } from "@/hooks/useAuth";
+import { CryptoCurrencySelector } from "@/components/billing/CryptoCurrencySelector";
 
 // removed hardcoded currentPlan; using API-driven plan details
 
@@ -69,6 +71,18 @@ export function Billing() {
   const CASHFREE_LOCKED = String(import.meta.env.VITE_CASHFREE_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase() === 'true';
   // Billing page itself is unlocked
   const billingLocked = false;
+
+  const { user } = useAuth();
+  
+  // Check if user is from India based on phone number country code
+  const isIndianUser = useMemo(() => {
+    if (!user?.phone) return false;
+    // Check if phone starts with +91 (India country code)
+    return user.phone.startsWith('+91');
+  }, [user?.phone]);
+
+  // Determine if Cashfree should be locked for this user
+  const isCashfreeLocked = CASHFREE_LOCKED || !isIndianUser;
 
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
@@ -94,6 +108,9 @@ export function Billing() {
   // Provider selection modal state
   const [showProvider, setShowProvider] = useState<boolean>(false);
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
+  // Cryptocurrency selection modal state
+  const [showCryptoSelector, setShowCryptoSelector] = useState<boolean>(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
   // Auto-start plan checkout if URL contains ?plan=pro|max
   const planParam = (() => {
     try {
@@ -130,6 +147,15 @@ export function Billing() {
     } catch { }
     return CASHFREE_LOCKED ? 'coinpayments' as const : 'cashfree' as const;
   }, [CASHFREE_LOCKED]);
+
+  // Get currency parameter from URL (?currency=BTC)
+  const currencyParam = useMemo(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('currency') || undefined;
+    } catch { }
+    return undefined;
+  }, []);
 
   // Parse payment status banner
   const paymentBanner = useMemo(() => {
@@ -373,7 +399,7 @@ export function Billing() {
         )}
         {planParam ? (
           providerParam === 'coinpayments'
-            ? <CoinPaymentsPlanCheckout plan={planParam} />
+            ? <CoinPaymentsPlanCheckout plan={planParam} currency={currencyParam} />
             : <CashfreePlanCheckout plan={planParam} />
         ) : null}
         {/* Header */}
@@ -688,9 +714,9 @@ export function Billing() {
 
         {/* Billing Tabs */}
         <Tabs defaultValue="transactions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="credits">Token Usage</TabsTrigger>
+          
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
 
@@ -766,53 +792,7 @@ export function Billing() {
           </TabsContent>
 
           {/* Token Usage */}
-          <TabsContent value="credits">
-            <Card className="trading-card">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">Token Usage Analytics</h3>
-                    <p className="text-sm text-muted-foreground">Daily token consumption breakdown</p>
-                  </div>
-                  <Select defaultValue={selectedPeriod} onValueChange={setSelectedPeriod}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7days">7 Days</SelectItem>
-                      <SelectItem value="30days">30 Days</SelectItem>
-                      <SelectItem value="90days">90 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-4">
-                  {creditUsage.map((usage, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
-                      <div className="flex items-center space-x-4">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-secondary/10 flex items-center justify-center">
-                          <TrendingUp className="h-5 w-5 text-secondary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{usage.date}</p>
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <span>{usage.single} single analyses</span>
-                            <span>•</span>
-                            <span>{usage.multiAI} multi-AI analyses</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">{usage.total.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">tokens used</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
+         
           {/* Invoices */}
           <TabsContent value="invoices">
             <Card className="trading-card">
@@ -878,24 +858,57 @@ export function Billing() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Button className="w-full btn-trading-primary" disabled={CASHFREE_LOCKED} title={CASHFREE_LOCKED ? 'Cashfree is temporarily locked in production' : undefined} onClick={() => {
-                if (!pendingPlan) return;
-                try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
-              }}>
+              <Button 
+                className="w-full btn-trading-primary" 
+                disabled={isCashfreeLocked} 
+                title={
+                  !isIndianUser 
+                    ? 'Cashfree is only available for Indian users' 
+                    : CASHFREE_LOCKED 
+                      ? 'Cashfree is temporarily locked in production' 
+                      : undefined
+                } 
+                onClick={() => {
+                  if (!pendingPlan) return;
+                  try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
+                }}
+              >
                 Pay with Card / UPI (Cashfree)
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 if (!pendingPlan) return;
-                try { window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments`; } catch { window.location.href = '/billing'; }
+                setShowProvider(false);
+                setShowCryptoSelector(true);
               }}>
                 Pay with Crypto (CoinPayments)
               </Button>
-              {CASHFREE_LOCKED && (
-                <p className="text-xs text-muted-foreground text-center">Cashfree checkout is temporarily disabled. CoinPayments remains available.</p>
+              {isCashfreeLocked && (
+                <p className="text-xs text-muted-foreground text-center">
+                  {!isIndianUser 
+                    ? 'Cashfree is only available for Indian users. Please use CoinPayments for crypto payments.' 
+                    : 'Cashfree checkout is temporarily disabled. CoinPayments remains available.'
+                  }
+                </p>
               )}
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Cryptocurrency selection modal */}
+        <CryptoCurrencySelector
+          open={showCryptoSelector}
+          onOpenChange={setShowCryptoSelector}
+          onSelect={(currency) => {
+            setSelectedCurrency(currency);
+            if (!pendingPlan) return;
+            try { 
+              window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments&currency=${currency}`;
+            } catch { 
+              window.location.href = '/billing'; 
+            }
+          }}
+          plan={pendingPlan || 'pro'}
+        />
       </div>
     </TradingLayout>
   );
