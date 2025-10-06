@@ -774,23 +774,13 @@ export function Auth() {
         <Card className="bg-gradient-glass border-border/20 shadow-glass p-6 space-y-6">
           <Tabs
             value={activeTab}
-            onValueChange={(v) => {
-              if (v === 'signup' && SIGNUP_LOCKED) {
-                toast({ title: 'Signups are disabled', description: 'Please login to continue.', variant: 'destructive' });
-                setActiveTab('login');
-                return;
-              }
-              setActiveTab(v);
-            }}
+            onValueChange={(v) => { setActiveTab(v); }}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 bg-muted/20">
               <TabsTrigger
                 value="signup"
-                className="data-[state=active]:bg-primary cursor-not-allowed opacity-60"
-                disabled
-                title="Signups are disabled"
-                aria-disabled
+                className="data-[state=active]:bg-primary"
               >
                 Sign Up
               </TabsTrigger>
@@ -801,9 +791,7 @@ export function Auth() {
 
             {/* Signup Tab */}
             <TabsContent value="signup" className="space-y-4">
-              <div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">
-                Signups are currently disabled. Please use Login.
-              </div>
+              {SIGNUP_LOCKED && (<div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">Signups are currently disabled. Please use Login.</div>)}
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-sm font-medium text-foreground pb-[10px]">
@@ -1280,3 +1268,5 @@ export function Auth() {
     </div>
   );
 } 
+
+
