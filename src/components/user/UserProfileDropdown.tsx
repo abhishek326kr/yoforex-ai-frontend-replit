@@ -94,13 +94,13 @@ export function UserProfileDropdown() {
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          {/* <DropdownMenuItem 
             className="cursor-pointer"
             onClick={() => setLocation('/settings')}
           >
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
