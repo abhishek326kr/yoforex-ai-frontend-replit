@@ -187,10 +187,22 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
+    /* Prevent horizontal scroll globally */
+    overflow-x: hidden;
+    width: 100%;
   }
 
   html {
     scroll-behavior: smooth;
+    /* Prevent horizontal scroll globally */
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* Root container should not overflow horizontally */
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
   }
 }
 
@@ -434,6 +446,10 @@
 
 @layer utilities {
   /* Custom utilities for use with @apply */
+  /* Utility to explicitly disable horizontal scroll on any container */
+  .no-x-scroll {
+    overflow-x: hidden !important;
+  }
   .bg-gradient-glass {
     background: var(--gradient-glass);
   }

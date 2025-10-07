@@ -54,7 +54,7 @@ export function TradingLayout({ children }: TradingLayoutProps) {
         <TradingSidebar />
         
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto relative pt-16 transition-all duration-300 lg:ml-64">
+        <main className="flex-1 min-w-0 overflow-y-auto relative pt-16 transition-all duration-300 lg:ml-64">
           <div className={compact ? "p-3 md:p-4" : "p-4 md:p-6 w-full max-w-[1440px] mx-auto"}>
             {children}
           </div>
