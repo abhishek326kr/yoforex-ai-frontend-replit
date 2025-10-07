@@ -21,4 +21,4 @@ export const apiConfig = {
 };
 
 // Always log in development tools for quick visibility
-console.log('API Configuration:', apiConfig);
+// console.log('API Configuration:', apiConfig);
