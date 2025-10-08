@@ -26,6 +26,9 @@ const apiClient = axios.create({
   withCredentials: true, // include cookies for HTTP-only cookie authentication
   headers: {
     'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+    
   },
 });
 
@@ -82,6 +85,37 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Helper to extract a meaningful message/code/details from FastAPI-style error payloads
+function parseFastApiError(data: any): { message?: string; code?: string | number; details?: any } {
+  if (!data) return {};
+  // FastAPI commonly returns { detail: "message" } or { detail: { code, error } } or { detail: [ { loc, msg, type }, ... ] }
+  const detail = (data as any).detail;
+  // Case 1: detail is a string
+  if (typeof detail === 'string') {
+    return { message: detail, code: (data as any).code, details: undefined };
+  }
+  // Case 2: detail is an array (validation errors 422)
+  if (Array.isArray(detail)) {
+    try {
+      const msgs = detail.map((d: any) => (d?.msg || JSON.stringify(d))).filter(Boolean);
+      return { message: msgs.join('; '), code: 422, details: detail };
+    } catch {
+      return { message: 'Validation error', code: 422, details: detail };
+    }
+  }
+  // Case 3: detail is an object with known fields
+  if (detail && typeof detail === 'object') {
+    const msg = (detail.error || detail.message || detail.msg);
+    const code = (detail.code || (data as any).code);
+    return { message: msg, code, details: detail };
+  }
+  // Generic shapes
+  if (typeof (data as any).message === 'string') {
+    return { message: (data as any).message, code: (data as any).code, details: (data as any).details };
+  }
+  return {};
+}
+
 // Response interceptor for handling errors and retries
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -126,9 +160,11 @@ apiClient.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       const data = error.response.data as any;
-      
-      const errorMessage = data?.message || error.message || 'An error occurred';
-      const errorDetails = data?.details || {};
+
+      // Prefer FastAPI-style parsing, then fall back
+      const parsed = parseFastApiError(data);
+      const errorMessage = parsed.message || error.message || 'An error occurred';
+      const errorDetails = parsed.details || (data?.details || {});
       
       const enhancedError = new Error(errorMessage) as any;
       enhancedError.status = status;
@@ -136,7 +172,7 @@ apiClient.interceptors.response.use(
       // Preserve original Axios response so callers can inspect error.response
       enhancedError.response = error.response;
       // Preserve Axios error shape hints
-      enhancedError.code = (data?.detail?.code ?? error.code);
+      enhancedError.code = (parsed.code ?? data?.detail?.code ?? error.code);
       enhancedError.isAxiosError = true;
       
       switch (status) {
@@ -166,6 +202,12 @@ apiClient.interceptors.response.use(
           break;
         case 404:
           enhancedError.message = 'The requested resource was not found';
+          break;
+        case 405:
+          enhancedError.message = 'Method not allowed. Please check the HTTP method for this endpoint.';
+          break;
+        case 422:
+          enhancedError.message = parsed.message || 'Validation error. Please check your inputs.';
           break;
         case 408:
           enhancedError.message = 'Request timeout. Please try again.';
@@ -201,7 +243,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(enhancedError);
     } else if (error.request) {
       // The request was made but no response was received
-      const networkError = new Error('Unable to connect to the server. Please check your internet connection.');
+      // Likely a network error, CORS failure, or timeout blocked by the browser
+      const msg = (error.code === 'ECONNABORTED')
+        ? 'Request timed out. Please try again.'
+        : 'Network or CORS error. Please try again, and ensure the backend allows this origin.';
+      const networkError = new Error(msg);
       return Promise.reject(networkError);
     } else {
       // Something happened in setting up the request
