@@ -859,8 +859,7 @@ export function Billing() {
             </DialogHeader>
             <div className="space-y-3 mt-2">
               <Button 
-                className="w-full btn-trading-primary" 
-                disabled={isCashfreeLocked} 
+                className="w-full btn-trading-primary"  
                 title={
                   !isIndianUser 
                     ? 'Cashfree is only available for Indian users' 
