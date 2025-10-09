@@ -869,7 +869,14 @@ export function Billing() {
                 } 
                 onClick={() => {
                   if (!pendingPlan) return;
-                  try { window.location.href = `/billing?plan=${pendingPlan}`; } catch { window.location.href = '/billing'; }
+                  try { 
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('plan', pendingPlan);
+                    url.searchParams.set('provider', 'cashfree');
+                    window.location.href = url.toString();
+                  } catch { 
+                    window.location.href = `/billing?plan=${pendingPlan}&provider=cashfree`; 
+                  }
                 }}
               >
                 Pay with Card / UPI (Cashfree)
