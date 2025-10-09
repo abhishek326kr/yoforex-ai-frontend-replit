@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { load } from "@cashfreepayments/cashfree-js";
 import type { Cashfree } from "@cashfreepayments/cashfree-js";
-import { startCashfreePlanOrder, getCashfreeOrderStatus } from "@/lib/api/billing";
+import { startCashfreePlanOrder, getCashfreeOrderStatus, finalizeCashfreeNow } from "@/lib/api/billing";
 import { CASHFREE_MODE } from "@/config/payments";
 import { toast } from "@/components/ui/use-toast";
 
@@ -77,6 +77,10 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
             const status = await getCashfreeOrderStatus(order.order_id, frontendBase);
             lastStatus = status.status;
             if (status.status === "paid") {
+              // Attempt immediate finalize to update credits/plan right away
+              try {
+                await finalizeCashfreeNow(order.order_id, { plan: props.plan });
+              } catch {}
               // Redirect to dedicated success page
               window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
               return;

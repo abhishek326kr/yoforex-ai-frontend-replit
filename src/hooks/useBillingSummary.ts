@@ -18,80 +18,124 @@ export function useBillingSummary() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Module-level shared cache/dedupe to prevent multiple components from spamming the API
+  // These live on the window object to ensure a single instance across HMR reload boundaries as well
+  const g: any = (typeof window !== 'undefined') ? window : {};
+  if (!g.__billing_summary_cache) {
+    g.__billing_summary_cache = {
+      cachedData: null as BillingSummary | null,
+      lastFetch: 0 as number,
+      inFlight: null as Promise<BillingSummary> | null,
+    };
+  }
+  const cache = g.__billing_summary_cache as { cachedData: BillingSummary | null; lastFetch: number; inFlight: Promise<BillingSummary> | null };
+
+  // Global single-shot listener/scheduler setup
+  if (!g.__billing_summary_bus) {
+    g.__billing_summary_bus = {
+      listenersInstalled: false,
+      scheduled: false,
+      timer: null as ReturnType<typeof setTimeout> | null,
+      schedule: (fn: () => void, delayMs = 800) => {
+        if (g.__billing_summary_bus.scheduled) return;
+        g.__billing_summary_bus.scheduled = true;
+        g.__billing_summary_bus.timer && clearTimeout(g.__billing_summary_bus.timer);
+        g.__billing_summary_bus.timer = setTimeout(() => {
+          g.__billing_summary_bus.scheduled = false;
+          try { fn(); } catch {}
+        }, delayMs);
+      },
+    };
+  }
+  const bus: any = g.__billing_summary_bus;
+
+  const fetchSummaryThrottled = useCallback(async () => {
+    // Return in-flight promise if a request is already ongoing
+    if (cache.inFlight) return cache.inFlight;
+    const now = Date.now();
+    // If cached within 3s, serve from cache
+    if (cache.cachedData && now - (cache.lastFetch || 0) < 3000) {
+      return cache.cachedData as BillingSummary;
+    }
+    cache.inFlight = (async () => {
+      try {
+        const res = await apiClient.get(`${API_BASE_URL}/billing/summary`);
+        cache.cachedData = res.data as BillingSummary;
+        cache.lastFetch = Date.now();
+        return cache.cachedData as BillingSummary;
+      } finally {
+        // Clear inFlight after a microtask to allow listeners to chain onto the same promise
+        Promise.resolve().then(() => { cache.inFlight = null; });
+      }
+    })();
+    return cache.inFlight;
+  }, []);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get(`${API_BASE_URL}/billing/summary`);
-      setData(res.data as BillingSummary);
+      const res = await fetchSummaryThrottled();
+      setData(res);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load billing summary");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchSummaryThrottled]);
 
   useEffect(() => {
     let cancelled = false;
-    // initial fetch
-    refresh();
-    // listen for global billing updates
-    const onBillingUpdated = (evt: Event) => {
-      if (cancelled) return;
-      try {
-        const anyEvt = evt as CustomEvent<any>;
-        const detail = anyEvt?.detail as {
-          charged_credits?: number;
-          monthly_credits_remaining?: number;
-          daily_credits_spent?: number;
-        } | undefined;
-
-        // Optimistically merge into current cached state for instant UI update
-        if (detail && (detail.charged_credits || detail.monthly_credits_remaining || detail.daily_credits_spent)) {
-          setData((prev) => {
-            if (!prev) return prev; // wait for initial load
-            let remaining = prev.monthly_credits_remaining;
-            let dailySpent = prev.daily_credits_spent ?? 0;
-
-            if (typeof detail.monthly_credits_remaining === 'number') {
-              remaining = detail.monthly_credits_remaining;
-            } else if (typeof detail.charged_credits === 'number') {
-              remaining = Math.max(0, remaining - detail.charged_credits);
-            }
-
-            if (typeof detail.daily_credits_spent === 'number') {
-              dailySpent = detail.daily_credits_spent;
-            } else if (typeof detail.charged_credits === 'number') {
-              dailySpent = Math.max(0, dailySpent + detail.charged_credits);
-            }
-
-            return {
-              ...prev,
-              monthly_credits_remaining: remaining,
-              daily_credits_spent: dailySpent,
-            };
-          });
+    // Seed state from cache immediately if present
+    if (cache.cachedData) setData(cache.cachedData);
+    // Only the first subscriber triggers an immediate fetch; others rely on cache
+    if (!g.__billing_summary_first_fetch_done) {
+      g.__billing_summary_first_fetch_done = true;
+      refresh();
+    }
+    // Install global listeners once
+    if (!bus.listenersInstalled) {
+      const onBillingUpdated = (evt: Event) => {
+        if (cancelled) return;
+        try {
+          const anyEvt = evt as CustomEvent<any>;
+          const detail = anyEvt?.detail as {
+            charged_credits?: number;
+            monthly_credits_remaining?: number;
+            daily_credits_spent?: number;
+          } | undefined;
+          if (detail && (detail.charged_credits || detail.monthly_credits_remaining || detail.daily_credits_spent)) {
+            cache.cachedData = {
+              ...(cache.cachedData || { plan: 'free', monthly_credits_remaining: 0, monthly_credits_max: 0 }),
+              monthly_credits_remaining: typeof detail.monthly_credits_remaining === 'number'
+                ? detail.monthly_credits_remaining
+                : Math.max(0, (cache.cachedData?.monthly_credits_remaining || 0) - (detail.charged_credits || 0)),
+              daily_credits_spent: typeof detail.daily_credits_spent === 'number'
+                ? detail.daily_credits_spent
+                : Math.max(0, (cache.cachedData?.daily_credits_spent || 0) + (detail.charged_credits || 0)),
+            } as BillingSummary;
+          }
+          // Coalesce a background refresh soon (skip when tab hidden)
+          if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+            bus.schedule(() => { fetchSummaryThrottled().then(() => { /* update cache only */ }); }, 1200);
+          }
+        } catch {
+          if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+            bus.schedule(() => { fetchSummaryThrottled().then(() => {}); }, 1500);
+          }
         }
-
-        // Also trigger a background refresh to sync authoritative values
-        refresh();
-      } catch {
-        refresh();
-      }
-    };
-    window.addEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
-    // also refresh when tab regains focus or becomes visible
-    const onFocus = () => { if (!cancelled) refresh(); };
-    const onVisibility = () => { if (!cancelled && document.visibilityState === 'visible') refresh(); };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
-      window.removeEventListener('focus', onFocus);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [refresh]);
+      };
+      window.addEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
+      bus.listenersInstalled = true;
+      // Persist removers for future teardown if needed (not removing to avoid reinstall storms)
+      g.__billing_summary_uninstall = () => {
+        window.removeEventListener(BILLING_UPDATED_EVENT, onBillingUpdated as EventListener);
+        bus.listenersInstalled = false;
+      };
+    }
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { data, loading, error, refresh, setData };
 }

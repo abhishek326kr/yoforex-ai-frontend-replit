@@ -124,6 +124,15 @@ export function Pricing() {
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
   const { data: billing } = useBillingSummary();
   const { user } = useAuth();
+  // Align Cashfree availability with Billing.tsx
+  const isProd = import.meta.env.MODE === 'production';
+  const CASHFREE_LOCKED = String(import.meta.env.VITE_CASHFREE_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase() === 'true';
+  // Indian user detection via phone prefix +91
+  const isIndianUser = useMemo(() => {
+    const phone = (user as any)?.phone as string | undefined;
+    return !!phone && phone.startsWith('+91');
+  }, [user]);
+  const isCashfreeLocked = CASHFREE_LOCKED || !isIndianUser;
   const currentPlan = (billing?.plan || 'free').toLowerCase() as 'free' | 'pro' | 'max';
   const rank: Record<'free' | 'pro' | 'max', number> = { free: 0, pro: 1, max: 2 };
   const [pricingTick, setPricingTick] = useState(0);
@@ -449,20 +458,25 @@ export function Pricing() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Button className="w-full btn-trading-primary" disabled title="Temporarily locked" onClick={() => {
-                if (!pendingPlan) return;
-                try {
-                  const iv = isAnnual ? '&interval=yearly' : '';
-                  window.location.href = `/billing?plan=${pendingPlan}${iv}`;
-                } catch { window.location.href = '/billing'; }
-              }}>
-                Pay with Card / UPI (Cashfree — Locked)
+              <Button
+                className="w-full btn-trading-primary"
+                disabled={isCashfreeLocked}
+                title={isCashfreeLocked ? (CASHFREE_LOCKED ? 'Cashfree is temporarily unavailable.' : 'Cashfree is only available for Indian users (+91).') : undefined}
+                onClick={() => {
+                  if (!pendingPlan || isCashfreeLocked) return;
+                  try {
+                    const iv = isAnnual ? '&interval=yearly' : '';
+                    window.location.href = `/billing/cashfree?plan=${pendingPlan}${iv}`;
+                  } catch { window.location.href = '/billing'; }
+                }}
+              >
+                Pay with Card / UPI (Cashfree)
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 if (!pendingPlan) return;
                 try {
                   const iv = isAnnual ? '&interval=yearly' : '';
-                  window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments${iv}`;
+                  window.location.href = `/billing/coinpayments?plan=${pendingPlan}${iv}`;
                 } catch { window.location.href = '/billing'; }
               }}>
                 Pay with Crypto (CoinPayments)

@@ -11,11 +11,16 @@ import { emitBillingUpdated } from "@/lib/billingEvents";
 export default function BillingSuccess() {
   const [, navigate] = useLocation();
   const { data: billing, refresh } = useBillingSummary();
+  // Guard to prevent duplicate polling loops when component re-renders
+  const startedRef = (typeof window !== 'undefined') ? (window as any).__billing_success_started ?? { current: false } : { current: false };
+  if (typeof window !== 'undefined' && !(window as any).__billing_success_started) {
+    (window as any).__billing_success_started = startedRef;
+  }
   const [webhookDone, setWebhookDone] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(true);
 
   // Refresh billing on mount
-  useEffect(() => { try { refresh?.(); emitBillingUpdated(); } catch {} }, [refresh]);
+  useEffect(() => { try { refresh?.(); emitBillingUpdated(); } catch {} }, []);
 
   const spInit = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""), []);
   const provider = useMemo(() => (spInit.get('provider') || '').toLowerCase(), [spInit]);
@@ -32,6 +37,11 @@ export default function BillingSuccess() {
     let cancelled = false;
     const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+    if (startedRef.current) {
+      return () => { cancelled = true; };
+    }
+    startedRef.current = true;
+
     // CoinPayments flow
     if (provider === 'coinpayments') {
       const runCp = async () => {
@@ -47,9 +57,9 @@ export default function BillingSuccess() {
 
         for (let i = 0; i < maxTries && !cancelled; i++) {
           try {
-            // Refresh billing summary and check plan
-            try { await refresh?.(); emitBillingUpdated(); } catch {}
-            const planNow = (billing?.plan || '').toLowerCase();
+            // Check plan from latest hook state; refresh sparingly
+            try { await refresh?.(); } catch {}
+            const planNow = (window as any).__latest_billing_plan || (billing?.plan || '').toLowerCase();
             if ((expected && planNow === expected) || (planNow === 'pro' || planNow === 'max')) {
               setWebhookDone(true);
               break;
@@ -95,7 +105,7 @@ export default function BillingSuccess() {
               break;
             }
           } catch {}
-          try { await refresh?.(); emitBillingUpdated(); } catch {}
+          // refresh less aggressively; rely on next loop iteration
         } catch {}
         await delay(2000);
       }
@@ -119,7 +129,7 @@ export default function BillingSuccess() {
     };
     void run();
     return () => { cancelled = true; };
-  }, [provider, orderId, refresh, billing]);
+  }, [provider, orderId]);
 
   return (
     <TradingLayout>

@@ -138,15 +138,23 @@ export function Billing() {
     };
   }, []);
 
-  // Choose payment provider from URL (?provider=coinpayments) else default to cashfree
-  const providerParam = useMemo(() => {
+  // Payment provider selection
+  type Provider = 'coinpayments' | 'cashfree';
+  // Choose provider from pathname slugs first (/billing/cashfree or /billing/coinpayments)
+  // Fallback to query or lock-based default
+  const providerParam: Provider = useMemo(() => {
+    try {
+      const path = window.location.pathname.toLowerCase();
+      if (path.includes('/billing/coinpayments')) return 'coinpayments';
+      if (path.includes('/billing/cashfree')) return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
+    } catch { }
     try {
       const sp = new URLSearchParams(window.location.search);
       const prov = (sp.get('provider') || '').toLowerCase();
-      if (prov === 'coinpayments') return 'coinpayments' as const;
+      if (prov === 'coinpayments') return 'coinpayments';
     } catch { }
-    return CASHFREE_LOCKED ? 'coinpayments' as const : 'cashfree' as const;
-  }, [CASHFREE_LOCKED]);
+    return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
+  }, [isCashfreeLocked, CASHFREE_LOCKED]);
 
   // Get currency parameter from URL (?currency=BTC)
   const currencyParam = useMemo(() => {
