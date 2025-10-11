@@ -121,7 +121,7 @@ export function useBillingSummary() {
           }
         } catch {
           if (typeof document === 'undefined' || document.visibilityState === 'visible') {
-            bus.schedule(() => { fetchSummaryThrottled().then(() => {}); }, 1500);
+            bus.schedule(() => { fetchSummaryThrottled().then(() => { /* No-op: Just updating the cache */ }); }, 1500);
           }
         }
       };
