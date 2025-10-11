@@ -40,7 +40,7 @@ const plans = {
     popular: false,
     credits: {
       daily: 1000000,
-      analyses:"Includes 1,000,000 tokens/month",
+      analyses: "Includes 1,000,000 tokens/month",
       resetTimer: true
     },
     features: [
@@ -178,7 +178,7 @@ export function Pricing() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Professional AI-powered forex analysis with flexible credit systems and premium features
           </p>
-          
+
           {/* Billing Toggle */}
           <div className="flex items-center justify-center space-x-3 mt-8">
             <span className={`text-sm ${!isAnnual ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
@@ -201,13 +201,12 @@ export function Pricing() {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {Object.entries(plans).map(([key, plan]) => (
-            <Card 
-              key={key} 
-              className={`relative p-8 trading-card transition-all duration-300 ease-in-out h-full flex flex-col border-border/20 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/70 hover:-translate-y-2 hover:scale-[1.02] ${
-                plan.popular 
-                  ? 'border-primary shadow-lg shadow-primary/20 border-2 hover:scale-[1.04]' 
+            <Card
+              key={key}
+              className={`relative p-8 trading-card transition-all duration-300 ease-in-out h-full flex flex-col border-border/20 hover:shadow-xl hover:shadow-primary/20 hover:border-primary/70 hover:-translate-y-2 hover:scale-[1.02] ${plan.popular
+                  ? 'border-primary shadow-lg shadow-primary/20 border-2 hover:scale-[1.04]'
                   : ''
-              }`}
+                }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -227,7 +226,7 @@ export function Pricing() {
                     {key === 'max' && <Crown className="h-6 w-6 text-yellow-500" />}
                     <span>{plan.name}</span>
                   </h3>
-                  
+
                   <div className="space-y-1">
                     <div className="flex items-baseline justify-center space-x-1">
                       <span className="text-4xl font-bold text-foreground">
@@ -243,7 +242,7 @@ export function Pricing() {
                       </p>
                     )}
                   </div>
-                  
+
                   <p className="text-sm text-muted-foreground">
                     {plan.tagline}
                   </p>
@@ -299,12 +298,11 @@ export function Pricing() {
                 )}
 
                 {/* CTA Button */}
-                <Button 
-                  className={`w-full ${
-                    plan.buttonVariant === 'default' 
-                      ? 'btn-trading-primary text-lg py-6' 
+                <Button
+                  className={`w-full ${plan.buttonVariant === 'default'
+                      ? 'btn-trading-primary text-lg py-6'
                       : 'border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground text-lg py-6'
-                  }`}
+                    }`}
                   variant={plan.buttonVariant}
                   disabled={(() => {
                     const k = key as 'free' | 'pro' | 'max';
@@ -346,7 +344,7 @@ export function Pricing() {
               <Shield className="h-6 w-6 text-primary" />
               <h3 className="text-xl font-semibold text-foreground">Secure Payment Methods</h3>
             </div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="flex flex-col items-center space-y-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-primary/10 flex items-center justify-center">
@@ -357,7 +355,7 @@ export function Pricing() {
                   <p className="text-xs text-muted-foreground">Cards, UPI, Net Banking</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center space-y-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-secondary/10 flex items-center justify-center">
                   <DollarSign className="h-6 w-6 text-secondary" />
@@ -367,7 +365,7 @@ export function Pricing() {
                   <p className="text-xs text-muted-foreground">50+ Cryptocurrencies</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center space-y-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-profit/10 flex items-center justify-center">
                   <Shield className="h-6 w-6 text-accent" />
@@ -377,7 +375,7 @@ export function Pricing() {
                   <p className="text-xs text-muted-foreground">Direct bank payments</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center space-y-2">
                 <div className="h-12 w-12 rounded-lg bg-gradient-dark flex items-center justify-center">
                   <Users className="h-6 w-6 text-muted-foreground" />
@@ -388,7 +386,7 @@ export function Pricing() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4" />
@@ -411,7 +409,7 @@ export function Pricing() {
           <h3 className="text-xl font-semibold text-foreground mb-6 text-center">
             Frequently Asked Questions
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
@@ -420,7 +418,7 @@ export function Pricing() {
                   Credits are consumed per AI analysis. Different analyses consume different amounts - single AI (150 credits), multi-AI consensus (750 credits), image analysis (300 credits).
                 </p>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">Can I upgrade anytime?</h4>
                 <p className="text-sm text-muted-foreground">
@@ -428,15 +426,15 @@ export function Pricing() {
                 </p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">What payment methods do you accept?</h4>
                 <p className="text-sm text-muted-foreground">
-                  We accept all major payment methods through PhonePe (cards, UPI, net banking) and cryptocurrency payments through CoinPayments.
+                  We accept all major payment methods through Cashfree (cards, UPI, net banking) and cryptocurrency payments through CoinPayments.
                 </p>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">Is there a free trial?</h4>
                 <p className="text-sm text-muted-foreground">
@@ -459,16 +457,16 @@ export function Pricing() {
               <Button
                 className="w-full btn-trading-primary"
                 disabled={isCashfreeLocked}
-                title={isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : undefined}
+                title={isCashfreeLocked ? 'Cashfree is only available for Indian users (+91).' : undefined}
                 onClick={() => {
                   if (!pendingPlan || isCashfreeLocked) return;
                   try {
                     const iv = isAnnual ? '&interval=yearly' : '';
-                    window.location.href = `/billing/phonepe?plan=${pendingPlan}${iv}`;
+                    window.location.href = `/billing/cashfree?plan=${pendingPlan}${iv}`;
                   } catch { window.location.href = '/billing'; }
                 }}
               >
-                Pay with Card / UPI (PhonePe)
+                Pay with Card / UPI (Cashfree)
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 if (!pendingPlan) return;
