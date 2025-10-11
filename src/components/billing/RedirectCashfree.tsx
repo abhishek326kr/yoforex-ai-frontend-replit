@@ -22,7 +22,7 @@ function Checkout() {
 
   return (
     <div className="row">
-      <p>Click below to open the PhonePe checkout in the current tab</p>
+      <p>Click below to open the cashfree checkout in the current tab</p>
       <button type="submit" className="btn btn-primary" id="renderBtn" onClick={doPayment}>
         Pay Now
       </button>

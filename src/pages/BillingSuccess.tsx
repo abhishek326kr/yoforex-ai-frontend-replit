@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle, Download, ArrowRight, Loader2 } from "lucide-react";
+import { CheckCircle, Download, ArrowRight, Loader2, Copy } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
 import { downloadInvoice, listInvoices, checkCashfreeFinalized, finalizeCashfreeNow } from "@/lib/api/billing";
 import { emitBillingUpdated } from "@/lib/billingEvents";
@@ -18,6 +18,7 @@ export default function BillingSuccess() {
   }
   const [webhookDone, setWebhookDone] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(true);
+  const [copied, setCopied] = useState<boolean>(false);
 
   // Refresh billing on mount
   useEffect(() => { try { refresh?.(); emitBillingUpdated(); } catch {} }, []);
@@ -131,6 +132,13 @@ export default function BillingSuccess() {
     return () => { cancelled = true; };
   }, [provider, orderId]);
 
+  // Optional auto-return after success finalization
+  useEffect(() => {
+    if (!webhookDone) return;
+    const t = setTimeout(() => navigate('/billing'), 4000);
+    return () => clearTimeout(t);
+  }, [webhookDone, navigate]);
+
   return (
     <TradingLayout>
       <div className="max-w-2xl mx-auto">
@@ -161,6 +169,28 @@ export default function BillingSuccess() {
                 <Download className="h-4 w-4 mr-2" /> Download Invoice
               </Button>
             )}
+          </div>
+
+          {orderId && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span>Order ID: {orderId}</span>
+              <button
+                className="inline-flex items-center gap-1 hover:text-foreground"
+                onClick={async () => { try { await navigator.clipboard.writeText(orderId); setCopied(true); setTimeout(()=>setCopied(false),1500);} catch {} }}
+                title="Copy order ID"
+              >
+                <Copy className="h-3 w-3" /> {copied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          )}
+
+          <div className="mt-3 text-[11px] text-muted-foreground">
+            <p>
+              {provider === 'coinpayments'
+                ? 'Crypto confirmations may take a few minutes. This page will reflect your upgrade once confirmed.'
+                : 'Finalizing your upgrade. If it takes longer than a minute, you can safely return to Billing; your plan will update automatically.'}
+            </p>
+            <p className="mt-1">Need help? Contact support at info@yoforex.net.</p>
           </div>
         </Card>
       </div>

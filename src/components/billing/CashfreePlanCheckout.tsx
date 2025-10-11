@@ -1,12 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { load } from "@cashfreepayments/cashfree-js";
 import type { Cashfree } from "@cashfreepayments/cashfree-js";
 import { startCashfreePlanOrder, getCashfreeOrderStatus, finalizeCashfreeNow } from "@/lib/api/billing";
 import { CASHFREE_MODE } from "@/config/payments";
 import { toast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: string }) {
   const startedRef = useRef(false);
+  const [step, setStep] = useState<string>("Preparing checkout…");
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -14,7 +16,8 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
 
     const run = async () => {
       try {
-        // 1) Ask backend to create PhonePe (Cashfree-backed) order for selected plan
+        setStep("Creating order…");
+        // 1) Ask backend to create Cashfree order for selected plan
         const isDev = import.meta.env.MODE === 'development';
         const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
         const returnUrl = `${frontendBase}/billing`;
@@ -28,12 +31,14 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
         } catch {}
         let order = await startCashfreePlanOrder({ plan: props.plan, currency: props.currency, return_url: returnUrl, interval });
 
-        // 2) Load PhonePe (Cashfree) SDK
+        // 2) Load Cashfree SDK
+        setStep("Loading payment SDK…");
         const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
-        console.debug("PhonePe checkout mode:", CASHFREE_MODE, "order:", order.order_id);
+        console.debug("Cashfree checkout mode:", CASHFREE_MODE, "order:", order.order_id);
 
-        // 3) Start checkout in a modal (popup). PhonePe will redirect to return_url after completion.
+        // 3) Start checkout in a modal (popup). Cashfree will redirect to return_url after completion.
         const doCheckout = async (sessionId: string) => {
+          setStep("Opening secure checkout…");
           return cashfree.checkout({
             paymentSessionId: sessionId,
             redirectTarget: "_modal",
@@ -55,7 +60,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
             } catch (retryErr: any) {
               // Surface likely environment mismatch to the user
               toast.error({
-                title: 'PhonePe Error',
+                title: 'Cashfree Error',
                 description: 'Payment session invalid. Ensure frontend VITE_CASHFREE_ENV matches backend key environment (sandbox vs production).',
                 variant: 'destructive',
               });
@@ -67,6 +72,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
         }
 
         // 4) Poll order status and redirect accordingly
+        setStep("Confirming payment…");
         try {
           const maxTries = 10;
           const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -98,7 +104,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
           window.location.href = "/billing";
         }
       } catch (e: any) {
-        // Show detailed PhonePe errors in a popup
+        // Show detailed Cashfree errors in a popup
         try {
           const respData = e?.response?.data;
           const detail = respData?.detail ?? respData; // FastAPI wraps as { detail: {...} }
@@ -123,7 +129,7 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
               }
               // Additional friendly hints for common causes
               if (/return_url_invalid/i.test(raw) || /url should be https/i.test(raw)) {
-                cfMessage = cfMessage || "PhonePe requires an HTTPS return_url.";
+                cfMessage = cfMessage || "Cashfree requires an HTTPS return_url.";
               }
             }
             // Compose message
@@ -138,11 +144,11 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
               friendly += `\nHelp: ${cfHelp}`;
             }
           }
-          toast.error({ title: 'PhonePe Error', description: friendly, variant: 'destructive' });
+          toast.error({ title: 'Cashfree Error', description: friendly, variant: 'destructive' });
         } catch {
-          toast.error({ title: 'PhonePe Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
+          toast.error({ title: 'Cashfree Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
         }
-        console.error("PhonePe plan checkout failed:", e);
+        console.error("Cashfree plan checkout failed:", e);
         // Fallback: stay on billing page
       }
     };
@@ -150,5 +156,15 @@ export function CashfreePlanCheckout(props: { plan: "pro" | "max"; currency?: st
     void run();
   }, [props.plan, props.currency]);
 
-  return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="trading-card p-6 w-full max-w-sm text-center">
+        <div className="flex items-center justify-center mb-3">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+        <p className="text-sm text-muted-foreground">{step}</p>
+        <p className="text-xs text-muted-foreground mt-2">Do not refresh or close this tab.</p>
+      </div>
+    </div>
+  );
 }

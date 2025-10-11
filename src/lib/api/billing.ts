@@ -63,25 +63,6 @@ export async function listTransactions(): Promise<TransactionInfo[]> {
   return res.data;
 }
 
-// Webhook finalize status
-export type CashfreeFinalizeStatus = {
-  finalized: boolean;
-  invoice_id?: string;
-  plan: string;
-};
-
-export async function checkCashfreeFinalized(order_id: string): Promise<CashfreeFinalizeStatus> {
-  const res = await apiClient.get<CashfreeFinalizeStatus>('/billing/cashfree/order/finalized', {
-    params: { order_id },
-  });
-  return res.data;
-}
-
-export async function finalizeCashfreeNow(order_id: string, opts?: { plan?: 'pro' | 'max'; credits?: number; }): Promise<{ status: string; finalized: boolean; invoice_id?: string; plan?: string; }>{
-  const res = await apiClient.post('/billing/cashfree/order/finalize-now', { order_id, ...opts });
-  return res.data as any;
-}
-
 export type CashfreeOrderStatusResponse = {
   status: 'paid' | 'pending' | 'failed' | 'unknown';
   order_id: string;
@@ -95,6 +76,32 @@ export async function getCashfreeOrderStatus(order_id: string, frontendBase?: st
   const res = await apiClient.get<CashfreeOrderStatusResponse>('/billing/cashfree/order/status', {
     params: { order_id, frontend_base: frontendBase },
   });
+  return res.data;
+}
+
+// Cashfree finalize status (used by success page to check webhook completion)
+export type CashfreeFinalizeStatus = {
+  finalized: boolean;
+  invoice_id?: string;
+  plan: string;
+};
+
+export async function checkCashfreeFinalized(order_id: string): Promise<CashfreeFinalizeStatus> {
+  const res = await apiClient.get<CashfreeFinalizeStatus>('/billing/cashfree/order/finalized', {
+    params: { order_id },
+  });
+  return res.data;
+}
+
+// Cashfree manual finalize in case webhook is delayed
+export async function finalizeCashfreeNow(
+  order_id: string,
+  hints?: { plan?: 'pro' | 'max'; credits?: number }
+): Promise<{ status: string; finalized: boolean; invoice_id?: string; plan: string }> {
+  const res = await apiClient.post<{ status: string; finalized: boolean; invoice_id?: string; plan: string }>(
+    '/billing/cashfree/order/finalize-now',
+    { order_id, plan: hints?.plan, credits: hints?.credits }
+  );
   return res.data;
 }
 

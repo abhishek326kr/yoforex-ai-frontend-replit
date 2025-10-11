@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { listInvoices, downloadInvoice, type InvoiceInfo, listTransactions, type TransactionInfo, checkCashfreeFinalized, finalizeCashfreeNow, getPlanDetails, type PlanDetailsResponse, startCashfreeTokensOrder, getCashfreeOrderStatus } from "@/lib/api/billing";
+import { listInvoices, downloadInvoice, type InvoiceInfo, listTransactions, type TransactionInfo, getPlanDetails, type PlanDetailsResponse, startCashfreeTokensOrder, getCashfreeOrderStatus } from "@/lib/api/billing";
 import { load } from "@cashfreepayments/cashfree-js";
 import type { Cashfree } from "@cashfreepayments/cashfree-js";
 import { CASHFREE_MODE } from "@/config/payments";
@@ -73,7 +73,7 @@ export function Billing() {
   const billingLocked = false;
 
   const { user } = useAuth();
-  
+
   // Check if user is from India based on phone number country code
   const isIndianUser = useMemo(() => {
     if (!user?.phone) return false;
@@ -98,19 +98,20 @@ export function Billing() {
   const [invLoading, setInvLoading] = useState<boolean>(false);
   const [invError, setInvError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [finalizeChecking, setFinalizeChecking] = useState<boolean>(false);
-  const [finalized, setFinalized] = useState<boolean>(false);
-  const [finalizedInvoiceId, setFinalizedInvoiceId] = useState<string | null>(null);
-  const [finalizeRunning, setFinalizeRunning] = useState<boolean>(false);
   const [bannerVisible, setBannerVisible] = useState<boolean>(true);
   const [pricingTick, setPricingTick] = useState(0);
   const userPricing = getUserPricing();
+
   // Provider selection modal state
   const [showProvider, setShowProvider] = useState<boolean>(false);
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
+
   // Cryptocurrency selection modal state
   const [showCryptoSelector, setShowCryptoSelector] = useState<boolean>(false);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('');
+  // Token purchase UX state
+  const [buyingTokens, setBuyingTokens] = useState<boolean>(false);
+
   // Auto-start plan checkout if URL contains ?plan=pro|max
   const planParam = (() => {
     try {
@@ -248,30 +249,6 @@ export function Billing() {
     const { status, orderId } = paymentBanner;
     if (status === "success") {
       toast({ title: "Payment successful", description: orderId ? `Order ${orderId} confirmed.` : undefined });
-      // Poll webhook finalize endpoint to update UI
-      if (orderId) {
-        let cancelled = false;
-        const run = async () => {
-          setFinalizeChecking(true);
-          const maxTries = 12; // ~24s
-          const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-          for (let i = 0; i < maxTries && !cancelled; i++) {
-            try {
-              const res = await checkCashfreeFinalized(orderId);
-              if (res.finalized) {
-                setFinalized(true);
-                setFinalizedInvoiceId(res.invoice_id || null);
-                try { await refreshBilling?.(); } catch { }
-                break;
-              }
-            } catch { }
-            await delay(2000);
-          }
-          if (!cancelled) setFinalizeChecking(false);
-        };
-        void run();
-        return () => { cancelled = true; };
-      }
     } else if (status === "failed") {
       toast({ title: "Payment failed", description: orderId ? `Order ${orderId} failed.` : undefined, variant: "destructive" });
     } else if (status === "pending") {
@@ -332,72 +309,19 @@ export function Billing() {
   return (
     <TradingLayout>
       <div className="space-y-6">
-        {/* Payment finalization banner */}
         {paymentBanner?.status === 'success' && bannerVisible && (
           <Card className="trading-card p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {finalizeChecking && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                <CheckCircle className="h-4 w-4 text-trading-profit" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {finalizeChecking ? 'Finalizing your upgrade…' : finalized ? 'Upgrade complete' : 'Awaiting confirmation'}
-                  </p>
+                  <p className="text-sm font-medium text-foreground">Payment successful</p>
                   {paymentBanner.orderId && (
                     <p className="text-xs text-muted-foreground">Order {paymentBanner.orderId}</p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {finalized && finalizedInvoiceId && (
-                  <Button size="sm" variant="outline" onClick={() => downloadInvoice(finalizedInvoiceId)}>
-                    <Download className="h-4 w-4 mr-1" /> Invoice
-                  </Button>
-                )}
-                {!finalized && paymentBanner?.orderId && (
-                  <Button size="sm" variant="outline" disabled={finalizeRunning} onClick={async () => {
-                    try {
-                      setFinalizeRunning(true);
-                      // Pass plan hint if present in URL so backend can finalize even if tags were missing
-                      let hintPlan = planParam;
-                      if (!hintPlan) {
-                        try {
-                          const stored = localStorage.getItem('cf_last_plan');
-                          if (stored === 'pro' || stored === 'max') hintPlan = stored as 'pro' | 'max';
-                        } catch { }
-                      }
-                      const res = await finalizeCashfreeNow(paymentBanner.orderId!, hintPlan ? { plan: hintPlan } : undefined);
-                      if (res?.finalized) {
-                        setFinalized(true);
-                        if (res.invoice_id) setFinalizedInvoiceId(res.invoice_id);
-                        try { await refreshBilling?.(); } catch { }
-                        try { localStorage.removeItem('cf_last_plan'); } catch { }
-                        try { emitBillingUpdated(); } catch { }
-                      } else {
-                        // Invoice generation can lag by a second; poll briefly
-                        try {
-                          const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-                          for (let i = 0; i < 5; i++) {
-                            const chk = await checkCashfreeFinalized(paymentBanner.orderId!);
-                            if (chk.finalized) {
-                              setFinalized(true);
-                              if (chk.invoice_id) setFinalizedInvoiceId(chk.invoice_id);
-                              try { await refreshBilling?.(); } catch { }
-                              try { localStorage.removeItem('cf_last_plan'); } catch { }
-                              try { emitBillingUpdated(); } catch { }
-                              break;
-                            }
-                            await delay(1000);
-                          }
-                        } catch { }
-                      }
-                    } finally {
-                      setFinalizeRunning(false);
-                    }
-                  }}>
-                    {finalizeRunning ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                    Finalize Now
-                  </Button>
-                )}
                 <Button size="sm" onClick={() => refreshBilling?.()} disabled={billingLoading} className="btn-trading-primary">
                   {billingLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
                   Refresh
@@ -422,7 +346,7 @@ export function Billing() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={isCashfreeLocked} title={isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : undefined}>
+                <Button variant="outline" size="sm" disabled={isCashfreeLocked} title={isCashfreeLocked ? 'Cashfree is only available for Indian users (+91).' : undefined}>
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
                 </Button>
@@ -453,61 +377,65 @@ export function Billing() {
                     <span>Total Cost:</span>
                     <span className="text-xl font-bold text-foreground">{formatPriceUSDToLocal(getCreditCost(creditAmount), userPricing)}</span>
                   </div>
-                  <Button className="w-full btn-trading-primary" disabled={isCashfreeLocked} onClick={async () => {
-                    try {
-                      const isDev = import.meta.env.MODE === 'development';
-                      const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
-                      const returnUrl = `${frontendBase}/billing`;
-                      let order = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: returnUrl });
-                      const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
-                      const doCheckout = async (sessionId: string) => cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_modal" });
+                  <Button
+                    className="w-full btn-trading-primary"
+                    disabled={isCashfreeLocked || buyingTokens}
+                    onClick={async () => {
                       try {
-                        await doCheckout(order.payment_session_id);
-                      } catch (checkoutErr: any) {
-                        const msg = checkoutErr?.message || checkoutErr?.toString?.() || "";
-                        const code = checkoutErr?.code || checkoutErr?.response?.data?.code;
-                        const looksSessionInvalid = /payment_session_id/i.test(String(code)) || /payment_session_id.*invalid/i.test(msg);
-                        if (looksSessionInvalid) {
-                          // Regenerate a fresh session once and retry checkout
-                          const fresh = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: undefined });
-                          order = fresh;
-                          await doCheckout(fresh.payment_session_id);
-                        } else {
-                          throw checkoutErr;
-                        }
-                      }
-                      // Poll order status and redirect
-                      const maxTries = 10;
-                      const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-                      for (let i = 0; i < maxTries; i++) {
+                        setBuyingTokens(true);
+                        const isDev = import.meta.env.MODE === 'development';
+                        const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
+                        const returnUrl = `${frontendBase}/billing`;
+                        let order = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: returnUrl });
+                        const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
+                        const doCheckout = async (sessionId: string) =>
+                          cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_modal" });
+
                         try {
-                          const status = await getCashfreeOrderStatus(order.order_id, frontendBase);
-                          if (status.status === 'paid') {
-                            window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
-                            return;
+                          await doCheckout(order.payment_session_id);
+                        } catch (checkoutErr: any) {
+                          const msg = checkoutErr?.message || checkoutErr?.toString?.() || "";
+                          const code = checkoutErr?.code || checkoutErr?.response?.data?.code;
+                          const looksSessionInvalid =
+                            /payment_session_id/i.test(String(code)) || /payment_session_id.*invalid/i.test(msg);
+                          if (looksSessionInvalid) {
+                            const fresh = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: undefined });
+                            order = fresh;
+                            await doCheckout(fresh.payment_session_id);
+                          } else {
+                            throw checkoutErr;
                           }
-                          if (status.status === 'failed') {
-                            window.location.href = `${frontendBase}/billing/failure?order_id=${encodeURIComponent(order.order_id)}`;
-                            return;
-                          }
-                        } catch { }
-                        await delay(2000);
-                      }
-                      // Fallback to success page which will poll/finalize
-                      window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
-                    } catch (e: any) {
-                      try {
-                        const respData = e?.response?.data;
-                        const detail = respData?.detail ?? respData;
-                        let friendly = "Payment could not be started. Please try again.";
-                        if (detail) {
-                          const code = detail.code || e?.code;
-                          // Attempt to extract nested Cashfree JSON from backend error string, if present
-                          let cfMessage: string | undefined;
-                          let cfCode: string | undefined;
-                          let cfHelp: string | undefined;
-                          const raw = typeof detail.error === 'string' ? detail.error : undefined;
-                          if (raw) {
+                        }
+
+                        const maxTries = 10;
+                        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+                        for (let i = 0; i < maxTries; i++) {
+                          try {
+                            const status = await getCashfreeOrderStatus(order.order_id, frontendBase);
+                            if (status.status === 'paid') {
+                              window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                              return;
+                            }
+                            if (status.status === 'failed') {
+                              window.location.href = `${frontendBase}/billing/failure?order_id=${encodeURIComponent(order.order_id)}`;
+                              return;
+                            }
+                          } catch { }
+                          await delay(2000);
+                        }
+                        window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                      } catch (e: any) {
+                        try {
+                          const respData = e?.response?.data;
+                          const detail = respData?.detail ?? respData;
+                          let friendly = "Payment could not be started. Please try again.";
+                          if (detail) {
+                            const code = detail.code || e?.code;
+                            let cfMessage: string | undefined;
+                            let cfCode: string | undefined;
+                            let cfHelp: string | undefined;
+                            const raw = typeof detail.error === 'string' ? detail.error : undefined;
+                            if (raw) {
                               const match = raw.match(/{\s*"code"[\s\S]*}/);
                               if (match) {
                                 try {
@@ -515,29 +443,40 @@ export function Billing() {
                                   cfMessage = parsed?.message;
                                   cfCode = parsed?.code;
                                   cfHelp = parsed?.help;
-                                } catch {}
+                                } catch { }
                               }
                               if (/return_url_invalid/i.test(raw) || /url should be https/i.test(raw)) {
-                                cfMessage = cfMessage || "PhonePe requires an HTTPS return_url.";
+                                cfMessage = cfMessage || "Cashfree requires an HTTPS return_url.";
                               }
+                            }
+                            const parts: string[] = [];
+                            if (code) parts.push(`[${code}]`);
+                            if (cfCode && cfCode !== code) parts.push(`[${cfCode}]`);
+                            if (cfMessage) parts.push(cfMessage);
+                            else if (detail.error && typeof detail.error === 'string') parts.push(detail.error);
+                            else if (e?.message) parts.push(String(e.message));
+                            friendly = parts.join(' ');
+                            if (cfHelp) friendly += `\nHelp: ${cfHelp}`;
                           }
-                          const parts: string[] = [];
-                          if (code) parts.push(`[${code}]`);
-                          if (cfCode && cfCode !== code) parts.push(`[${cfCode}]`);
-                          if (cfMessage) parts.push(cfMessage);
-                          else if (detail.error && typeof detail.error === 'string') parts.push(detail.error);
-                          else if (e?.message) parts.push(String(e.message));
-                          friendly = parts.join(' ');
-                          if (cfHelp) friendly += `\nHelp: ${cfHelp}`;
+                          toast.error({ title: 'Cashfree Error', description: friendly, variant: 'destructive' });
+                        } catch {
+                          toast.error({ title: 'Cashfree Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
                         }
-                        toast.error({ title: 'PhonePe Error', description: friendly, variant: 'destructive' });
-                      } catch {
-                        toast.error({ title: 'PhonePe Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
+                      } finally {
+                        setBuyingTokens(false);
                       }
-                    }
-                  }}>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Purchase Tokens
+                    }}
+                  >
+                    {buyingTokens ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Opening checkout…
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Purchase Tokens
+                      </>
+                    )}
                   </Button>
                 </div>
               </DialogContent>
@@ -676,7 +615,7 @@ export function Billing() {
                   })()}
                 </span>
               </div>
-              
+
               <div className="flex gap-2 pt-1">
                 <Button size="sm" variant="outline" onClick={() => refreshBilling?.()} disabled={billingLoading}>
                   {billingLoading ? (
@@ -725,7 +664,7 @@ export function Billing() {
         <Tabs defaultValue="transactions" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          
+
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
 
@@ -801,7 +740,7 @@ export function Billing() {
           </TabsContent>
 
           {/* Token Usage */}
-         
+
           {/* Invoices */}
           <TabsContent value="invoices">
             <Card className="trading-card">
@@ -867,40 +806,52 @@ export function Billing() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
-              <Button 
-                className="w-full btn-trading-primary"  
+              <Button
+                className="w-full btn-trading-primary"
                 title={
-                  !isIndianUser 
-                    ? 'Cashfree is only available for Indian users' 
-                    : CASHFREE_LOCKED 
-                      ? 'Cashfree is temporarily locked in production' 
+                  !isIndianUser
+                    ? 'Cashfree is only available for Indian users'
+                    : CASHFREE_LOCKED
+                      ? 'Cashfree is temporarily locked in production'
                       : undefined
-                } 
+                }
+                disabled={!isIndianUser || CASHFREE_LOCKED}
                 onClick={() => {
                   if (!pendingPlan) return;
-                  try { 
+                  try {
                     const url = new URL(window.location.href);
                     url.searchParams.set('plan', pendingPlan);
                     url.searchParams.set('provider', 'cashfree');
                     window.location.href = url.toString();
-                  } catch { 
-                    window.location.href = `/billing?plan=${pendingPlan}&provider=cashfree`; 
+                  } catch {
+                    window.location.href = `/billing?plan=${pendingPlan}&provider=cashfree`;
                   }
                 }}
               >
                 Pay with Card / UPI (Cashfree)
               </Button>
-              <Button variant="outline" className="w-full" onClick={() => {
-                if (!pendingPlan) return;
-                setShowProvider(false);
-                setShowCryptoSelector(true);
-              }}>
+              <p className="text-[11px] text-muted-foreground text-center -mt-1">
+                Fast checkout with UPI, cards, and netbanking.
+              </p>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  if (!pendingPlan) return;
+                  setShowProvider(false);
+                  setShowCryptoSelector(true);
+                }}
+              >
                 Pay with Crypto (CoinPayments)
               </Button>
+              <p className="text-[11px] text-muted-foreground text-center -mt-1">
+                Supports BTC, ETH, LTC and more.
+              </p>
               {isCashfreeLocked && (
                 <p className="text-xs text-muted-foreground text-center">
-                  {!isIndianUser 
-                    ? 'Cashfree is only available for Indian users. Please use CoinPayments for crypto payments.' 
+                  {!isIndianUser
+                    ? 'Cashfree is only available for Indian users. Please use CoinPayments for crypto payments.'
                     : 'Cashfree checkout is temporarily disabled. CoinPayments remains available.'
                   }
                 </p>
@@ -916,10 +867,10 @@ export function Billing() {
           onSelect={(currency) => {
             setSelectedCurrency(currency);
             if (!pendingPlan) return;
-            try { 
+            try {
               window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments&currency=${currency}`;
-            } catch { 
-              window.location.href = '/billing'; 
+            } catch {
+              window.location.href = '/billing';
             }
           }}
           plan={pendingPlan || 'pro'}
