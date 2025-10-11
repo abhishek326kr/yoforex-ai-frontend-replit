@@ -346,7 +346,7 @@ export function Billing() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={isCashfreeLocked} title={isCashfreeLocked ? 'Cashfree is only available for Indian users (+91).' : undefined}>
+                <Button variant="outline" size="sm" disabled title={isCashfreeLocked ? 'Cashfree is only available for Indian users (+91).' : undefined}>
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
                 </Button>
@@ -626,7 +626,7 @@ export function Billing() {
                     'Refresh'
                   )}
                 </Button>
-                <Button size="sm" className="btn-trading-primary" onClick={() => setShowAddCredits(true)}>
+                <Button size="sm" className="btn-trading-primary" disabled onClick={() => setShowAddCredits(true)}>
                   <Plus className="h-3 w-3 mr-1" /> Buy Tokens
                 </Button>
               </div>
