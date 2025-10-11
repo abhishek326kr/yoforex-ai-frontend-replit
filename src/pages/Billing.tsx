@@ -67,7 +67,7 @@ const creditUsage = [
 export function Billing() {
   // Lock billing UI in production by default unless explicitly unlocked
   const isProd = import.meta.env.MODE === 'production';
-  // New: lock only Cashfree in production by default; CoinPayments remains available
+  // Cashfree availability strictly for Indian users
   const CASHFREE_LOCKED = String(import.meta.env.VITE_CASHFREE_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase() === 'true';
   // Billing page itself is unlocked
   const billingLocked = false;
@@ -81,8 +81,8 @@ export function Billing() {
     return user.phone.startsWith('+91');
   }, [user?.phone]);
 
-  // Determine if Cashfree should be locked for this user
-  const isCashfreeLocked = CASHFREE_LOCKED || !isIndianUser;
+  // Determine if PhonePe should be locked for this user (strictly India-only)
+  const isCashfreeLocked = !isIndianUser;
 
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
@@ -140,13 +140,14 @@ export function Billing() {
 
   // Payment provider selection
   type Provider = 'coinpayments' | 'cashfree';
-  // Choose provider from pathname slugs first (/billing/cashfree or /billing/coinpayments)
+  // Choose provider from pathname slugs first (/billing/phonepe or /billing/coinpayments)
   // Fallback to query or lock-based default
   const providerParam: Provider = useMemo(() => {
     try {
       const path = window.location.pathname.toLowerCase();
       if (path.includes('/billing/coinpayments')) return 'coinpayments';
-      if (path.includes('/billing/cashfree')) return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
+      // Route alias: treat /billing/phonepe as our Cashfree-backed flow
+      if (path.includes('/billing/phonepe') || path.includes('/billing/cashfree')) return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
     } catch { }
     try {
       const sp = new URLSearchParams(window.location.search);
@@ -421,7 +422,7 @@ export function Billing() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={CASHFREE_LOCKED} title={CASHFREE_LOCKED ? 'Token purchase via Cashfree is temporarily unavailable' : undefined}>
+                <Button variant="outline" size="sm" disabled={isCashfreeLocked} title={isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : undefined}>
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
                 </Button>
@@ -430,10 +431,10 @@ export function Billing() {
                 <DialogHeader>
                   <DialogTitle>Purchase Additional Tokens</DialogTitle>
                   <DialogDescription>
-                    {CASHFREE_LOCKED ? 'Cashfree is temporarily unavailable. Token purchases will be re-enabled soon.' : 'Add more tokens to your account for additional AI analyses'}
+                    {isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : 'Add more tokens to your account for additional AI analyses'}
                   </DialogDescription>
                 </DialogHeader>
-                <div className={`space-y-4 ${CASHFREE_LOCKED ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+                <div className={`space-y-4 ${isCashfreeLocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
                   <div>
                     <Label htmlFor="credits">Number of Tokens</Label>
                     <Select onValueChange={(value) => setCreditAmount(parseInt(value))}>
@@ -452,7 +453,7 @@ export function Billing() {
                     <span>Total Cost:</span>
                     <span className="text-xl font-bold text-foreground">{formatPriceUSDToLocal(getCreditCost(creditAmount), userPricing)}</span>
                   </div>
-                  <Button className="w-full btn-trading-primary" disabled={CASHFREE_LOCKED} onClick={async () => {
+                  <Button className="w-full btn-trading-primary" disabled={isCashfreeLocked} onClick={async () => {
                     try {
                       const isDev = import.meta.env.MODE === 'development';
                       const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
@@ -517,7 +518,7 @@ export function Billing() {
                                 } catch {}
                               }
                               if (/return_url_invalid/i.test(raw) || /url should be https/i.test(raw)) {
-                                cfMessage = cfMessage || "Cashfree requires an HTTPS return_url.";
+                                cfMessage = cfMessage || "PhonePe requires an HTTPS return_url.";
                               }
                           }
                           const parts: string[] = [];
@@ -529,9 +530,9 @@ export function Billing() {
                           friendly = parts.join(' ');
                           if (cfHelp) friendly += `\nHelp: ${cfHelp}`;
                         }
-                        toast.error({ title: 'Cashfree Error', description: friendly, variant: 'destructive' });
+                        toast.error({ title: 'PhonePe Error', description: friendly, variant: 'destructive' });
                       } catch {
-                        toast.error({ title: 'Cashfree Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
+                        toast.error({ title: 'PhonePe Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
                       }
                     }
                   }}>

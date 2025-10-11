@@ -124,15 +124,13 @@ export function Pricing() {
   const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
   const { data: billing } = useBillingSummary();
   const { user } = useAuth();
-  // Align Cashfree availability with Billing.tsx
-  const isProd = import.meta.env.MODE === 'production';
-  const CASHFREE_LOCKED = String(import.meta.env.VITE_CASHFREE_LOCKED ?? (isProd ? 'true' : 'false')).toLowerCase() === 'true';
   // Indian user detection via phone prefix +91
   const isIndianUser = useMemo(() => {
     const phone = (user as any)?.phone as string | undefined;
     return !!phone && phone.startsWith('+91');
   }, [user]);
-  const isCashfreeLocked = CASHFREE_LOCKED || !isIndianUser;
+  // Cashfree availability strictly for Indian users
+  const isCashfreeLocked = !isIndianUser;
   const currentPlan = (billing?.plan || 'free').toLowerCase() as 'free' | 'pro' | 'max';
   const rank: Record<'free' | 'pro' | 'max', number> = { free: 0, pro: 1, max: 2 };
   const [pricingTick, setPricingTick] = useState(0);
@@ -355,7 +353,7 @@ export function Pricing() {
                   <CreditCard className="h-6 w-6 text-primary" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Cashfree</p>
+                  <p className="text-sm font-medium text-foreground">PhonePe</p>
                   <p className="text-xs text-muted-foreground">Cards, UPI, Net Banking</p>
                 </div>
               </div>
@@ -365,7 +363,7 @@ export function Pricing() {
                   <DollarSign className="h-6 w-6 text-secondary" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Coingate</p>
+                  <p className="text-sm font-medium text-foreground">CoinPayments</p>
                   <p className="text-xs text-muted-foreground">50+ Cryptocurrencies</p>
                 </div>
               </div>
@@ -435,7 +433,7 @@ export function Pricing() {
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">What payment methods do you accept?</h4>
                 <p className="text-sm text-muted-foreground">
-                  We accept all major payment methods through Cashfree (cards, UPI, net banking) and cryptocurrency payments through Coingate.
+                  We accept all major payment methods through PhonePe (cards, UPI, net banking) and cryptocurrency payments through CoinPayments.
                 </p>
               </div>
               
@@ -461,16 +459,16 @@ export function Pricing() {
               <Button
                 className="w-full btn-trading-primary"
                 disabled={isCashfreeLocked}
-                title={isCashfreeLocked ? (CASHFREE_LOCKED ? 'Cashfree is temporarily unavailable.' : 'Cashfree is only available for Indian users (+91).') : undefined}
+                title={isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : undefined}
                 onClick={() => {
                   if (!pendingPlan || isCashfreeLocked) return;
                   try {
                     const iv = isAnnual ? '&interval=yearly' : '';
-                    window.location.href = `/billing/cashfree?plan=${pendingPlan}${iv}`;
+                    window.location.href = `/billing/phonepe?plan=${pendingPlan}${iv}`;
                   } catch { window.location.href = '/billing'; }
                 }}
               >
-                Pay with Card / UPI (Cashfree)
+                Pay with Card / UPI (PhonePe)
               </Button>
               <Button variant="outline" className="w-full" onClick={() => {
                 if (!pendingPlan) return;

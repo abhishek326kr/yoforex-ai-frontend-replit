@@ -25,7 +25,7 @@ function Checkout() {
 
   return (
     <div className="row">
-      <p>Click below to open the checkout page in popup</p>
+      <p>Click below to open the PhonePe checkout in a popup</p>
       <button type="submit" className="btn btn-primary" id="renderBtn" onClick={doPayment}>
         Pay Now
       </button>
