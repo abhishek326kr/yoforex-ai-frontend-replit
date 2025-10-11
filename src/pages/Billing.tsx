@@ -68,7 +68,7 @@ export function Billing() {
   // Lock billing UI in production by default unless explicitly unlocked
   const isProd = import.meta.env.MODE === 'production';
   // Cashfree availability strictly for Indian users
-  const CASHFREE_LOCKED = true;
+  const CASHFREE_LOCKED = false;
   // Billing page itself is unlocked
   const billingLocked = false;
 
