@@ -147,7 +147,8 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
       <div>
         <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 gap-2">
           {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => {
-            const lockedProv = isProviderLocked(p);
+            // const lockedProv = isProviderLocked(p);
+            const lockedProv = false;
             return (
               <TooltipProvider key={p}>
                 <Tooltip>
@@ -183,7 +184,8 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
             </SelectTrigger>
             <SelectContent>
               {(catalog[selectedProvider] || []).map((m) => {
-                const locked = isPaidModel(selectedProvider, m);
+                // const locked = isPaidModel(selectedProvider, m);
+                const locked = false
                 return (
                   <SelectItem
                     key={m}

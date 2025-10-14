@@ -251,6 +251,8 @@ export function Billing() {
       toast({ title: "Payment successful", description: orderId ? `Order ${orderId} confirmed.` : undefined });
     } else if (status === "failed") {
       toast({ title: "Payment failed", description: orderId ? `Order ${orderId} failed.` : undefined, variant: "destructive" });
+    } else if (status === "cancelled") {
+      toast({ title: "Payment cancelled", description: orderId ? `Order ${orderId} was cancelled.` : undefined, variant: "destructive" });
     } else if (status === "pending") {
       toast({ title: "Payment pending", description: orderId ? `Awaiting confirmation for ${orderId}.` : undefined });
     }
@@ -384,8 +386,8 @@ export function Billing() {
                       try {
                         setBuyingTokens(true);
                         const isDev = import.meta.env.MODE === 'development';
-                        const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
-                        const returnUrl = `${frontendBase}/billing`;
+                        const frontendBase = isDev ? 'http://localhost:3000' : 'https://app.yoforexai.com';
+                        const returnUrl = `${frontendBase}`;
                         let order = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: returnUrl });
                         const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
                         const doCheckout = async (sessionId: string) =>
@@ -398,6 +400,12 @@ export function Billing() {
                           const code = checkoutErr?.code || checkoutErr?.response?.data?.code;
                           const looksSessionInvalid =
                             /payment_session_id/i.test(String(code)) || /payment_session_id.*invalid/i.test(msg);
+                          const looksCancelled = /cancel|close|closed|popup.*close|user.*cancel|user.*close/i.test(String(msg)) || ['USER_CANCELLED','CANCELLED','PAYMENT_CANCELLED','CLOSE'].includes(String(code).toUpperCase());
+                          if (looksCancelled) {
+                            const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
+                            window.location.href = `${frontendBase}/billing?status=cancelled&order_id=${encodeURIComponent(order.order_id)}`;
+                            return;
+                          }
                           if (looksSessionInvalid) {
                             const fresh = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: undefined });
                             order = fresh;
@@ -428,6 +436,25 @@ export function Billing() {
                         try {
                           const respData = e?.response?.data;
                           const detail = respData?.detail ?? respData;
+                          const extractMessage = (d: any): string | null => {
+                            if (!d) return null;
+                            if (typeof d === 'object') {
+                              for (const k in d) {
+                                if (k === 'code' ) return d[k];
+                                else {
+                                  const jsonMatch = k.match(/{[\s\S]*}/);
+                                  if (jsonMatch) {
+                                    try {
+                                      const parsed = JSON.parse(jsonMatch[0]);
+                                      return parsed?.message;
+                                    } catch { }
+                                  }
+                                }
+                              }
+                              return d.error ?? null;
+                            }
+                            return null;
+                          }
                           let friendly = "Payment could not be started. Please try again.";
                           if (detail) {
                             const code = detail.code || e?.code;

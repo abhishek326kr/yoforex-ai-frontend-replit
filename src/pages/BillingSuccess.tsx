@@ -29,6 +29,9 @@ export default function BillingSuccess() {
     const sp = spInit;
     return sp.get("order_id") || undefined;
   }, [spInit]);
+  const statusParam = useMemo(() => {
+    try { return (spInit.get('status') || '').toLowerCase(); } catch { return undefined; }
+  }, [spInit]);
   const [cpChecking, setCpChecking] = useState<boolean>(false);
 
   // Poll webhook completion
@@ -37,7 +40,11 @@ export default function BillingSuccess() {
   useEffect(() => {
     let cancelled = false;
     const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
-
+    // If we were navigated here with an explicit cancelled status, don't poll/finalize
+    if (statusParam === 'cancelled') {
+      setChecking(false);
+      return () => { cancelled = true; };
+    }
     if (startedRef.current) {
       return () => { cancelled = true; };
     }
@@ -145,15 +152,18 @@ export default function BillingSuccess() {
         <Card className="trading-card p-8 text-center">
           <div className="flex flex-col items-center space-y-3">
             <CheckCircle className="h-10 w-10 text-trading-profit" />
-            <h1 className="text-2xl font-bold heading-trading">Payment Successful</h1>
-            <p className="text-muted-foreground">{orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.'}</p>
+            <h1 className="text-2xl font-bold heading-trading">{statusParam === 'cancelled' ? 'Upgrade cancelled' : 'Payment Successful'}</h1>
+            <p className="text-muted-foreground">{statusParam === 'cancelled' ? (orderId ? `Order ${orderId} was cancelled.` : 'The upgrade was cancelled.') : (orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.')}</p>
             {checking && (
               <div className="flex items-center justify-center text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {provider === 'coinpayments' ? 'Waiting for crypto confirmation…' : 'Finalizing your upgrade…'}
               </div>
             )}
-            {!checking && !webhookDone && (
+            {!checking && !webhookDone && statusParam !== 'cancelled' && (
               <p className="text-xs text-muted-foreground">This may take a moment. If your plan has not updated, please refresh the Billing page.</p>
+            )}
+            {statusParam === 'cancelled' && (
+              <p className="text-xs text-muted-foreground">You closed or cancelled the checkout. No changes were made to your plan.</p>
             )}
             {webhookDone && (
               <p className="text-xs text-trading-profit">Invoice generated and upgrade finalized.</p>
