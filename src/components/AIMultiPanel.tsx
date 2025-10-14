@@ -54,12 +54,12 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
     return list.find((m) => !isPaidModel(provider, m));
   };
 
-  const isProviderLocked = (provider: Provider): boolean => {
-    // Lock both OpenAI and Claude providers
-    if (provider === 'claude' || provider === 'openai') return true;
-    const list = catalog[provider] || [];
-    return list.length > 0 && list.every((m) => isPaidModel(provider, m));
-  };
+  // const isProviderLocked = (provider: Provider): boolean => {
+  //   // Lock both OpenAI and Claude providers
+  //   if (provider === 'claude' || provider === 'openai') return true;
+  //   const list = catalog[provider] || [];
+  //   return list.length > 0 && list.every((m) => isPaidModel(provider, m));
+  // };
 
   const hasFreeModel = (provider: Provider): boolean => {
     const list = catalog[provider] || [];
@@ -83,9 +83,9 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   const hasSelectedModel = !!models[selectedProvider];
   const canRun = useMemo(() => {
     if (!pair || !timeframe || !strategy || !selectedProvider) return false;
-    if (isProviderLocked(selectedProvider)) return false;
+    // if (isProviderLocked(selectedProvider)) return false;
     const selectedModel = models[selectedProvider];
-    if (selectedModel && isPaidModel(selectedProvider, selectedModel)) return false;
+    // if (selectedModel && isPaidModel(selectedProvider, selectedModel)) return false;
     if (needsExplicitModel) return !!hasSelectedModel && !isPaidModel(selectedProvider, selectedModel!);
     // If catalog has entries for this provider, ensure at least one free model exists
     const list = catalog[selectedProvider] || [];
@@ -108,26 +108,26 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   }, [selectedProvider, catalog]);
 
   // Sanitize selection: if a locked model is somehow selected, switch to first free (or unset)
-  useEffect(() => {
-    const current = models[selectedProvider];
-    if (current && isPaidModel(selectedProvider, current)) {
-      const free = firstFreeModelForProvider(selectedProvider);
-      setModels(prev => ({ ...prev, [selectedProvider]: free }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [models, selectedProvider, catalog]);
+  // useEffect(() => {
+  //   const current = models[selectedProvider];
+  //   if (current && isPaidModel(selectedProvider, current)) {
+  //     const free = firstFreeModelForProvider(selectedProvider);
+  //     setModels(prev => ({ ...prev, [selectedProvider]: free }));
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [models, selectedProvider, catalog]);
 
   // If selected provider becomes locked (e.g., catalog loads), switch to the first provider with a free model
-  useEffect(() => {
-    if (!selectedProvider) return;
-    if (!isProviderLocked(selectedProvider)) return;
-    const providers = Object.keys(PROVIDER_LABELS) as Provider[];
-    const fallback = providers.find((p) => !isProviderLocked(p) && hasFreeModel(p));
-    if (fallback && fallback !== selectedProvider) {
-      setSelectedProvider(fallback);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProvider, catalog]);
+  // useEffect(() => {
+  //   if (!selectedProvider) return;
+  //   if (!isProviderLocked(selectedProvider)) return;
+  //   const providers = Object.keys(PROVIDER_LABELS) as Provider[];
+  //   const fallback = providers.find((p) => !isProviderLocked(p) && hasFreeModel(p));
+  //   if (fallback && fallback !== selectedProvider) {
+  //     setSelectedProvider(fallback);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [selectedProvider, catalog]);
 
   // Notify parent when provider or models change
   useEffect(() => {
@@ -202,9 +202,9 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
                               <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="right" className="text-xs">
+                          {/* <TooltipContent side="right" className="text-xs">
                             Paid model — upgrade required
-                          </TooltipContent>
+                          </TooltipContent> */}
                         </Tooltip>
                       </TooltipProvider>
                     ) : (
