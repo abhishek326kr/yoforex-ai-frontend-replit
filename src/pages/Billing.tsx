@@ -431,7 +431,7 @@ export function Billing() {
                           } catch { }
                           await delay(2000);
                         }
-                        window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                        window.location.href = `${frontendBase}/billing?status=pending&order_id=${encodeURIComponent(order.order_id)}`;
                       } catch (e: any) {
                         try {
                           const respData = e?.response?.data;
@@ -458,6 +458,18 @@ export function Billing() {
                           let friendly = "Payment could not be started. Please try again.";
                           if (detail) {
                             const code = detail.code || e?.code;
+                            // Map known backend error codes to friendly messages from client mapping
+                            try {
+                              // Import dynamic mapping from API client module
+                              // eslint-disable-next-line @typescript-eslint/no-var-requires
+                              const client = require('@/lib/api/client').default || require('@/lib/api/client');
+                              const map = client?.BACKEND_FRIENDLY_MESSAGES as Record<string, string> | undefined;
+                              if (map && code && map[code]) {
+                                friendly = map[code];
+                              }
+                            } catch {
+                              // ignore require errors; fallback to previous heuristics
+                            }
                             let cfMessage: string | undefined;
                             let cfCode: string | undefined;
                             let cfHelp: string | undefined;

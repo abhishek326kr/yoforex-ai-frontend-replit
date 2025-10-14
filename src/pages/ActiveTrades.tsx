@@ -15,6 +15,7 @@ import {
 import { TrendingDown, Clock, AlertTriangle, X, Edit3, Copy } from "lucide-react";
 import { useActiveTrades } from "@/context/ActiveTradesContext";
 import { useToast } from "@/components/ui/use-toast";
+import { showApiError } from '@/lib/ui/errorToast';
 import { closeTrade as closeTradeApi } from "@/lib/api/trades";
 
 export function ActiveTrades() {
@@ -67,7 +68,7 @@ export function ActiveTrades() {
     } catch (e: any) {
       // Even if something unexpected happened, clear locally so the user isn't blocked
       trades.forEach(t => removeTrade(t.id));
-      toast({ title: "Closed positions (local)", description: e?.message || 'Some errors occurred while closing on server.' });
+      showApiError(e, { title: 'Closed positions (local)', defaultMessage: 'Some errors occurred while closing on server.' });
     }
   };
 
@@ -347,7 +348,7 @@ export function ActiveTrades() {
                       toast({ title: "Position closed" });
                     }
                   } catch (err: any) {
-                    toast({ title: "Failed to close position", description: err?.message || 'Unknown error', variant: 'destructive' });
+                    showApiError(err, { title: 'Failed to close position', defaultMessage: 'Failed to close position. Please try again.' });
                   } finally {
                     setShowCloseDialog(false);
                     setCloseTargetId(null);

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { showApiError } from "@/lib/ui/errorToast";
 import { fetchTicketById, createTicketComment, type TicketDTO, type TicketCommentDTO } from "@/lib/api/support";
 import { Paperclip } from "lucide-react";
 
@@ -54,7 +55,7 @@ export default function TicketView() {
         const embedded = (data as any)?.comments || [];
         setComments(Array.isArray(embedded) ? embedded.slice().reverse() : []); // oldest at top like typical threads
       } catch (e: any) {
-        toast({ title: 'Failed to load ticket', description: e?.message || 'Unknown error', variant: 'destructive' });
+        showApiError(e, { title: 'Failed to load ticket', defaultMessage: 'Failed to load ticket. Please try again.' });
       } finally {
         if (active) setLoading(false);
       }
@@ -85,7 +86,7 @@ export default function TicketView() {
       setReply("");
       toast({ title: 'Reply posted' });
     } catch (e: any) {
-      toast({ title: 'Failed to post reply', description: e?.message || 'Unknown error', variant: 'destructive' });
+      showApiError(e, { title: 'Failed to post reply', defaultMessage: 'Failed to post reply. Please try again.' });
     } finally {
       setPosting(false);
     }

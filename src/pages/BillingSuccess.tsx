@@ -117,23 +117,15 @@ export default function BillingSuccess() {
         } catch {}
         await delay(2000);
       }
+      // If webhook hasn't confirmed within the polling window, do NOT auto-finalize from the client.
+      // Finalization requires server-side verification from Cashfree webhooks. Showing 'pending'
+      // avoids mistakenly creating invoices when the user cancelled or closed the checkout.
       if (!cancelled && !webhookDone && orderId) {
-        try {
-          await finalizeCashfreeNow(orderId);
-          try { await refresh?.(); emitBillingUpdated(); } catch {}
-          const invs2 = await listInvoices();
-          const found2 = invs2.some(inv => inv.invoice_id === `INV-${orderId}`);
-          if (found2) {
-            setWebhookDone(true);
-          } else {
-            try {
-              const status2 = await checkCashfreeFinalized(orderId);
-              if (status2?.finalized) setWebhookDone(true);
-            } catch {}
-          }
-        } catch {}
+        // Stop checking and leave the finalization responsibility to server-side webhooks.
+        setChecking(false);
+      } else {
+        if (!cancelled) setChecking(false);
       }
-      if (!cancelled) setChecking(false);
     };
     void run();
     return () => { cancelled = true; };
@@ -152,8 +144,8 @@ export default function BillingSuccess() {
         <Card className="trading-card p-8 text-center">
           <div className="flex flex-col items-center space-y-3">
             <CheckCircle className="h-10 w-10 text-trading-profit" />
-            <h1 className="text-2xl font-bold heading-trading">{statusParam === 'cancelled' ? 'Upgrade cancelled' : 'Payment Successful'}</h1>
-            <p className="text-muted-foreground">{statusParam === 'cancelled' ? (orderId ? `Order ${orderId} was cancelled.` : 'The upgrade was cancelled.') : (orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.')}</p>
+            <h1 className="text-2xl font-bold heading-trading">{statusParam === 'cancelled' ? 'Upgrade cancelled' : (statusParam === 'pending' ? 'Payment pending' : 'Payment Successful')}</h1>
+            <p className="text-muted-foreground">{statusParam === 'cancelled' ? (orderId ? `Order ${orderId} was cancelled.` : 'The upgrade was cancelled.') : (statusParam === 'pending' ? (orderId ? `Order ${orderId} is pending confirmation.` : 'Your payment is pending confirmation.') : (orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.'))}</p>
             {checking && (
               <div className="flex items-center justify-center text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {provider === 'coinpayments' ? 'Waiting for crypto confirmation…' : 'Finalizing your upgrade…'}

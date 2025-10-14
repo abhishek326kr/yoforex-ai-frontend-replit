@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { toast, useToast } from "@/hooks/use-toast";
+import { showApiError } from '@/lib/ui/errorToast';
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,9 +68,8 @@ export function Profile() {
             preferred_pairs: profile.preferred_pairs || '',
             risk_tolerance: profile.risk_tolerance || ''
           });
-
         }
-        
+
         // Load preferences
         const userPrefs = await profileStorage.getPreferences();
         if (userPrefs) {
@@ -92,14 +92,10 @@ export function Profile() {
               document.documentElement.classList.remove('compact');
             }
           } catch {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: 'Failed to apply compact view preference',
-            });
+            showApiError(new Error('Failed to apply compact view preference'), { title: 'Error', defaultMessage: 'Failed to apply compact view preference' });
           }
         }
-        
+
         // Load security settings
         const secSettings = await profileStorage.getSecuritySettings();
         if (secSettings) {
@@ -113,26 +109,16 @@ export function Profile() {
       } catch (error: any) {
         if (error?.message === 'User not verified' || error?.message === 'Not authenticated') {
           // Show message and redirect to auth page
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to access your profile settings.",
-            variant: "destructive"
-          });
+          showApiError(error, { title: 'Authentication Required', defaultMessage: 'Please log in to access your profile settings.' });
           setTimeout(() => setLocation('/auth'), 1500);
           return;
         } else {
           console.error('Failed to load profile data:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load profile data. Please try again.",
-            variant: "destructive"
-          });
+          showApiError(error, { title: 'Error', defaultMessage: 'Failed to load profile data. Please try again.' });
         }
       }
     };
 
-  
-    
     loadProfileData();
   }, [user, toast]);
 

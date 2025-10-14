@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { showApiError } from '@/lib/ui/errorToast';
 import { Paperclip, Info, Search } from "lucide-react";
 import { TradingLayout } from "./layout/TradingLayout";
 import { useEffect, useMemo, useState } from "react";
@@ -72,7 +73,7 @@ export default function HelpSupport() {
         const data = await fetchSupportMetadata();
         if (mounted) setMetadata(data);
       } catch (e: any) {
-        toast({ title: "Failed to load support metadata", description: e?.message || 'Unknown error', variant: 'destructive' });
+        showApiError(e, { title: 'Failed to load support metadata', defaultMessage: 'Failed to load support metadata. Please try again.' });
       } finally {
         if (mounted) setLoadingMeta(false);
       }
@@ -160,7 +161,7 @@ export default function HelpSupport() {
         }
       } catch (e: any) {
         setTicketDetails(null);
-        toast({ title: 'Failed to load ticket details', description: e?.message || 'Unknown error', variant: 'destructive' });
+        showApiError(e, { title: 'Failed to load ticket details', defaultMessage: 'Failed to load ticket details. Please try again.' });
       } finally {
         if (active) setDetailsLoading(false);
       }
@@ -193,8 +194,8 @@ export default function HelpSupport() {
       };
       setComments(prev => [fallback, ...prev]);
       setCommentInput("");
-    } catch (e: any) {
-      toast({ title: 'Failed to add comment', description: e?.message || 'Unknown error', variant: 'destructive' });
+      } catch (e: any) {
+        showApiError(e, { title: 'Failed to add comment', defaultMessage: 'Failed to add comment. Please try again.' });
     } finally {
       setCommentSubmitting(false);
     }
@@ -213,7 +214,7 @@ export default function HelpSupport() {
         setTickets(rows);
         setTicketsLoaded(true);
       } catch (e: any) {
-        toast({ title: 'Failed to load tickets', description: e?.message || 'Unknown error', variant: 'destructive' });
+        showApiError(e, { title: 'Failed to load tickets', defaultMessage: 'Failed to load tickets. Please try again.' });
       } finally {
         if (active) setTicketsLoading(false);
       }
@@ -334,7 +335,7 @@ export default function HelpSupport() {
       });
       setAttachments([]);
     } catch (err: any) {
-      toast({ title: "Failed to submit ticket", description: err?.message || 'Unknown error', variant: 'destructive' });
+      showApiError(err, { title: 'Failed to submit ticket', defaultMessage: 'Failed to submit ticket. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }

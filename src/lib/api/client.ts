@@ -87,6 +87,24 @@ function parseFastApiError(data: any): { message?: string; code?: string | numbe
   if (!data) return {};
   // FastAPI commonly returns { detail: "message" } or { detail: { code, error } } or { detail: [ { loc, msg, type }, ... ] }
   const detail = (data as any).detail;
+  // If detail is a string but contains embedded JSON (some backends stringify nested errors), try to extract it
+  if (typeof detail === 'string') {
+    // quick heuristic: find first { and last }
+    const first = detail.indexOf('{');
+    const last = detail.lastIndexOf('}');
+    if (first !== -1 && last !== -1 && last > first) {
+      try {
+        const inner = JSON.parse(detail.slice(first, last + 1));
+        // If inner looks like a FastAPI detail object, normalize it
+        if (inner && (inner.detail || inner.error || inner.message)) {
+          return parseFastApiError(inner);
+        }
+        // Otherwise, fall through and let the string be used as message
+      } catch (e) {
+        // ignore parse errors and continue
+      }
+    }
+  }
   // Case 1: detail is a string
   if (typeof detail === 'string') {
     return { message: detail, code: (data as any).code, details: undefined };
@@ -112,6 +130,29 @@ function parseFastApiError(data: any): { message?: string; code?: string | numbe
   }
   return {};
 }
+
+// Map backend error codes to friendly messages for lay users
+const BACKEND_FRIENDLY_MESSAGES: Record<string, string> = {
+  // Payments
+  cashfree_error: 'Payment provider error. Please try again or contact support if the problem persists.',
+  not_paid: 'Payment not completed. No changes were made.',
+  bad_signature: 'Payment callback verification failed. If you completed payment, contact support.',
+  bad_payload: 'Received invalid data from the payment provider.',
+  plan_price_missing: 'This plan currently has a configuration issue. Please contact support.',
+  bad_tokens: 'Invalid token amount selected. Please choose a valid pack.',
+
+  // Permissions / auth
+  forbidden: 'You do not have permission to perform this action.',
+  user_not_found: 'User account not found. Please sign in again or contact support.',
+
+  // Billing / usage
+  daily_cap_reached: 'You have reached your daily usage limit. Please try again tomorrow or upgrade your plan.',
+
+  // Promo / input
+  invalid_promo: 'Promo code not recognized or expired.',
+  bad_request: 'Invalid request. Please check your input and try again.',
+  model_not_allowed: 'One or more selected models are not allowed on your current plan.',
+};
 
 // Response interceptor for handling errors and retries
 apiClient.interceptors.response.use(
@@ -253,5 +294,8 @@ apiClient.interceptors.response.use(
     }
   }
 );
+
+// Attach friendly mapping to the export for UI access
+(apiClient as any).BACKEND_FRIENDLY_MESSAGES = BACKEND_FRIENDLY_MESSAGES;
 
 export default apiClient;

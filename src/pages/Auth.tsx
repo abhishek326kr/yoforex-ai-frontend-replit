@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { showApiError } from '@/lib/ui/errorToast';
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
@@ -102,41 +103,7 @@ export function Auth() {
         setActiveTab('reset-password');
       }
     } catch (error: any) {
-      const res = error?.response;
-      if (!res) {
-        toast({
-          title: 'Network Error',
-          description: 'Please check your internet connection and try again.',
-          variant: 'destructive',
-        });
-      } else {
-        const detail = res?.data?.detail;
-        // Surface phone invalid specifically
-        let title = 'Request Failed';
-        let description = 'Failed to send reset code.';
-        if (Array.isArray(detail)) {
-          const msg = detail[0]?.msg || detail[0];
-          if (typeof msg === 'string' && /phone|invalid/i.test(msg)) {
-            title = 'Invalid WhatsApp number';
-            description = msg;
-          } else {
-            description = msg || description;
-          }
-        } else if (typeof detail === 'string') {
-          if (/phone|invalid/i.test(detail)) {
-            title = 'Invalid WhatsApp number';
-          }
-          description = detail;
-        } else if (detail?.error) {
-          if (/phone|invalid/i.test(detail.error)) {
-            title = 'Invalid WhatsApp number';
-          }
-          description = detail.error;
-        } else if (error?.message) {
-          description = error.message;
-        }
-        toast({ title, description, variant: 'destructive' });
-      }
+      showApiError(error, { title: 'Request Failed', defaultMessage: 'Failed to send reset code. Please try again.' });
     } finally {
       setIsLoading(false);
     }

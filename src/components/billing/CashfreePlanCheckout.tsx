@@ -136,11 +136,9 @@ export function CashfreePlanCheckout(props: {
             }
             await delay(2000);
           }
-          // Fallback if still pending/unknown
-          // Go to success page which will poll and inform the user while finalization completes
-          window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(
-            order.order_id
-          )}`;
+          // Fallback if still pending/unknown: redirect to billing with pending status
+          // This avoids showing an immediate success page when payment wasn't confirmed
+          window.location.href = `${frontendBase}/billing?status=pending&order_id=${encodeURIComponent(order.order_id)}`;
         } catch {
           window.location.href = "/billing";
         }
