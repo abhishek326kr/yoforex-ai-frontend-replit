@@ -18,7 +18,8 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.json",
+    "tsconfigRootDir": "c:/yoforex-projects/yoforex-ai/frontend"
   },
   "overrides": [
     {

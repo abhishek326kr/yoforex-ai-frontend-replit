@@ -859,7 +859,10 @@ export function Billing() {
                   if (!pendingPlan) return;
                   try {
                     const url = new URL(window.location.href);
+                    // Preserve any existing `interval` query param (e.g., interval=yearly)
+                    const currentInterval = new URLSearchParams(window.location.search).get('interval');
                     url.searchParams.set('plan', pendingPlan);
+                    if (currentInterval) url.searchParams.set('interval', currentInterval);
                     url.searchParams.set('provider', 'cashfree');
                     window.location.href = url.toString();
                   } catch {
@@ -907,7 +910,10 @@ export function Billing() {
             setSelectedCurrency(currency);
             if (!pendingPlan) return;
             try {
-              window.location.href = `/billing?plan=${pendingPlan}&provider=coinpayments&currency=${currency}`;
+              // Preserve interval if present in current URL
+              const currentInterval = new URLSearchParams(window.location.search).get('interval');
+              const iv = currentInterval ? `&interval=${encodeURIComponent(currentInterval)}` : "";
+              window.location.href = `/billing?plan=${pendingPlan}${iv}&provider=coinpayments&currency=${encodeURIComponent(currency)}`;
             } catch {
               window.location.href = '/billing';
             }

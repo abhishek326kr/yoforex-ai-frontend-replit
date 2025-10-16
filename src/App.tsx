@@ -2,6 +2,7 @@
 import { ToastContainer } from 'react-toastify';
 import { LiveTrading } from "@/pages/LiveTrading";
 import { CashfreePlanCheckout } from "@/components/billing/CashfreePlanCheckout";
+import { CoinPaymentsPlanCheckout } from "@/components/billing/CoinPaymentsPlanCheckout";
 import { About } from "@/pages/About";
 import 'react-toastify/dist/ReactToastify.css';
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,15 +40,29 @@ const queryClient = new QueryClient();
 
 // Component to handle Cashfree route with plan parameter
 const CashfreeRouteHandler = () => {
-  const [location] = useLocation();
-  const params = new URLSearchParams(location.split('?')[1] || '');
-  const plan = params.get('plan') as 'pro' | 'max' | null;
+  // wouter's location may not include the query string reliably, so use
+  // window.location.search which contains the full query string for the current URL.
+  const params = new URLSearchParams(window.location.search || '');
+  const plan = (params.get('plan') || null) as 'pro' | 'max' | null;
 
   if (!plan) {
     return <div>Invalid plan selected</div>;
   }
 
   return <CashfreePlanCheckout plan={plan} />;
+};
+
+// Component to handle CoinPayments route with plan parameter
+const CoinPaymentsRouteHandler = () => {
+  const params = new URLSearchParams(window.location.search || '');
+  const plan = (params.get('plan') || null) as 'pro' | 'max' | null;
+  const currency = (params.get('currency') || undefined) as string | undefined;
+
+  if (!plan) {
+    return <div>Invalid plan selected</div>;
+  }
+
+  return <CoinPaymentsPlanCheckout plan={plan} currency={currency} />;
 };
 
 const App = () => (
@@ -166,6 +181,11 @@ const App = () => (
                   <CashfreeRouteHandler />
                 </ProtectedRoute>
               </Route>
+              <Route path="/billing/coinpayments">
+                <ProtectedRoute>
+                  <CoinPaymentsRouteHandler />
+                </ProtectedRoute>
+              </Route>
               <Route path="/help">
                 <ProtectedRoute>
                   <HelpSupport />
@@ -199,3 +219,5 @@ const App = () => (
 );
 
 export default App;
+
+

@@ -71,7 +71,7 @@ export const CountryPhoneInput: React.FC<CountryPhoneInputProps> = ({
 
   return (
     <div className={`relative ${className || ""}`}>
-      <div className="absolute inset-y-0 left-0 flex items-center pl-2 pr-2 w-32 border-r border-border/30">
+      <div className="absolute inset-y-0 left-0 flex items-center pl-2 w-32 border-r border-border/30">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
