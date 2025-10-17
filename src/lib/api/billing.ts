@@ -177,10 +177,12 @@ export type PlanDetailsResponse = {
   status: string;
   monthly_price_usd: number;
   next_billing_date_iso: string;
+  next_billing_date_human?: string | null;
   provider?: string;
-  // Expiry info
   current_period_start_iso?: string | null;
   current_period_end_iso?: string | null;
+  current_period_start_human?: string | null;
+  current_period_end_human?: string | null;
   is_expired?: boolean | null;
   days_until_expiry?: number | null;
   is_expiring_soon?: boolean | null;

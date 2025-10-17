@@ -25,7 +25,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { listInvoices, downloadInvoice, type InvoiceInfo, listTransactions, type TransactionInfo, getPlanDetails, type PlanDetailsResponse, startCashfreeTokensOrder, getCashfreeOrderStatus } from "@/lib/api/billing";
+import {
+  listInvoices,
+  downloadInvoice,
+  type InvoiceInfo,
+  listTransactions,
+  type TransactionInfo,
+  getPlanDetails,
+  type PlanDetailsResponse,
+  startCashfreeTokensOrder,
+  getCashfreeOrderStatus,
+} from "@/lib/api/billing";
 import { load } from "@cashfreepayments/cashfree-js";
 import type { Cashfree } from "@cashfreepayments/cashfree-js";
 import { CASHFREE_MODE } from "@/config/payments";
@@ -45,7 +55,7 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
-  Search
+  Search,
 } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
 import { getUserPricing, formatPriceUSDToLocal } from "@/lib/pricing";
@@ -61,12 +71,12 @@ const creditUsage = [
   { date: "2024-01-21", single: 8, multiAI: 1, total: 1950 },
   { date: "2024-01-20", single: 15, multiAI: 0, total: 2250 },
   { date: "2024-01-19", single: 6, multiAI: 3, total: 3150 },
-  { date: "2024-01-18", single: 10, multiAI: 1, total: 2250 }
+  { date: "2024-01-18", single: 10, multiAI: 1, total: 2250 },
 ];
 
 export function Billing() {
   // Lock billing UI in production by default unless explicitly unlocked
-  const isProd = import.meta.env.MODE === 'production';
+  const isProd = import.meta.env.MODE === "production";
   // Cashfree availability strictly for Indian users
   const CASHFREE_LOCKED = false;
   // Billing page itself is unlocked
@@ -78,7 +88,7 @@ export function Billing() {
   const isIndianUser = useMemo(() => {
     if (!user?.phone) return false;
     // Check if phone starts with +91 (India country code)
-    return user.phone.startsWith('+91');
+    return user.phone.startsWith("+91");
   }, [user?.phone]);
 
   // Determine if PhonePe should be locked for this user (strictly India-only)
@@ -87,11 +97,20 @@ export function Billing() {
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [showAddCredits, setShowAddCredits] = useState(false);
   const [creditAmount, setCreditAmount] = useState(100000);
-  const { data: billing, loading: billingLoading, error: billingError, refresh: refreshBilling } = useBillingSummary();
-  const [planDetails, setPlanDetails] = useState<PlanDetailsResponse | null>(null);
+  const {
+    data: billing,
+    loading: billingLoading,
+    error: billingError,
+    refresh: refreshBilling,
+  } = useBillingSummary();
+  const [planDetails, setPlanDetails] = useState<PlanDetailsResponse | null>(
+    null
+  );
   const [planLoading, setPlanLoading] = useState<boolean>(false);
   const [planError, setPlanError] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<TransactionInfo[] | null>(null);
+  const [transactions, setTransactions] = useState<TransactionInfo[] | null>(
+    null
+  );
   const [txnLoading, setTxnLoading] = useState<boolean>(false);
   const [txnError, setTxnError] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<InvoiceInfo[]>([]);
@@ -104,11 +123,11 @@ export function Billing() {
 
   // Provider selection modal state
   const [showProvider, setShowProvider] = useState<boolean>(false);
-  const [pendingPlan, setPendingPlan] = useState<('pro' | 'max') | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<("pro" | "max") | null>(null);
 
   // Cryptocurrency selection modal state
   const [showCryptoSelector, setShowCryptoSelector] = useState<boolean>(false);
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("");
   // Token purchase UX state
   const [buyingTokens, setBuyingTokens] = useState<boolean>(false);
 
@@ -118,7 +137,7 @@ export function Billing() {
       const sp = new URLSearchParams(window.location.search);
       const p = (sp.get("plan") || "").toLowerCase();
       if (p === "pro" || p === "max") return p as "pro" | "max";
-    } catch { }
+    } catch {}
     return undefined;
   })();
 
@@ -126,44 +145,48 @@ export function Billing() {
   useEffect(() => {
     const onFx = () => setPricingTick((x) => x + 1);
     const onStorage = (e: StorageEvent) => {
-      if (!e || e.key === 'userProfile') setPricingTick((x) => x + 1);
+      if (!e || e.key === "userProfile") setPricingTick((x) => x + 1);
     };
     const onProfile = () => setPricingTick((x) => x + 1);
-    window.addEventListener('fx:updated', onFx as EventListener);
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('profile:updated', onProfile as EventListener);
+    window.addEventListener("fx:updated", onFx as EventListener);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("profile:updated", onProfile as EventListener);
     return () => {
-      window.removeEventListener('fx:updated', onFx as EventListener);
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('profile:updated', onProfile as EventListener);
+      window.removeEventListener("fx:updated", onFx as EventListener);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("profile:updated", onProfile as EventListener);
     };
   }, []);
 
   // Payment provider selection
-  type Provider = 'coinpayments' | 'cashfree';
+  type Provider = "coinpayments" | "cashfree";
   // Choose provider from pathname slugs first (/billing/phonepe or /billing/coinpayments)
   // Fallback to query or lock-based default
   const providerParam: Provider = useMemo(() => {
     try {
       const path = window.location.pathname.toLowerCase();
-      if (path.includes('/billing/coinpayments')) return 'coinpayments';
+      if (path.includes("/billing/coinpayments")) return "coinpayments";
       // Route alias: treat /billing/phonepe as our Cashfree-backed flow
-      if (path.includes('/billing/phonepe') || path.includes('/billing/cashfree')) return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
-    } catch { }
+      if (
+        path.includes("/billing/phonepe") ||
+        path.includes("/billing/cashfree")
+      )
+        return isCashfreeLocked ? "coinpayments" : "cashfree";
+    } catch {}
     try {
       const sp = new URLSearchParams(window.location.search);
-      const prov = (sp.get('provider') || '').toLowerCase();
-      if (prov === 'coinpayments') return 'coinpayments';
-    } catch { }
-    return (isCashfreeLocked ? 'coinpayments' : 'cashfree');
+      const prov = (sp.get("provider") || "").toLowerCase();
+      if (prov === "coinpayments") return "coinpayments";
+    } catch {}
+    return isCashfreeLocked ? "coinpayments" : "cashfree";
   }, [isCashfreeLocked, CASHFREE_LOCKED]);
 
   // Get currency parameter from URL (?currency=BTC)
   const currencyParam = useMemo(() => {
     try {
       const sp = new URLSearchParams(window.location.search);
-      return sp.get('currency') || undefined;
-    } catch { }
+      return sp.get("currency") || undefined;
+    } catch {}
     return undefined;
   }, []);
 
@@ -174,7 +197,10 @@ export function Billing() {
       const status = (sp.get("status") || "").toLowerCase();
       const orderId = sp.get("order_id") || undefined;
       if (!status) return null;
-      return { status, orderId } as { status: "success" | "failed" | "pending" | string; orderId?: string };
+      return { status, orderId } as {
+        status: "success" | "failed" | "pending" | string;
+        orderId?: string;
+      };
     } catch {
       return null;
     }
@@ -190,13 +216,16 @@ export function Billing() {
         const data = await getPlanDetails();
         if (!cancelled) setPlanDetails(data);
       } catch (e: any) {
-        if (!cancelled) setPlanError(e?.message || "Failed to load plan details");
+        if (!cancelled)
+          setPlanError(e?.message || "Failed to load plan details");
       } finally {
         if (!cancelled) setPlanLoading(false);
       }
     };
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load transactions
@@ -209,13 +238,16 @@ export function Billing() {
         const data = await listTransactions();
         if (!cancelled) setTransactions(data);
       } catch (e: any) {
-        if (!cancelled) setTxnError(e?.message || "Failed to load transactions");
+        if (!cancelled)
+          setTxnError(e?.message || "Failed to load transactions");
       } finally {
         if (!cancelled) setTxnLoading(false);
       }
     };
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load invoices
@@ -234,7 +266,9 @@ export function Billing() {
       }
     };
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // React to payment status
@@ -245,16 +279,34 @@ export function Billing() {
     // Auto-hide after 5 minutes
     const hideTimer = setTimeout(() => setBannerVisible(false), 5 * 60 * 1000);
     // Refresh billing summary for authoritative values
-    try { refreshBilling?.(); } catch { }
+    try {
+      refreshBilling?.();
+    } catch {}
     const { status, orderId } = paymentBanner;
     if (status === "success") {
-      toast({ title: "Payment successful", description: orderId ? `Order ${orderId} confirmed.` : undefined });
+      toast({
+        title: "Payment successful",
+        description: orderId ? `Order ${orderId} confirmed.` : undefined,
+      });
     } else if (status === "failed") {
-      toast({ title: "Payment failed", description: orderId ? `Order ${orderId} failed.` : undefined, variant: "destructive" });
+      toast({
+        title: "Payment failed",
+        description: orderId ? `Order ${orderId} failed.` : undefined,
+        variant: "destructive",
+      });
     } else if (status === "cancelled") {
-      toast({ title: "Payment cancelled", description: orderId ? `Order ${orderId} was cancelled.` : undefined, variant: "destructive" });
+      toast({
+        title: "Payment cancelled",
+        description: orderId ? `Order ${orderId} was cancelled.` : undefined,
+        variant: "destructive",
+      });
     } else if (status === "pending") {
-      toast({ title: "Payment pending", description: orderId ? `Awaiting confirmation for ${orderId}.` : undefined });
+      toast({
+        title: "Payment pending",
+        description: orderId
+          ? `Awaiting confirmation for ${orderId}.`
+          : undefined,
+      });
     }
     // Optionally strip status params from URL after a short delay
     const t = setTimeout(() => {
@@ -264,18 +316,21 @@ export function Billing() {
         // keep order_id for invoices lookup if you want, else remove both
         // url.searchParams.delete("order_id");
         window.history.replaceState({}, "", url.toString());
-      } catch { }
+      } catch {}
     }, 2500);
-    return () => { clearTimeout(t); clearTimeout(hideTimer); };
+    return () => {
+      clearTimeout(t);
+      clearTimeout(hideTimer);
+    };
   }, [paymentBanner, refreshBilling, toast]);
 
   const getCreditCost = (credits: number) => {
     // Bundle-based USD pricing for token top-ups
     const bundlePricesUSD: Record<number, number> = {
-      100000: 1.0,      // 100k tokens
-      500000: 4.0,      // 500k tokens
-      1000000: 7.5,     // 1M tokens
-      5000000: 30.0,    // 5M tokens
+      100000: 1.0, // 100k tokens
+      500000: 4.0, // 500k tokens
+      1000000: 7.5, // 1M tokens
+      5000000: 30.0, // 5M tokens
     };
     if (credits in bundlePricesUSD) return bundlePricesUSD[credits];
     // Fallback: linear scaling based on 1M = $7.5
@@ -284,10 +339,14 @@ export function Billing() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "text-trading-profit";
-      case "processing": return "text-yellow-500";
-      case "failed": return "text-trading-loss";
-      default: return "text-muted-foreground";
+      case "completed":
+        return "text-trading-profit";
+      case "processing":
+        return "text-yellow-500";
+      case "failed":
+        return "text-trading-loss";
+      default:
+        return "text-muted-foreground";
     }
   };
 
@@ -297,9 +356,12 @@ export function Billing() {
         <div className="max-w-2xl mx-auto">
           <Card className="trading-card p-8 text-center">
             <div className="space-y-3">
-              <h1 className="text-2xl font-bold heading-trading">Billing Temporarily Locked</h1>
+              <h1 className="text-2xl font-bold heading-trading">
+                Billing Temporarily Locked
+              </h1>
               <p className="text-muted-foreground text-sm">
-                Billing operations are disabled in production at the moment. Please try again later or contact support.
+                Billing operations are disabled in production at the moment.
+                Please try again later or contact support.
               </p>
             </div>
           </Card>
@@ -311,21 +373,95 @@ export function Billing() {
   return (
     <TradingLayout>
       <div className="space-y-6">
-        {paymentBanner?.status === 'success' && bannerVisible && (
+        {(() => {
+          const planName = (
+            planDetails?.plan ||
+            billing?.plan ||
+            "free"
+          ).toLowerCase();
+          const isFree = planName === "free";
+          const rem = billing?.monthly_credits_remaining ?? 0;
+          const low = rem > 0 && rem < 50_000;
+          if (!isFree || !low) return null;
+          return (
+            <Card className="trading-card p-4 border-yellow-500/30">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-500">
+                      Low tokens on Free plan
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      You have {rem.toLocaleString()} tokens left. Free plan has
+                      no monthly renewal. To continue analyses, please add
+                      tokens via our Telegram or upgrade to PRO/MAX.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    className="inline-flex items-center gap-2 px-2 sm:px-3"
+                    variant="secondary"
+                    aria-label="Join Telegram"
+                    onClick={() => {
+                      // TODO: replace with your Telegram URL
+                      window.open(
+                        "https://t.me/+n0jVrMKTReg0Y2M1",
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                    }}
+                  >
+                    <img
+                      src="/telegram.png"
+                      alt="Telegram"
+                      width={20}
+                      height={20}
+                    />
+                    <span className="hidden sm:inline">Join Telegram</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="btn-trading-primary"
+                    onClick={() => {
+                      setPendingPlan("pro");
+                      setShowProvider(true);
+                    }}
+                  >
+                    Upgrade to PRO
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })()}
+        {paymentBanner?.status === "success" && bannerVisible && (
           <Card className="trading-card p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-4 w-4 text-trading-profit" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">Payment successful</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Payment successful
+                  </p>
                   {paymentBanner.orderId && (
-                    <p className="text-xs text-muted-foreground">Order {paymentBanner.orderId}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Order {paymentBanner.orderId}
+                    </p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => refreshBilling?.()} disabled={billingLoading} className="btn-trading-primary">
-                  {billingLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                <Button
+                  size="sm"
+                  onClick={() => refreshBilling?.()}
+                  disabled={billingLoading}
+                  className="btn-trading-primary"
+                >
+                  {billingLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : null}
                   Refresh
                 </Button>
               </div>
@@ -333,14 +469,21 @@ export function Billing() {
           </Card>
         )}
         {planParam ? (
-          providerParam === 'coinpayments'
-            ? <CoinPaymentsPlanCheckout plan={planParam} currency={currencyParam} />
-            : <CashfreePlanCheckout plan={planParam} />
+          providerParam === "coinpayments" ? (
+            <CoinPaymentsPlanCheckout
+              plan={planParam}
+              currency={currencyParam}
+            />
+          ) : (
+            <CashfreePlanCheckout plan={planParam} />
+          )
         ) : null}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold heading-trading">Billing & Payments</h1>
+            <h1 className="text-3xl font-bold heading-trading">
+              Billing & Payments
+            </h1>
             <p className="text-muted-foreground mt-1">
               Manage your subscription, tokens, and payment history
             </p>
@@ -348,7 +491,16 @@ export function Billing() {
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled title={isCashfreeLocked ? 'Cashfree is only available for Indian users (+91).' : undefined}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  title={
+                    isCashfreeLocked
+                      ? "Cashfree is only available for Indian users (+91)."
+                      : undefined
+                  }
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
                 </Button>
@@ -357,27 +509,68 @@ export function Billing() {
                 <DialogHeader>
                   <DialogTitle>Purchase Additional Tokens</DialogTitle>
                   <DialogDescription>
-                    {isCashfreeLocked ? 'PhonePe is only available for Indian users (+91).' : 'Add more tokens to your account for additional AI analyses'}
+                    {isCashfreeLocked
+                      ? "PhonePe is only available for Indian users (+91)."
+                      : "Add more tokens to your account for additional AI analyses"}
                   </DialogDescription>
                 </DialogHeader>
-                <div className={`space-y-4 ${isCashfreeLocked ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+                <div
+                  className={`space-y-4 ${
+                    isCashfreeLocked
+                      ? "opacity-50 pointer-events-none select-none"
+                      : ""
+                  }`}
+                >
                   <div>
                     <Label htmlFor="credits">Number of Tokens</Label>
-                    <Select onValueChange={(value) => setCreditAmount(parseInt(value))}>
+                    <Select
+                      onValueChange={(value) =>
+                        setCreditAmount(parseInt(value))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select token amount" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="100000">100,000 tokens - {formatPriceUSDToLocal(getCreditCost(100000), userPricing)}</SelectItem>
-                        <SelectItem value="500000">500,000 tokens - {formatPriceUSDToLocal(getCreditCost(500000), userPricing)}</SelectItem>
-                        <SelectItem value="1000000">1,000,000 tokens - {formatPriceUSDToLocal(getCreditCost(1000000), userPricing)}</SelectItem>
-                        <SelectItem value="5000000">5,000,000 tokens - {formatPriceUSDToLocal(getCreditCost(5000000), userPricing)}</SelectItem>
+                        <SelectItem value="100000">
+                          100,000 tokens -{" "}
+                          {formatPriceUSDToLocal(
+                            getCreditCost(100000),
+                            userPricing
+                          )}
+                        </SelectItem>
+                        <SelectItem value="500000">
+                          500,000 tokens -{" "}
+                          {formatPriceUSDToLocal(
+                            getCreditCost(500000),
+                            userPricing
+                          )}
+                        </SelectItem>
+                        <SelectItem value="1000000">
+                          1,000,000 tokens -{" "}
+                          {formatPriceUSDToLocal(
+                            getCreditCost(1000000),
+                            userPricing
+                          )}
+                        </SelectItem>
+                        <SelectItem value="5000000">
+                          5,000,000 tokens -{" "}
+                          {formatPriceUSDToLocal(
+                            getCreditCost(5000000),
+                            userPricing
+                          )}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-gradient-dark rounded-lg">
                     <span>Total Cost:</span>
-                    <span className="text-xl font-bold text-foreground">{formatPriceUSDToLocal(getCreditCost(creditAmount), userPricing)}</span>
+                    <span className="text-xl font-bold text-foreground">
+                      {formatPriceUSDToLocal(
+                        getCreditCost(creditAmount),
+                        userPricing
+                      )}
+                    </span>
                   </div>
                   <Button
                     className="w-full btn-trading-primary"
@@ -385,29 +578,61 @@ export function Billing() {
                     onClick={async () => {
                       try {
                         setBuyingTokens(true);
-                        const isDev = import.meta.env.MODE === 'development';
-                        const frontendBase = isDev ? 'http://localhost:3000' : 'https://app.yoforexai.com';
+                        const isDev = import.meta.env.MODE === "development";
+                        const frontendBase = isDev
+                          ? "http://localhost:3000"
+                          : "https://app.yoforexai.com";
                         const returnUrl = `${frontendBase}`;
-                        let order = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: returnUrl });
-                        const cashfree: Cashfree = await load({ mode: CASHFREE_MODE });
+                        let order = await startCashfreeTokensOrder({
+                          tokens: creditAmount,
+                          return_url: returnUrl,
+                        });
+                        const cashfree: Cashfree = await load({
+                          mode: CASHFREE_MODE,
+                        });
                         const doCheckout = async (sessionId: string) =>
-                          cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_modal" });
+                          cashfree.checkout({
+                            paymentSessionId: sessionId,
+                            redirectTarget: "_modal",
+                          });
 
                         try {
                           await doCheckout(order.payment_session_id);
                         } catch (checkoutErr: any) {
-                          const msg = checkoutErr?.message || checkoutErr?.toString?.() || "";
-                          const code = checkoutErr?.code || checkoutErr?.response?.data?.code;
+                          const msg =
+                            checkoutErr?.message ||
+                            checkoutErr?.toString?.() ||
+                            "";
+                          const code =
+                            checkoutErr?.code ||
+                            checkoutErr?.response?.data?.code;
                           const looksSessionInvalid =
-                            /payment_session_id/i.test(String(code)) || /payment_session_id.*invalid/i.test(msg);
-                          const looksCancelled = /cancel|close|closed|popup.*close|user.*cancel|user.*close/i.test(String(msg)) || ['USER_CANCELLED','CANCELLED','PAYMENT_CANCELLED','CLOSE'].includes(String(code).toUpperCase());
+                            /payment_session_id/i.test(String(code)) ||
+                            /payment_session_id.*invalid/i.test(msg);
+                          const looksCancelled =
+                            /cancel|close|closed|popup.*close|user.*cancel|user.*close/i.test(
+                              String(msg)
+                            ) ||
+                            [
+                              "USER_CANCELLED",
+                              "CANCELLED",
+                              "PAYMENT_CANCELLED",
+                              "CLOSE",
+                            ].includes(String(code).toUpperCase());
                           if (looksCancelled) {
-                            const frontendBase = isDev ? 'http://localhost:3000' : window.location.origin;
-                            window.location.href = `${frontendBase}/billing?status=cancelled&order_id=${encodeURIComponent(order.order_id)}`;
+                            const frontendBase = isDev
+                              ? "http://localhost:3000"
+                              : window.location.origin;
+                            window.location.href = `${frontendBase}/billing?status=cancelled&order_id=${encodeURIComponent(
+                              order.order_id
+                            )}`;
                             return;
                           }
                           if (looksSessionInvalid) {
-                            const fresh = await startCashfreeTokensOrder({ tokens: creditAmount, return_url: undefined });
+                            const fresh = await startCashfreeTokensOrder({
+                              tokens: creditAmount,
+                              return_url: undefined,
+                            });
                             order = fresh;
                             await doCheckout(fresh.payment_session_id);
                           } else {
@@ -416,54 +641,69 @@ export function Billing() {
                         }
 
                         const maxTries = 10;
-                        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+                        const delay = (ms: number) =>
+                          new Promise((r) => setTimeout(r, ms));
                         for (let i = 0; i < maxTries; i++) {
                           try {
-                            const status = await getCashfreeOrderStatus(order.order_id, frontendBase);
-                            if (status.status === 'paid') {
-                              window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(order.order_id)}`;
+                            const status = await getCashfreeOrderStatus(
+                              order.order_id,
+                              frontendBase
+                            );
+                            if (status.status === "paid") {
+                              window.location.href = `${frontendBase}/billing/success?order_id=${encodeURIComponent(
+                                order.order_id
+                              )}`;
                               return;
                             }
-                            if (status.status === 'failed') {
-                              window.location.href = `${frontendBase}/billing/failure?order_id=${encodeURIComponent(order.order_id)}`;
+                            if (status.status === "failed") {
+                              window.location.href = `${frontendBase}/billing/failure?order_id=${encodeURIComponent(
+                                order.order_id
+                              )}`;
                               return;
                             }
-                          } catch { }
+                          } catch {}
                           await delay(2000);
                         }
-                        window.location.href = `${frontendBase}/billing?status=pending&order_id=${encodeURIComponent(order.order_id)}`;
+                        window.location.href = `${frontendBase}/billing?status=pending&order_id=${encodeURIComponent(
+                          order.order_id
+                        )}`;
                       } catch (e: any) {
                         try {
                           const respData = e?.response?.data;
                           const detail = respData?.detail ?? respData;
                           const extractMessage = (d: any): string | null => {
                             if (!d) return null;
-                            if (typeof d === 'object') {
+                            if (typeof d === "object") {
                               for (const k in d) {
-                                if (k === 'code' ) return d[k];
+                                if (k === "code") return d[k];
                                 else {
                                   const jsonMatch = k.match(/{[\s\S]*}/);
                                   if (jsonMatch) {
                                     try {
                                       const parsed = JSON.parse(jsonMatch[0]);
                                       return parsed?.message;
-                                    } catch { }
+                                    } catch {}
                                   }
                                 }
                               }
                               return d.error ?? null;
                             }
                             return null;
-                          }
-                          let friendly = "Payment could not be started. Please try again.";
+                          };
+                          let friendly =
+                            "Payment could not be started. Please try again.";
                           if (detail) {
                             const code = detail.code || e?.code;
                             // Map known backend error codes to friendly messages from client mapping
                             try {
                               // Import dynamic mapping from API client module
                               // eslint-disable-next-line @typescript-eslint/no-var-requires
-                              const client = require('@/lib/api/client').default || require('@/lib/api/client');
-                              const map = client?.BACKEND_FRIENDLY_MESSAGES as Record<string, string> | undefined;
+                              const client =
+                                require("@/lib/api/client").default ||
+                                require("@/lib/api/client");
+                              const map = client?.BACKEND_FRIENDLY_MESSAGES as
+                                | Record<string, string>
+                                | undefined;
                               if (map && code && map[code]) {
                                 friendly = map[code];
                               }
@@ -473,7 +713,10 @@ export function Billing() {
                             let cfMessage: string | undefined;
                             let cfCode: string | undefined;
                             let cfHelp: string | undefined;
-                            const raw = typeof detail.error === 'string' ? detail.error : undefined;
+                            const raw =
+                              typeof detail.error === "string"
+                                ? detail.error
+                                : undefined;
                             if (raw) {
                               const match = raw.match(/{\s*"code"[\s\S]*}/);
                               if (match) {
@@ -482,24 +725,43 @@ export function Billing() {
                                   cfMessage = parsed?.message;
                                   cfCode = parsed?.code;
                                   cfHelp = parsed?.help;
-                                } catch { }
+                                } catch {}
                               }
-                              if (/return_url_invalid/i.test(raw) || /url should be https/i.test(raw)) {
-                                cfMessage = cfMessage || "Cashfree requires an HTTPS return_url.";
+                              if (
+                                /return_url_invalid/i.test(raw) ||
+                                /url should be https/i.test(raw)
+                              ) {
+                                cfMessage =
+                                  cfMessage ||
+                                  "Cashfree requires an HTTPS return_url.";
                               }
                             }
                             const parts: string[] = [];
                             if (code) parts.push(`[${code}]`);
-                            if (cfCode && cfCode !== code) parts.push(`[${cfCode}]`);
+                            if (cfCode && cfCode !== code)
+                              parts.push(`[${cfCode}]`);
                             if (cfMessage) parts.push(cfMessage);
-                            else if (detail.error && typeof detail.error === 'string') parts.push(detail.error);
+                            else if (
+                              detail.error &&
+                              typeof detail.error === "string"
+                            )
+                              parts.push(detail.error);
                             else if (e?.message) parts.push(String(e.message));
-                            friendly = parts.join(' ');
+                            friendly = parts.join(" ");
                             if (cfHelp) friendly += `\nHelp: ${cfHelp}`;
                           }
-                          toast.error({ title: 'Cashfree Error', description: friendly, variant: 'destructive' });
+                          toast.error({
+                            title: "Cashfree Error",
+                            description: friendly,
+                            variant: "destructive",
+                          });
                         } catch {
-                          toast.error({ title: 'Cashfree Error', description: 'Payment could not be started. Please try again.', variant: 'destructive' });
+                          toast.error({
+                            title: "Cashfree Error",
+                            description:
+                              "Payment could not be started. Please try again.",
+                            variant: "destructive",
+                          });
                         }
                       } finally {
                         setBuyingTokens(false);
@@ -508,7 +770,8 @@ export function Billing() {
                   >
                     {buyingTokens ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Opening checkout…
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                        Opening checkout…
                       </>
                     ) : (
                       <>
@@ -532,12 +795,16 @@ export function Billing() {
           <Card className="trading-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Current Plan</h3>
-                <p className="text-sm text-muted-foreground">Active subscription</p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Current Plan
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Active subscription
+                </p>
               </div>
               <Badge className="bg-gradient-primary">
                 {(() => {
-                  const p = (planDetails?.plan || billing?.plan || 'free');
+                  const p = planDetails?.plan || billing?.plan || "free";
                   return p;
                 })()}
               </Badge>
@@ -546,30 +813,87 @@ export function Billing() {
               {planError && (
                 <p className="text-sm text-destructive">{planError}</p>
               )}
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Monthly Cost:</span>
-                <span className="font-medium text-foreground">
-                  {planLoading ? '…' : formatPriceUSDToLocal(Math.round(planDetails?.monthly_price_usd ?? 0), userPricing)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Next Billing:</span>
-                <span className="font-medium text-foreground">{planLoading ? '…' : (planDetails?.next_billing_date_iso || '')}</span>
-              </div>
               {(() => {
-                const endIso = planDetails?.current_period_end_iso;
+                const planName = (
+                  planDetails?.plan ||
+                  billing?.plan ||
+                  "free"
+                ).toLowerCase();
+                const isFree = planName === "free";
+                if (isFree) {
+                    return null;
+                }
+                return (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Monthly Cost:
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {planLoading
+                          ? "…"
+                          : formatPriceUSDToLocal(
+                              Math.round(planDetails?.monthly_price_usd ?? 0),
+                              userPricing
+                            )}
+                      </span>
+                    </div>
+                    {/* <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Next Billing:
+                      </span>
+                      <span className="font-medium text-foreground">
+                        {planLoading
+                          ? "…"
+                          : planDetails?.next_billing_date_human ||
+                            planDetails?.next_billing_date_iso ||
+                            ""}
+                      </span>
+                    </div> */}
+                  </>
+                );
+              })()}
+              {(() => {
+                const isFree =
+                  (
+                    planDetails?.plan ||
+                    billing?.plan ||
+                    "free"
+                  ).toLowerCase() === "free";
+                if (isFree) return null;
+                const endIso = planDetails?.current_period_end_human;
                 const days = planDetails?.days_until_expiry;
                 const expired = !!planDetails?.is_expired;
                 if (!endIso) return null;
                 return (
                   <>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Plan Expiry:</span>
-                      <span className={`font-medium ${expired ? 'text-trading-loss' : 'text-foreground'}`}>{endIso}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Plan Expiry:
+                      </span>
+                      <span
+                        className={`font-medium ${
+                          expired ? "text-trading-loss" : "text-foreground"
+                        }`}
+                      >
+                        {endIso}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Days Remaining:</span>
-                      <span className={`font-medium ${expired ? 'text-trading-loss' : (typeof days === 'number' && days <= 7 ? 'text-yellow-500' : 'text-foreground')}`}>{typeof days === 'number' ? days : '—'}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Days Remaining:
+                      </span>
+                      <span
+                        className={`font-medium ${
+                          expired
+                            ? "text-trading-loss"
+                            : typeof days === "number" && days <= 7
+                            ? "text-yellow-500"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {typeof days === "number" ? days : "—"}
+                      </span>
                     </div>
                   </>
                 );
@@ -578,13 +902,23 @@ export function Billing() {
                 <span className="text-sm text-muted-foreground">Status:</span>
                 <div className="flex items-center space-x-1">
                   <CheckCircle className="h-3 w-3 text-trading-profit" />
-                  <span className="text-sm font-medium text-trading-profit">{(planDetails?.status || 'active').charAt(0).toUpperCase() + (planDetails?.status || 'active').slice(1)}</span>
+                  <span className="text-sm font-medium text-trading-profit">
+                    {(planDetails?.status || "active").charAt(0).toUpperCase() +
+                      (planDetails?.status || "active").slice(1)}
+                  </span>
                 </div>
               </div>
               {(() => {
                 const current = (billing?.plan || "free").toLowerCase();
-                const nextPlan = current === 'free' ? 'pro' : (current === 'pro' ? 'max' : undefined);
-                const label = nextPlan ? `Upgrade to ${nextPlan.toUpperCase()}` : 'On Highest Plan';
+                const nextPlan =
+                  current === "free"
+                    ? "pro"
+                    : current === "pro"
+                    ? "max"
+                    : undefined;
+                const label = nextPlan
+                  ? `Upgrade to ${nextPlan.toUpperCase()}`
+                  : "On Highest Plan";
                 const disabled = !nextPlan;
                 return (
                   <Button
@@ -608,8 +942,12 @@ export function Billing() {
           <Card className="trading-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Tokens Remaining</h3>
-                <p className="text-sm text-muted-foreground">Your monthly tokens</p>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Tokens Remaining
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Your monthly tokens
+                </p>
               </div>
               <Wallet className="h-5 w-5 text-primary" />
             </div>
@@ -626,10 +964,14 @@ export function Billing() {
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  of {(billing?.monthly_credits_max ?? 0).toLocaleString()} tokens
+                  of {(billing?.monthly_credits_max ?? 0).toLocaleString()}{" "}
+                  tokens
                 </p>
               </div>
-              <div className="w-full bg-muted/30 rounded-full h-2" aria-label="tokens-progress">
+              <div
+                className="w-full bg-muted/30 rounded-full h-2"
+                aria-label="tokens-progress"
+              >
                 <div
                   className="bg-gradient-primary h-2 rounded-full"
                   style={{
@@ -639,7 +981,7 @@ export function Billing() {
                       if (!max) return 0;
                       const pct = Math.floor((rem / max) * 100);
                       return Math.min(100, Math.max(0, pct));
-                    })()}%`
+                    })()}%`,
                   }}
                 />
               </div>
@@ -648,7 +990,7 @@ export function Billing() {
                   {(() => {
                     const max = billing?.monthly_credits_max ?? 0;
                     const rem = billing?.monthly_credits_remaining ?? 0;
-                    if (!max) return '0%';
+                    if (!max) return "0%";
                     const pct = Math.floor((rem / max) * 100);
                     return `${Math.min(100, Math.max(0, pct))}%`;
                   })()}
@@ -656,16 +998,27 @@ export function Billing() {
               </div>
 
               <div className="flex gap-2 pt-1">
-                <Button size="sm" variant="outline" onClick={() => refreshBilling?.()} disabled={billingLoading}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => refreshBilling?.()}
+                  disabled={billingLoading}
+                >
                   {billingLoading ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />{" "}
+                      Refreshing
                     </>
                   ) : (
-                    'Refresh'
+                    "Refresh"
                   )}
                 </Button>
-                <Button size="sm" className="btn-trading-primary" disabled onClick={() => setShowAddCredits(true)}>
+                <Button
+                  size="sm"
+                  className="btn-trading-primary"
+                  disabled
+                  onClick={() => setShowAddCredits(true)}
+                >
                   <Plus className="h-3 w-3 mr-1" /> Buy Tokens
                 </Button>
               </div>
@@ -675,7 +1028,9 @@ export function Billing() {
           <Card className="trading-card p-6 hidden ">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Account Balance</h3>
+                <h3 className="text-lg font-semibold text-foreground">
+                  Account Balance
+                </h3>
                 <p className="text-sm text-muted-foreground">Available funds</p>
               </div>
               <DollarSign className="h-5 w-5 text-primary" />
@@ -713,13 +1068,20 @@ export function Billing() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Transaction History</h3>
-                    <p className="text-sm text-muted-foreground">All account transactions and payments</p>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Transaction History
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      All account transactions and payments
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input placeholder="Search transactions..." className="pl-10 w-64" />
+                      <Input
+                        placeholder="Search transactions..."
+                        className="pl-10 w-64"
+                      />
                     </div>
                     <Select defaultValue="all">
                       <SelectTrigger className="w-32">
@@ -727,7 +1089,9 @@ export function Billing() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="subscription">Subscriptions</SelectItem>
+                        <SelectItem value="subscription">
+                          Subscriptions
+                        </SelectItem>
                         <SelectItem value="credits">Credits</SelectItem>
                       </SelectContent>
                     </Select>
@@ -741,34 +1105,69 @@ export function Billing() {
                   {txnLoading && !transactions && (
                     <p className="text-sm text-muted-foreground">Loading…</p>
                   )}
-                  {!txnLoading && !txnError && (transactions?.length ?? 0) === 0 && (
-                    <p className="text-sm text-muted-foreground">No transactions yet.</p>
-                  )}
+                  {!txnLoading &&
+                    !txnError &&
+                    (transactions?.length ?? 0) === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No transactions yet.
+                      </p>
+                    )}
                   {(transactions || []).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20"
+                    >
                       <div className="flex items-center space-x-4">
                         <div className="h-10 w-10 rounded-lg bg-gradient-primary/10 flex items-center justify-center">
-                          {transaction.type === 'subscription' && <Calendar className="h-5 w-5 text-primary" />}
-                          {transaction.type === 'credits' && <Wallet className="h-5 w-5 text-secondary" />}
+                          {transaction.type === "subscription" && (
+                            <Calendar className="h-5 w-5 text-primary" />
+                          )}
+                          {transaction.type === "credits" && (
+                            <Wallet className="h-5 w-5 text-secondary" />
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{transaction.description}</p>
+                          <p className="font-medium text-foreground">
+                            {transaction.description}
+                          </p>
                           <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                            <span>{new Date(transaction.date).toLocaleString()}</span>
+                            <span>
+                              {new Date(transaction.date).toLocaleString()}
+                            </span>
                             <span>•</span>
                             <span>{transaction.paymentMethod}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right space-y-1">
-                        <p className={`font-semibold ${transaction.amount > 0 ? 'text-trading-profit' : 'text-foreground'}`}>
-                          {transaction.amount > 0 ? '+' : ''}{Math.abs(transaction.amount).toFixed(2)} {transaction.currency}
+                        <p
+                          className={`font-semibold ${
+                            transaction.amount > 0
+                              ? "text-trading-profit"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {transaction.amount > 0 ? "+" : ""}
+                          {Math.abs(transaction.amount).toFixed(2)}{" "}
+                          {transaction.currency}
                         </p>
-                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
-                          {transaction.status === 'completed' && <CheckCircle className="h-3 w-3" />}
-                          {transaction.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin" />}
-                          {transaction.status === 'failed' && <AlertTriangle className="h-3 w-3" />}
-                          <span className="text-sm font-medium capitalize">{transaction.status}</span>
+                        <div
+                          className={`flex items-center space-x-1 ${getStatusColor(
+                            transaction.status
+                          )}`}
+                        >
+                          {transaction.status === "completed" && (
+                            <CheckCircle className="h-3 w-3" />
+                          )}
+                          {transaction.status === "processing" && (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          )}
+                          {transaction.status === "failed" && (
+                            <AlertTriangle className="h-3 w-3" />
+                          )}
+                          <span className="text-sm font-medium capitalize">
+                            {transaction.status}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -786,8 +1185,12 @@ export function Billing() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">Invoices & Receipts</h3>
-                    <p className="text-sm text-muted-foreground">Download your billing documents</p>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Invoices & Receipts
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Download your billing documents
+                    </p>
                   </div>
                 </div>
 
@@ -799,29 +1202,45 @@ export function Billing() {
                 ) : (
                   <div className="space-y-3">
                     {invoices.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No invoices yet.</p>
+                      <p className="text-sm text-muted-foreground">
+                        No invoices yet.
+                      </p>
                     ) : (
                       invoices.map((inv) => (
-                        <div key={inv.invoice_id} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
+                        <div
+                          key={inv.invoice_id}
+                          className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20"
+                        >
                           <div className="flex items-center space-x-4">
                             <div className="h-10 w-10 rounded-lg bg-gradient-primary/10 flex items-center justify-center">
                               <CreditCard className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium text-foreground">{inv.invoice_id}</p>
+                              <p className="font-medium text-foreground">
+                                {inv.invoice_id}
+                              </p>
                               <div className="text-sm text-muted-foreground">
-                                <span>{new Date(inv.created_at).toLocaleString()}</span>
-                                {typeof inv.totals?.amount === 'number' && (
+                                <span>
+                                  {new Date(inv.created_at).toLocaleString()}
+                                </span>
+                                {typeof inv.totals?.amount === "number" && (
                                   <>
                                     <span> • </span>
-                                    <span>{(inv.totals.amount || 0).toFixed(2)} {inv.currency || ''}</span>
+                                    <span>
+                                      {(inv.totals.amount || 0).toFixed(2)}{" "}
+                                      {inv.currency || ""}
+                                    </span>
                                   </>
                                 )}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => downloadInvoice(inv.invoice_id)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadInvoice(inv.invoice_id)}
+                            >
                               <Download className="h-4 w-4" />
                             </Button>
                           </div>
@@ -841,7 +1260,8 @@ export function Billing() {
             <DialogHeader>
               <DialogTitle>Choose payment method</DialogTitle>
               <DialogDescription>
-                Select how you want to pay for the {pendingPlan ? pendingPlan.toUpperCase() : ''} plan.
+                Select how you want to pay for the{" "}
+                {pendingPlan ? pendingPlan.toUpperCase() : ""} plan.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 mt-2">
@@ -849,10 +1269,10 @@ export function Billing() {
                 className="w-full btn-trading-primary"
                 title={
                   !isIndianUser
-                    ? 'Cashfree is only available for Indian users'
+                    ? "Cashfree is only available for Indian users"
                     : CASHFREE_LOCKED
-                      ? 'Cashfree is temporarily locked in production'
-                      : undefined
+                    ? "Cashfree is temporarily locked in production"
+                    : undefined
                 }
                 disabled={!isIndianUser || CASHFREE_LOCKED}
                 onClick={() => {
@@ -860,10 +1280,13 @@ export function Billing() {
                   try {
                     const url = new URL(window.location.href);
                     // Preserve any existing `interval` query param (e.g., interval=yearly)
-                    const currentInterval = new URLSearchParams(window.location.search).get('interval');
-                    url.searchParams.set('plan', pendingPlan);
-                    if (currentInterval) url.searchParams.set('interval', currentInterval);
-                    url.searchParams.set('provider', 'cashfree');
+                    const currentInterval = new URLSearchParams(
+                      window.location.search
+                    ).get("interval");
+                    url.searchParams.set("plan", pendingPlan);
+                    if (currentInterval)
+                      url.searchParams.set("interval", currentInterval);
+                    url.searchParams.set("provider", "cashfree");
                     window.location.href = url.toString();
                   } catch {
                     window.location.href = `/billing?plan=${pendingPlan}&provider=cashfree`;
@@ -893,9 +1316,8 @@ export function Billing() {
               {isCashfreeLocked && (
                 <p className="text-xs text-muted-foreground text-center">
                   {!isIndianUser
-                    ? 'Cashfree is only available for Indian users. Please use CoinPayments for crypto payments.'
-                    : 'Cashfree checkout is temporarily disabled. CoinPayments remains available.'
-                  }
+                    ? "Cashfree is only available for Indian users. Please use CoinPayments for crypto payments."
+                    : "Cashfree checkout is temporarily disabled. CoinPayments remains available."}
                 </p>
               )}
             </div>
@@ -911,14 +1333,20 @@ export function Billing() {
             if (!pendingPlan) return;
             try {
               // Preserve interval if present in current URL
-              const currentInterval = new URLSearchParams(window.location.search).get('interval');
-              const iv = currentInterval ? `&interval=${encodeURIComponent(currentInterval)}` : "";
-              window.location.href = `/billing?plan=${pendingPlan}${iv}&provider=coinpayments&currency=${encodeURIComponent(currency)}`;
+              const currentInterval = new URLSearchParams(
+                window.location.search
+              ).get("interval");
+              const iv = currentInterval
+                ? `&interval=${encodeURIComponent(currentInterval)}`
+                : "";
+              window.location.href = `/billing?plan=${pendingPlan}${iv}&provider=coinpayments&currency=${encodeURIComponent(
+                currency
+              )}`;
             } catch {
-              window.location.href = '/billing';
+              window.location.href = "/billing";
             }
           }}
-          plan={pendingPlan || 'pro'}
+          plan={pendingPlan || "pro"}
         />
       </div>
     </TradingLayout>
