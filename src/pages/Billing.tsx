@@ -36,6 +36,7 @@ import {
   startCashfreeTokensOrder,
   getCashfreeOrderStatus,
 } from "@/lib/api/billing";
+import clientApi from "@/lib/api/client";
 import { load } from "@cashfreepayments/cashfree-js";
 import type { Cashfree } from "@cashfreepayments/cashfree-js";
 import { CASHFREE_MODE } from "@/config/payments";
@@ -695,20 +696,15 @@ export function Billing() {
                           if (detail) {
                             const code = detail.code || e?.code;
                             // Map known backend error codes to friendly messages from client mapping
-                            try {
-                              // Import dynamic mapping from API client module
-                              // eslint-disable-next-line @typescript-eslint/no-var-requires
-                              const client =
-                                require("@/lib/api/client").default ||
-                                require("@/lib/api/client");
-                              const map = client?.BACKEND_FRIENDLY_MESSAGES as
+                              try {
+                              const map = (clientApi as any)?.BACKEND_FRIENDLY_MESSAGES as
                                 | Record<string, string>
                                 | undefined;
                               if (map && code && map[code]) {
                                 friendly = map[code];
                               }
                             } catch {
-                              // ignore require errors; fallback to previous heuristics
+                              // ignore import errors; fallback to previous heuristics
                             }
                             let cfMessage: string | undefined;
                             let cfCode: string | undefined;

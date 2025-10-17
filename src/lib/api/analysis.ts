@@ -120,6 +120,7 @@ export default function formattedTimeframe(timeframe: string) {
 
 export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3): Promise<AnalysisResponse> => {
   const { pair, timeframe, strategy, count = 100 } = params;
+  console.log(params)
   const newTimeFrame = formattedTimeframe(timeframe)
 
   let lastError: Error | null = null;
@@ -156,7 +157,8 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
         }
       );
 
-      console.log('Analysis response received:', response.data);
+      // console.log('Analysis response received:', response.data);
+      
       return response.data;
 
     } catch (error: any) {

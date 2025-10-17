@@ -108,8 +108,23 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
   qp.append('granularity', granularity);
   qp.append('count', String(count));
 
+  // Also include optional per-provider model query params expected by backend
+  // (gemini_model, claude_model, deepseek_model, openai_model, mistral_model, cohere_model, xai_model)
+  const perProviderQueryMap: Record<string,string> = {};
+  if (models) {
+    if (models.gemini) perProviderQueryMap['gemini_model'] = models.gemini;
+    if (models.claude) perProviderQueryMap['claude_model'] = models.claude;
+    if (models.deepseek) perProviderQueryMap['deepseek_model'] = models.deepseek;
+    if (models.openai) perProviderQueryMap['openai_model'] = models.openai;
+    if (models.mistral) perProviderQueryMap['mistral_model'] = models.mistral;
+    if (models.cohere) perProviderQueryMap['cohere_model'] = models.cohere;
+    if (models.xai) perProviderQueryMap['xai_model'] = models.xai;
+  }
+  Object.entries(perProviderQueryMap).forEach(([k,v]) => qp.append(k,v));
+
   const url = `/analysis/strategy/ai/multi?${qp.toString()}`;
-  const body = models ? { models } : undefined;
+  // Body should contain a mapping of provider -> model slug when provided
+  const body = models && Object.keys(models).length > 0 ? { models } : undefined;
 
   // Retry logic for transient errors (network/timeout/5xx)
   const maxRetries = 2;
