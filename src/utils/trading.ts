@@ -74,10 +74,9 @@ const COMMODITY_SYMBOLS: Record<string, string> = {
   'BCO/USD': 'TVC:UKOIL',     
   'NATGAS/USD': 'NATGASUSD', 
   'COPPER/USD': 'XCUUSD',   
-  'PLATINUM/USD': 'TVC:PLATINUM',
-  'PALLADIUM/USD': 'TVC:PALLADIUM',
-  'XPT/USD': 'TVC:PLATINUM',
-  'XPD/USD': 'TVC:PALLADIUM'
+  
+  'XPT/USD': 'XPTUSD',
+  'XPD/USD': 'XPDUSD'
 };
 
 interface FormattedSymbol {
@@ -165,7 +164,7 @@ export const mapToOandaInstrument = (pair: string): string => {
 
   // Commodities in OANDA format (same as forex style but with underscore)
   if (COMMODITY_SYMBOLS[pair]) {
-    return COMMODITY_SYMBOLS[pair];
+    return COMMODITY_SYMBOLS[pair].replace('/', '_');
   }
 
   // Crypto — OANDA doesn’t list BINANCE symbols, map only if they exist there
