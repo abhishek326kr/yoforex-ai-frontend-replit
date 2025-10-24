@@ -1,18 +1,12 @@
-<<<<<<< HEAD
 // Add these imports if they're missing:
 import { ToastContainer } from 'react-toastify';
-import { LiveTrading } from "@/pages/LiveTrading";
+
 import { CashfreePlanCheckout } from "@/components/billing/CashfreePlanCheckout";
 import { CoinPaymentsPlanCheckout } from "@/components/billing/CoinPaymentsPlanCheckout";
 import { About } from "@/pages/About";
 import 'react-toastify/dist/ReactToastify.css';
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Router, Route, Switch, useLocation } from "wouter";
-import { Dashboard } from "@/pages/Dashboard";
+
 import { History as HistoryPage } from "@/pages/History";
-=======
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,21 +14,16 @@ import { Router, Route, Switch } from "wouter";
 import { Dashboard } from "@/pages/Dashboard";
 import { LiveTrading } from "@/pages/LiveTrading";
 import { History } from "@/pages/History";
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { ActiveTrades } from "@/pages/ActiveTrades";
 import { Settings } from "@/pages/Settings";
 import { Pricing } from "@/pages/Pricing";
 import { Billing } from "@/pages/Billing";
-<<<<<<< HEAD
 import BillingSuccess from "@/pages/BillingSuccess";
 import BillingFailure from "@/pages/BillingFailure";
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { Profile } from "@/pages/Profile";
 import { Auth } from "@/pages/Auth";
 // import { Landing } from "@/pages/Landing";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-<<<<<<< HEAD
 import { PublicRoute } from "@/components/PublicRoute";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
@@ -83,16 +72,6 @@ const CoinPaymentsRouteHandler = () => {
   return <CoinPaymentsPlanCheckout plan={plan} currency={currency} />;
 };
 
-=======
-import { AuthProvider } from "@/hooks/useAuth";
-import { ThemeProvider } from "@/hooks/useTheme";
-import NotFound from "@/pages/NotFound";
-import HelpSupport from "./components/HelpSupport";
-import { Journal } from "./components/Journal";
-
-const queryClient = new QueryClient();
-
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="yoforex-ui-theme">
@@ -109,7 +88,6 @@ const App = () => (
           pauseOnHover
           theme="dark"
         />
-<<<<<<< HEAD
         {/* Global modals */}
         <UpgradeModal />
         <Router>
@@ -261,7 +239,6 @@ const App = () => (
           </AuthProvider>
         </Router>
         <Footer />
-=======
         <Router>
           <AuthProvider>
           <Switch>
@@ -292,15 +269,11 @@ const App = () => (
           </Switch>
           </AuthProvider>
         </Router>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
 
 export default App;
-<<<<<<< HEAD
 
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2

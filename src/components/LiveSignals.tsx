@@ -11,7 +11,6 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 // Foreign names for more global feel
 const foreignNames = [
-<<<<<<< HEAD
   // Middle East (Arabic, Persian, Turkish, Hebrew)
   "Muhammad", "Ahmed", "Omar", "Youssef", "Hassan", "Ali", "Khalid", "Ibrahim", "Tariq", "Bilal",
   "Fatima", "Aisha", "Zainab", "Maryam", "Nour", "Layla", "Amira", "Salma", "Noor", "Huda",
@@ -66,32 +65,6 @@ const userProfiles = Array.from({ length: 100 }, (_, i) => {
     risk: ["Low", "Medium", "High", "Variable"][getRandomInt(0, 3)],
   };
 });
-=======
-  "Lucas", "Emma", "Noah", "Olivia", "Liam", "Sophia", "Mason", "Isabella", "Jacob", "Mia",
-  "William", "Charlotte", "Ethan", "Amelia", "James", "Harper", "Benjamin", "Evelyn", "Elijah", "Abigail",
-  "Logan", "Emily", "Alexander", "Ella", "Oliver", "Avery", "Daniel", "Sofia", "Matthew", "Camila",
-  "Aiden", "Aria", "Henry", "Scarlett", "Joseph", "Victoria", "Jackson", "Madison", "Samuel", "Luna",
-  "Sebastian", "Grace", "David", "Chloe", "Carter", "Penelope", "Wyatt", "Layla", "John", "Riley",
-  "Owen", "Zoey", "Dylan", "Nora", "Luke", "Lily", "Gabriel", "Eleanor", "Anthony", "Hannah",
-  "Isaac", "Lillian", "Grayson", "Addison", "Jack", "Aubrey", "Julian", "Ellie", "Levi", "Stella",
-  "Christopher", "Natalie", "Joshua", "Zoe", "Andrew", "Leah", "Lincoln", "Hazel", "Mateo", "Violet",
-  "Ryan", "Aurora", "Jaxon", "Savannah", "Nathan", "Audrey", "Aaron", "Brooklyn", "Isaiah", "Bella",
-  "Thomas", "Claire", "Charles", "Skylar", "Caleb", "Lucy", "Josiah", "Paisley", "Christian", "Everly"
-];
-
-const userProfiles = Array.from({ length: 100 }, (_, i) => ({
-  name: foreignNames[i % foreignNames.length],
-  avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? "men" : "women"}/${i % 50}.jpg`,
-  strategy: [
-    "Breakout Strategy", "Fibonacci Retracement", "Trend Following", "ICT Concept", "SMC Strategy",
-    "Advanced SMC", "Volatility Breakout", "Carry Trade", "Options Straddle", "Momentum"
-  ][getRandomInt(0, 9)],
-  tier: ["Free", "Pro", "Max"][getRandomInt(0, 2)],
-  winRate: [68, 72, 75, 81, 79, 84, 86][getRandomInt(0, 6)],
-  credits: [2, 5, 8, 10][getRandomInt(0, 3)],
-  risk: ["Low", "Medium", "High", "Variable"][getRandomInt(0, 3)],
-}));
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 function getRandomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -101,15 +74,12 @@ function getRandomTradeType() {
   return ["Scalping", "Swing", "Day Trading", "Position"][getRandomInt(0, 3)];
 }
 
-<<<<<<< HEAD
 function getInitial(name: string): string {
   if (!name || typeof name !== 'string') return '?';
   const trimmed = name.trim();
   return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : '?';
 }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 function LiveSignals() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -214,19 +184,10 @@ function LiveSignals() {
       </div>
       <div className="w-full flex flex-col items-center justify-center mb-6">
         <div className="relative flex flex-col items-center bg-gradient-dark rounded-xl px-5 py-6 shadow-lg w-full border border-primary/20 hover:shadow-2xl hover:border-primary/60 transition-all duration-300 group">
-<<<<<<< HEAD
           <div className="w-20 h-20 rounded-full border-4 border-primary shadow-lg mb-3 bg-white overflow-hidden animate-bounce-slow group-hover:scale-105 transition flex items-center justify-center">
             <span className="text-3xl font-bold text-primary">
               {getInitial(popupUser.name)}
             </span>
-=======
-          <div className="w-20 h-20 rounded-full border-4 border-primary shadow-lg mb-3 bg-white overflow-hidden animate-bounce-slow group-hover:scale-105 transition">
-            <img
-              src={popupUser.avatar}
-              alt={popupUser.name}
-              className="w-full h-full object-cover"
-            />
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           </div>
           <div className="flex flex-col items-center text-center w-full">
             <span className="font-semibold text-lg text-foreground mb-1">{popupUser.name}</span>

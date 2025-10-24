@@ -1,30 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
-<<<<<<< HEAD
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { fetchModelsCatalog, type Provider, type MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useBillingSummary } from '@/hooks/useBillingSummary';
-=======
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2, Zap } from 'lucide-react';
 import { fetchModelsCatalog, runMultiAnalysis, type Provider, type MultiAnalysisResponse } from '@/lib/api/aiMulti';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 interface AIMultiPanelProps {
   pair: string;
   timeframe: string;
   strategy: string;
   onResult?: (result: MultiAnalysisResponse) => void;
-<<<<<<< HEAD
   onConfigChange?: (config: { provider: Provider; models: Partial<Record<Provider, string>> }) => void;
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
 
 const PROVIDER_LABELS: Record<Provider, string> = {
@@ -37,7 +28,6 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   xai: 'xAI',
 };
 
-<<<<<<< HEAD
 export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onConfigChange }: AIMultiPanelProps) {
   const [catalog, setCatalog] = useState<Record<string, string[]>>({});
   const [selectedProvider, setSelectedProvider] = useState<Provider>('gemini');
@@ -90,15 +80,6 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
     const list = catalog[provider] || [];
     return list.some((m) => !isPaidModel(provider, m));
   };
-=======
-export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AIMultiPanelProps) {
-  const [catalog, setCatalog] = useState<Record<string, string[]>>({});
-  const [selectedProvider, setSelectedProvider] = useState<Provider>('gemini');
-  const [models, setModels] = useState<Partial<Record<Provider, string>>>({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<MultiAnalysisResponse | null>(null);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   // Load model catalog once
   useEffect(() => {
@@ -107,11 +88,7 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
         const data = await fetchModelsCatalog();
         setCatalog(data);
       } catch (e: any) {
-<<<<<<< HEAD
         // Silently ignore catalog errors; parent will surface errors on run.
-=======
-        setError(e?.message || 'Failed to load models catalog');
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       }
     })();
   }, []);
@@ -119,7 +96,6 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
   const providerModels = catalog[selectedProvider] || [];
   const needsExplicitModel = selectedProvider === 'openai' && providerModels.length > 0;
   const hasSelectedModel = !!models[selectedProvider];
-<<<<<<< HEAD
   const canRun = useMemo(() => {
     if (!pair || !timeframe || !strategy || !selectedProvider) return false;
     if (isProviderLocked(selectedProvider)) return false;
@@ -131,57 +107,20 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
     // No catalog info, allow run (backend may have defaults)
     return true;
   }, [pair, timeframe, strategy, selectedProvider, needsExplicitModel, hasSelectedModel, models, catalog, billing?.plan]);
-=======
-  const canRun = useMemo(
-    () => !!pair && !!timeframe && !!strategy && !!selectedProvider && (!needsExplicitModel || hasSelectedModel),
-    [pair, timeframe, strategy, selectedProvider, needsExplicitModel, hasSelectedModel]
-  );
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   const handleModelChange = (prov: Provider, value: string) => {
     setModels(prev => ({ ...prev, [prov]: value }));
   };
 
-<<<<<<< HEAD
   // Auto-select first FREE model when switching providers (avoid locked defaults)
   useEffect(() => {
     const free = firstFreeModelForProvider(selectedProvider);
     if (free && !models[selectedProvider]) {
       setModels(prev => ({ ...prev, [selectedProvider]: free }));
-=======
-  const run = async () => {
-    setError(null);
-    setLoading(true);
-    setResult(null);
-    try {
-      const data = await runMultiAnalysis({ providers: [selectedProvider], pair, timeframe, strategy, models });
-      setResult(data);
-      onResult?.(data);
-    } catch (e: any) {
-      const msg = e?.message || 'Failed to run AI multi analysis';
-      // Improve common OpenAI messages
-      const enhanced = /insufficient_quota|quota/i.test(msg)
-        ? 'OpenAI quota exceeded. Select a different provider/model or check billing.'
-        : /model_not_found|does not exist/i.test(msg)
-        ? 'Selected OpenAI model is unavailable for this account. Choose a different model.'
-        : msg;
-      setError(enhanced);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Auto-select first available model when switching providers (helps avoid invalid defaults)
-  useEffect(() => {
-    const list = catalog[selectedProvider];
-    if (list && list.length > 0 && !models[selectedProvider]) {
-      setModels(prev => ({ ...prev, [selectedProvider]: list[0] }));
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProvider, catalog]);
 
-<<<<<<< HEAD
   // Sanitize selection: if a locked model is somehow selected, switch to first free (or unset)
   // useEffect(() => {
   //   const current = models[selectedProvider];
@@ -210,26 +149,16 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProvider, models]);
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Multi-Provider AI Analysis</h3>
-<<<<<<< HEAD
         {/* Run is initiated from the Market Analysis card. */}
         <span className="text-xs text-muted-foreground">Configured via this panel</span>
-=======
-        <Button onClick={run} disabled={!canRun || loading} className="bg-gradient-primary">
-          {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin"/> : <Zap className="h-4 w-4 mr-2"/>}
-          {loading ? 'Running...' : 'Run'}
-        </Button>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       </div>
 
       {/* Provider (single-select) */}
       <div>
-<<<<<<< HEAD
         <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 gap-2">
           {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => {
             const lockedProv = isProviderLocked(p);
@@ -259,15 +188,6 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
               </TooltipProvider>
             );
           })}
-=======
-        <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
-            <label key={p} className="flex items-center gap-2 text-sm border rounded-md p-2 cursor-pointer">
-              <RadioGroupItem id={`prov-${p}`} value={p} />
-              <span>{PROVIDER_LABELS[p]}</span>
-            </label>
-          ))}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         </RadioGroup>
       </div>
 
@@ -280,7 +200,6 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
               <SelectValue placeholder={needsExplicitModel ? 'Select a model (required)' : 'Default model'} />
             </SelectTrigger>
             <SelectContent>
-<<<<<<< HEAD
               {(catalog[selectedProvider] || []).map((m) => {
                 const locked = isPaidModel(selectedProvider, m) && isProviderLocked(selectedProvider);
                 return (
@@ -310,49 +229,10 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult }: AI
                   </SelectItem>
                 );
               })}
-=======
-              {(catalog[selectedProvider] || []).map((m) => (
-                <SelectItem key={m} value={m}>{m}</SelectItem>
-              ))}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             </SelectContent>
           </Select>
         </div>
       </div>
-<<<<<<< HEAD
-=======
-
-      {/* Status */}
-      {!loading && error && (
-        <div className="text-sm text-red-500">{error}</div>
-      )}
-
-      {/* Results */}
-      {result && (
-        <div className="space-y-3">
-          <div className="text-sm text-muted-foreground">Pair: {result.pair} • TF: {result.granularity}</div>
-          <div className="space-y-3">
-            {Object.entries(result.analysis || {}).map(([prov, payload]) => (
-              <div key={prov} className="p-3 rounded-md border border-border/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{PROVIDER_LABELS[prov as Provider] || prov}</span>
-                  {payload?.signal && (
-                    <Badge className={payload.signal === 'BUY' ? 'bg-green-500 text-white' : payload.signal === 'SELL' ? 'bg-red-500 text-white' : ''}>
-                      {payload.signal}
-                    </Badge>
-                  )}
-                </div>
-                {payload?.recommendation ? (
-                  <div className="text-sm text-foreground/80">{payload.recommendation}</div>
-                ) : (
-                  <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-muted-foreground">{JSON.stringify(payload, null, 2)}</pre>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     </Card>
   );
 }

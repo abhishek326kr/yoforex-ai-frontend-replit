@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useEffect, useRef, memo, useMemo, useCallback } from 'react';
-=======
-import { useEffect, useRef, memo, useMemo } from 'react';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { formatTradingViewSymbol } from '@/utils/trading';
 
 
@@ -77,134 +73,8 @@ const TradingViewWidget = ({
     return 'D';
   }, [interval, limitedTimeframes]);
 
-<<<<<<< HEAD
   // initializeWidget creates/initializes the TradingView widget inside the container
   const initializeWidget = useCallback(() => {
-=======
-  // Initialize widget
-  useEffect(() => {
-    const containerElement = container.current;
-    if (!containerElement) return;
-
-    // Clear container
-    while (containerElement.firstChild) {
-      containerElement.removeChild(containerElement.firstChild);
-    }
-
-    let script: HTMLScriptElement | null = null;
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const initialize = () => {
-      // Check if TradingView script is already loaded
-      if (window.TradingView) {
-        initializeWidget();
-        return;
-      }
-
-      // Check if script is already being loaded
-      if (document.getElementById('tradingview-widget-script')) {
-        // If script is still loading, wait for it
-        timeoutId = setTimeout(() => {
-          if (window.TradingView) {
-            initializeWidget();
-          }
-        }, 500);
-        return;
-      }
-
-      // Load TradingView script
-      script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/tv.js';
-      script.async = true;
-      script.id = 'tradingview-widget-script';
-      
-      script.onload = () => {
-        if (window.TradingView) {
-          initializeWidget();
-        }
-      };
-
-      script.onerror = () => {
-        console.error('Failed to load TradingView widget script');
-      };
-
-      document.body.appendChild(script);
-    };
-
-    // Add a small delay to prevent rapid re-initialization
-    const initTimer = setTimeout(initialize, 100);
-
-    return () => {
-      clearTimeout(initTimer);
-      clearTimeout(timeoutId);
-      
-      // Clean up widget instance
-      if (window.TradingView && typeof window.TradingView.widget === 'function') {
-        const widgets = document.querySelectorAll('[id^=tradingview_]');
-        widgets.forEach(widget => {
-          widget.remove();
-        });
-      }
-      
-      // Clean up script if it was created by this component
-      if (script && document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [formattedSymbol, safeInterval]);
-
-  // Handle symbol and interval changes
-  useEffect(() => {
-    // Store previous values for comparison
-    const prevSymbol = prevSymbolRef.current;
-    const prevInterval = prevIntervalRef.current;
-    
-    // Check if we need to update
-    const symbolChanged = formattedSymbol !== prevSymbol;
-    const intervalChanged = safeInterval !== prevInterval;
-    
-    if (symbolChanged || intervalChanged) {
-      console.log('Symbol or interval changed, reinitializing widget', {
-        prevSymbol,
-        newSymbol: formattedSymbol,
-        prevInterval,
-        newInterval: safeInterval
-      });
-      
-      // Update refs with new values
-      prevSymbolRef.current = formattedSymbol;
-      prevIntervalRef.current = safeInterval;
-      
-      // Notify parent component about the timeframe change if needed
-      if (limitedTimeframes && safeInterval !== interval && onTimeframeChange) {
-        onTimeframeChange(safeInterval);
-      }
-      
-      // Force reinitialization of the widget
-      const cleanup = () => {
-        if (widgetInstance.current) {
-          try {
-            widgetInstance.current.remove();
-          } catch (e) {
-            console.error('Error removing widget:', e);
-          }
-          widgetInstance.current = null;
-        }
-      };
-      
-      cleanup();
-      
-      // Add a small delay to ensure cleanup is complete
-      const timer = setTimeout(() => {
-        initializeWidget();
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [formattedSymbol, safeInterval, limitedTimeframes, onTimeframeChange, interval]);
-
-  const initializeWidget = () => {
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     const containerElement = container.current;
     if (!containerElement || !window.TradingView) return;
 
@@ -224,7 +94,6 @@ const TradingViewWidget = ({
     widgetContainer.style.height = '100%';
     containerElement.appendChild(widgetContainer);
 
-<<<<<<< HEAD
     // Theme-aware colors
     const isDark = theme === 'dark';
     const paneBg = isDark ? '#131722' : '#ffffff';
@@ -232,8 +101,6 @@ const TradingViewWidget = ({
     const textColor = isDark ? '#d1d4dc' : '#4b5563';
     const toolbarBg = isDark ? '#1e1e2d' : '#f3f4f6';
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     // Initialize the widget
     const widgetOptions: any = {
       autosize,
@@ -243,11 +110,7 @@ const TradingViewWidget = ({
       theme,
       style,
       locale: 'en',
-<<<<<<< HEAD
       toolbar_bg: toolbarBg,
-=======
-      toolbar_bg: '#1e1e2d',
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       enable_publishing: false,
       allow_symbol_change: !limitedTimeframes,
       hide_side_toolbar: hideSideToolbar,
@@ -257,19 +120,11 @@ const TradingViewWidget = ({
       container_id: containerId,
       ...(showVolume && { studies: ['Volume@tv-basicstudies'] }),
       overrides: {
-<<<<<<< HEAD
         'paneProperties.background': paneBg,
         'paneProperties.vertGridProperties.color': gridColor,
         'paneProperties.horzGridProperties.color': gridColor,
         'symbolWatermarkProperties.transparency': 90,
         'scalesProperties.textColor': textColor,
-=======
-        'paneProperties.background': '#131722',
-        'paneProperties.vertGridProperties.color': 'rgba(255, 255, 255, 0.06)',
-        'paneProperties.horzGridProperties.color': 'rgba(255, 255, 255, 0.06)',
-        'symbolWatermarkProperties.transparency': 90,
-        'scalesProperties.textColor': '#d1d4dc',
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         'mainSeriesProperties.candleStyle.upColor': '#26a69a',
         'mainSeriesProperties.candleStyle.downColor': '#ef5350',
         'mainSeriesProperties.candleStyle.borderUpColor': '#26a69a',
@@ -307,7 +162,6 @@ const TradingViewWidget = ({
     } catch (error) {
       console.error('Error initializing TradingView widget:', error);
     }
-<<<<<<< HEAD
   }, [formattedSymbol, safeInterval, theme, autosize, hideSideToolbar, hideTopToolbar, style, saveImage, showVolume, hideVolume, containerId, limitedTimeframes]);
 
   // Effect: load tv.js if necessary and initialize the widget
@@ -400,14 +254,6 @@ const TradingViewWidget = ({
   useEffect(() => {
     const containerElement = container.current;
     return () => {
-=======
-  };
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      const containerElement = container.current;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       if (containerElement) {
         while (containerElement.firstChild) {
           containerElement.removeChild(containerElement.firstChild);

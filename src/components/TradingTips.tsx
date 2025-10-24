@@ -15,11 +15,7 @@ type NewsItem = {
   sentiment: string;
 };
 
-<<<<<<< HEAD
 const PAGE_SIZE = 3;
-=======
-const PAGE_SIZE = 5;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 const PAGINATION_WINDOW = 3;
 
 // Loading Component
@@ -104,17 +100,10 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
     fetchNews(page);
   }, [page]);
 
-<<<<<<< HEAD
   const displayItems = horizontalLayout && !showPagination ? news.slice(0, 3) : news.slice(0, PAGE_SIZE);
 
   return (
     <Card className="w-full flex flex-col">
-=======
-  const displayItems = horizontalLayout && !showPagination ? news.slice(0, 3) : news;
-
-  return (
-    <Card className="w-full h-full flex flex-col">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       <CardHeader className="flex flex-row items-center justify-between pb-2 px-6 pt-4">
         <CardTitle className="text-lg font-semibold">
           {horizontalLayout ? 'Latest Market News' : 'Trading News'}
@@ -128,15 +117,9 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </CardHeader>
-<<<<<<< HEAD
       <CardContent className={`overflow-hidden ${horizontalLayout ? 'px-2' : ''}`}>
         {error ? (
           <div className="flex flex-col items-center justify-center min-h-32 text-center p-6">
-=======
-      <CardContent className={`flex-1 overflow-hidden ${horizontalLayout ? 'px-2' : ''}`}>
-        {error ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             <AlertCircle className="h-10 w-10 text-rose-500 mb-3" />
             <p className="text-rose-400 mb-4">{error}</p>
             <button 
@@ -164,11 +147,7 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
                       !horizontalLayout ? 'border-b border-muted/50 last:border-0 pb-4 last:pb-0' : ''
                     }`}
                   >
-<<<<<<< HEAD
                     <Card className={`${horizontalLayout ? 'hover:shadow-md transition-shadow' : ''}`}>
-=======
-                    <Card className={`h-full ${horizontalLayout ? 'hover:shadow-md transition-shadow' : ''}`}>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                       <a 
                         href={item.url} 
                         target="_blank" 
@@ -223,31 +202,18 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
         )}
       </CardContent>
       {(!horizontalLayout || showPagination) && (
-<<<<<<< HEAD
         <CardFooter className="flex flex-wrap items-center justify-between gap-2 px-6 py-3 border-t">
           <div className="flex items-center space-x-2">
-=======
-        <CardFooter className="flex items-center justify-between px-6 py-3 border-t">
-          <div className="flex-1 flex justify-between sm:justify-start">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handlePrevPage} 
               disabled={page === 1 || loading}
-<<<<<<< HEAD
               className="shrink-0"
             >
               <ChevronLeft className="h-4 w-4 mr-1" /> Previous
             </Button>
             <div className="hidden sm:flex items-center space-x-1 overflow-x-auto">
-=======
-              className="mr-2"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-            </Button>
-            <div className="hidden sm:flex items-center space-x-1">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const pageNum = windowStart + i;
                 if (pageNum > totalPages) return null;
@@ -256,11 +222,7 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
                     key={pageNum}
                     variant={page === pageNum ? "default" : "ghost"}
                     size="sm"
-<<<<<<< HEAD
                     className={`h-8 w-8 min-w-[32px] p-0 flex-shrink-0 ${page === pageNum ? 'font-bold' : ''}`}
-=======
-                    className={`h-8 w-8 p-0 ${page === pageNum ? 'font-bold' : ''}`}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                     onClick={() => handlePageChange(pageNum)}
                     disabled={loading}
                   >
@@ -275,10 +237,7 @@ export default function TradingTips({ horizontalLayout = false, showPagination =
             size="sm" 
             onClick={handleNextPage} 
             disabled={page >= totalPages || loading}
-<<<<<<< HEAD
             className="shrink-0"
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           >
             Next <ChevronRight className="h-4 w-4 ml-1" />
           </Button>

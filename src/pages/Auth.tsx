@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import { useEffect, useState } from "react";
 import CountryPhoneInput from "@/components/inputs/CountryPhoneInput";
-=======
-import { useState } from "react";
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-<<<<<<< HEAD
 import { showApiError } from '@/lib/ui/errorToast';
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
@@ -34,11 +27,6 @@ import {
   TrendingUp
 } from "lucide-react";
 import apiClient from "@/lib/api/client";
-<<<<<<< HEAD
-
-=======
-import 'react-phone-input-2/lib/style.css'
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 interface AuthFormData {
   name?: string;
@@ -49,33 +37,23 @@ interface AuthFormData {
 }
 
 export function Auth() {
-<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState("login");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [resendSignupIn, setResendSignupIn] = useState(0);
   const [resendLoginIn, setResendLoginIn] = useState(0);
-=======
-  const [activeTab, setActiveTab] = useState("signup");
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   const [formData, setFormData] = useState<AuthFormData>({
     email: "",
     phone: "",
     password: "",
   });
   const { toast } = useToast();
-<<<<<<< HEAD
   const SIGNUP_LOCKED = false;
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   const { login } = useAuth();
 
   const handleInputChange = (field: keyof AuthFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-<<<<<<< HEAD
   useEffect(() => {
     const timer = setInterval(() => {
       setResendSignupIn((s) => (s > 0 ? s - 1 : 0));
@@ -217,19 +195,6 @@ export function Auth() {
       }
     }
 
-=======
-
-  const handleSignup = async () => {
-    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/signup`, {
@@ -264,7 +229,6 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
-<<<<<<< HEAD
         let title = res?.data[0]?.msg;
         let description = 'Validation error occurred.';
         const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
@@ -276,16 +240,6 @@ export function Auth() {
           description = msg || description;
         }
         toast({ title, description, variant: 'destructive' });
-=======
-        const description = Array.isArray(detail)
-          ? (detail[0]?.msg || detail[0] || "Validation error occurred.")
-          : (typeof detail === 'string' ? detail : (detail?.error || "Validation error occurred."));
-        toast({
-          title: "Signup Failed",
-          description,
-          variant: "destructive",
-        });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       } else if (res?.status === 409) {
         const detail = res?.data?.detail;
         const description = typeof detail === 'string' ? detail : (detail?.error || "An account with this email or phone already exists.");
@@ -323,7 +277,6 @@ export function Auth() {
 
   const handleVerifySignupOTP = async () => {
     if (!formData.phone || !formData.otp) {
-<<<<<<< HEAD
       const missingPhone = !formData.phone;
       const message = missingPhone && !formData.otp
         ? 'No phone number and OTP entered'
@@ -331,13 +284,6 @@ export function Auth() {
           ? 'No phone number entered'
           : 'No OTP entered';
       toast({ title: message, variant: 'destructive' });
-=======
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number and OTP.",
-        variant: "destructive",
-      });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       return;
     }
 
@@ -351,36 +297,19 @@ export function Auth() {
       // Backend returns JSON { status: 'verified', access_token, user_data }
       if (response.data?.status === "verified") {
         const { access_token, user_data } = response.data;
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         // Store user data in localStorage for immediate use
         if (user_data && access_token) {
           localStorage.setItem('userProfile', JSON.stringify(user_data.profile));
           localStorage.setItem('userPreferences', JSON.stringify(user_data.preferences));
           localStorage.setItem('userSecurity', JSON.stringify(user_data.security));
-<<<<<<< HEAD
 
           // Store token and login user
           login(access_token);
 
-=======
-          
-          // Store token and login user
-          login(access_token);
-          
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           toast({
             title: "Signup Successful",
             description: "Welcome to YoForex AI! Your account is now verified.",
           });
-<<<<<<< HEAD
-
-=======
-          
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           // Redirect to dashboard
           window.location.href = '/dashboard';
         } else {
@@ -439,7 +368,6 @@ export function Auth() {
     }
   };
 
-<<<<<<< HEAD
   const handleResendSignupOTP = async () => {
     const phoneErr = validateWhatsappNumber(formData.phone);
     if (phoneErr) { toast({ title: phoneErr, variant: 'destructive' }); return; }
@@ -470,16 +398,6 @@ export function Auth() {
         toast({ title: phoneErr, variant: 'destructive' });
         return;
       }
-=======
-  const handleRequestLoginOTP = async () => {
-    if (!formData.phone) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number.",
-        variant: "destructive",
-      });
-      return;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     }
 
     setIsLoading(true);
@@ -517,7 +435,6 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
-<<<<<<< HEAD
         let title = 'Request Failed';
         let description = 'Failed to send OTP. Please try again.';
         const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
@@ -529,16 +446,6 @@ export function Auth() {
           description = msg || description;
         }
         toast({ title, description, variant: 'destructive' });
-=======
-        const description = Array.isArray(detail)
-          ? (detail[0]?.msg || detail[0] || "Failed to send OTP. Please try again.")
-          : (typeof detail === 'string' ? detail : (detail?.error || "Failed to send OTP. Please try again."));
-        toast({
-          title: "Request Failed",
-          description,
-          variant: "destructive",
-        });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       } else {
         const detail = res?.data?.detail;
         const code = (typeof detail === 'object' && detail?.code) ? detail.code : undefined;
@@ -571,7 +478,6 @@ export function Auth() {
 
   const handleVerifyLoginOTP = async () => {
     if (!formData.phone || !formData.otp) {
-<<<<<<< HEAD
       const missingPhone = !formData.phone;
       const message = missingPhone && !formData.otp
         ? 'No phone number and OTP entered'
@@ -590,16 +496,6 @@ export function Auth() {
       }
     }
 
-=======
-      toast({
-        title: "Validation Error",
-        description: "Please enter your phone number and OTP.",
-        variant: "destructive",
-      });
-      return;
-    }
-
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     setIsLoading(true);
     try {
       const response = await apiClient.post(`/auth/login/verify-otp`, {
@@ -609,11 +505,6 @@ export function Auth() {
 
       // Backend returns JSON { status: 'login_successful', access_token }
       if (response.data?.status === "login_successful") {
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
@@ -674,7 +565,6 @@ export function Auth() {
     }
   };
 
-<<<<<<< HEAD
   const handleResendLoginOTP = async () => {
     const phoneErr = validateWhatsappNumber(formData.phone);
     if (phoneErr) { toast({ title: phoneErr, variant: 'destructive' }); return; }
@@ -715,14 +605,6 @@ export function Auth() {
       toast({
         title: message,
         variant: 'destructive',
-=======
-  const handleEmailLogin = async () => {
-    if (!formData.email || !formData.password) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter your email and password.",
-        variant: "destructive",
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       });
       return;
     }
@@ -740,22 +622,12 @@ export function Auth() {
         if (!access_token) {
           throw new Error('No access token received from server');
         }
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         // Store user data in localStorage for immediate use
         if (user_data) {
           localStorage.setItem('userProfile', JSON.stringify(user_data.profile));
           localStorage.setItem('userPreferences', JSON.stringify(user_data.preferences));
           localStorage.setItem('userSecurity', JSON.stringify(user_data.security));
         }
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         toast({
           title: "Login Successful",
           description: "Welcome back to YoForex AI!",
@@ -779,13 +651,8 @@ export function Auth() {
         const description = Array.isArray(detail)
           ? (detail[0]?.msg || detail[0] || "Invalid credentials. Please try again.")
           : (typeof detail === 'string'
-<<<<<<< HEAD
             ? detail
             : (detail?.error || "Invalid credentials. Please try again."));
-=======
-              ? detail
-              : (detail?.error || "Invalid credentials. Please try again."));
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         toast({
           title: "Login Failed",
           description,
@@ -850,11 +717,6 @@ export function Auth() {
               powered by
               <img src="/yoforexai.png" alt="YoForex Logo" className="h-5 w-auto opacity-90" />
             </p>
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           </div>
           <div className="flex items-center justify-center space-x-2 mt-[0px]">
             <Badge variant="secondary" className="bg-gradient-profit text-white">
@@ -870,7 +732,6 @@ export function Auth() {
 
         {/* Auth Card */}
         <Card className="bg-gradient-glass border-border/20 shadow-glass p-6 space-y-6">
-<<<<<<< HEAD
           <Tabs
             value={activeTab}
             onValueChange={(v) => { setActiveTab(v); }}
@@ -881,11 +742,6 @@ export function Auth() {
                 value="signup"
                 className="data-[state=active]:bg-primary"
               >
-=======
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted/20">
-              <TabsTrigger value="signup" className="data-[state=active]:bg-primary">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 Sign Up
               </TabsTrigger>
               <TabsTrigger value="login" className="data-[state=active]:bg-primary">
@@ -895,10 +751,7 @@ export function Auth() {
 
             {/* Signup Tab */}
             <TabsContent value="signup" className="space-y-4">
-<<<<<<< HEAD
               {SIGNUP_LOCKED && (<div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">Signups are currently disabled. Please use Login.</div>)}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-sm font-medium text-foreground pb-[10px]">
@@ -943,7 +796,6 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
-<<<<<<< HEAD
                   <CountryPhoneInput
                     id="phone"
                     name="phone"
@@ -953,20 +805,6 @@ export function Auth() {
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
                     className="mt-1"
                   />
-=======
-
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="E.g. +910234567890"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                    />
-                  </div>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 </div>
 
 
@@ -1002,11 +840,7 @@ export function Auth() {
 
                 <Button
                   onClick={handleSignup}
-<<<<<<< HEAD
                   
-=======
-                  disabled={isLoading}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
                 >
                   {isLoading ? (
@@ -1092,11 +926,7 @@ export function Auth() {
                 </div>
 
                 <div className="phone-input">
-<<<<<<< HEAD
                   <Label
-=======
-                  <Label 
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                     htmlFor="phone"
                     className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]"
                   >
@@ -1104,7 +934,6 @@ export function Auth() {
                     <span>Whatsapp Number</span>
 
                   </Label>
-<<<<<<< HEAD
                   <CountryPhoneInput
                     id="login-phone"
                     name="login-phone"
@@ -1114,19 +943,6 @@ export function Auth() {
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
                     className="mt-1"
                   />
-=======
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-phone"
-                      type="tel"
-                      placeholder="E.g. +910123456789"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
-                    />
-                  </div>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 </div>
 
                 <Button
@@ -1142,7 +958,6 @@ export function Auth() {
                   )}
                   Login with OTP
                 </Button>
-<<<<<<< HEAD
 
                 {/* Forgot password link at the bottom of the Login card */}
                 <div className="flex justify-center">
@@ -1273,8 +1088,6 @@ export function Auth() {
                     Back to Login
                   </button>
                 </div>
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
             </TabsContent>
 
@@ -1319,7 +1132,6 @@ export function Auth() {
                   )}
                   Verify Account
                 </Button>
-<<<<<<< HEAD
                 <div className="flex justify-center">
                   <button
                     type="button"
@@ -1330,8 +1142,6 @@ export function Auth() {
                     {resendSignupIn > 0 ? `Resend OTP (${resendSignupIn}s)` : 'Resend OTP'}
                   </button>
                 </div>
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
             </TabsContent>
 
@@ -1376,7 +1186,6 @@ export function Auth() {
                   )}
                   Verify & Login
                 </Button>
-<<<<<<< HEAD
                 <div className="flex justify-center">
                   <button
                     type="button"
@@ -1387,8 +1196,6 @@ export function Auth() {
                     {resendLoginIn > 0 ? `Resend OTP (${resendLoginIn}s)` : 'Resend OTP'}
                   </button>
                 </div>
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
             </TabsContent>
           </Tabs>
@@ -1420,10 +1227,6 @@ export function Auth() {
       </div>
     </div>
   );
-<<<<<<< HEAD
 } 
 
 
-=======
-} 
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2

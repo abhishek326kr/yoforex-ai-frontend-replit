@@ -84,7 +84,6 @@ type AnalysisShape = {
 function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
   if (!payload || typeof payload !== 'object') return null;
 
-<<<<<<< HEAD
   // Handle Gemini response format
   if (payload.candidates && Array.isArray(payload.candidates)) {
     try {
@@ -101,8 +100,6 @@ function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
     }
   }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   // Accept both number and numeric string inputs, coerce safely
   const toNum = (v: any): number | null => {
     if (v === null || v === undefined) return null;
@@ -111,7 +108,6 @@ function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
   };
 
   const signalRaw = String(payload.signal || '').toUpperCase();
-<<<<<<< HEAD
   const signal: Signal = signalRaw === 'BUY' || signalRaw === 'SELL' || signalRaw === 'STRADDLE_BUY' || signalRaw === 'STRADDLE_SELL' ? 
     (signalRaw.includes('BUY') ? 'BUY' : signalRaw.includes('SELL') ? 'SELL' : signalRaw as Signal) : 'HOLD';
   
@@ -131,13 +127,6 @@ function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
     stop_loss = toNum(payload.stop_loss);
     take_profit = toNum(payload.take_profit);
   }
-=======
-  const signal: Signal = signalRaw === 'BUY' || signalRaw === 'SELL' ? (signalRaw as Signal) : 'HOLD';
-  const confidence = toNum(payload.confidence);
-  const entry = toNum(payload.entry);
-  const stop_loss = toNum(payload.stop_loss);
-  const take_profit = toNum(payload.take_profit);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   // Minimal required fields to render nicely
   if (confidence === null || entry === null || stop_loss === null || take_profit === null) {
@@ -177,7 +166,6 @@ function extractErrorText(payload: any): string | null {
       }
     }
 
-<<<<<<< HEAD
     // Handle Gemini response format
     if (payload.candidates && Array.isArray(payload.candidates)) {
       try {
@@ -194,8 +182,6 @@ function extractErrorText(payload: any): string | null {
       }
     }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     if (!payload || typeof payload !== 'object') return null;
 
     // Common shapes

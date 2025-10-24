@@ -37,14 +37,11 @@ export interface AnalysisResponse {
     };
     recommendation: string;
   };
-<<<<<<< HEAD
   billing?: {
     charged_credits: number;
     monthly_credits_remaining: number;
     daily_credits_spent: number;
   };
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
 
 interface AnalysisParams {
@@ -101,13 +98,8 @@ export default function formattedTimeframe(timeframe: string) {
     case '1H': return 'H1';
     case '4H': return 'H4';
     case '8H': return 'H8';
-<<<<<<< HEAD
     case '1D': return 'D';
     case '1W': return 'W';
-=======
-    case '1D': return 'D1';
-    case '1W': return 'W1';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     case '1MO': return 'M';
   }
 
@@ -119,13 +111,8 @@ export default function formattedTimeframe(timeframe: string) {
     case '30': return 'M30';
     case '60': return 'H1';
     case '240': return 'H4';
-<<<<<<< HEAD
     case 'D': return 'D';
     case 'W': return 'W';
-=======
-    case 'D': return 'D1';
-    case 'W': return 'W1';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     case 'M': return 'M';
     default: return 'H1'; // Fallback
   }
@@ -133,10 +120,7 @@ export default function formattedTimeframe(timeframe: string) {
 
 export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3): Promise<AnalysisResponse> => {
   const { pair, timeframe, strategy, count = 100 } = params;
-<<<<<<< HEAD
   console.log(params)
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   const newTimeFrame = formattedTimeframe(timeframe)
 
   let lastError: Error | null = null;
@@ -168,7 +152,6 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
           headers: {
             'Accept': 'application/json',
           },
-<<<<<<< HEAD
           // Only treat 2xx as success; 4xx should throw and be handled by callers
           validateStatus: (status) => status >= 200 && status < 300
         }
@@ -176,13 +159,6 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
 
       // console.log('Analysis response received:', response.data);
       
-=======
-          validateStatus: (status) => status < 500 // Don't retry on client errors
-        }
-      );
-
-      console.log('Analysis response received:', response.data);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       return response.data;
 
     } catch (error: any) {
@@ -196,15 +172,9 @@ export const fetchTradingAnalysis = async (params: AnalysisParams, retries = 3):
 
       const isNetworkError = !error.response && error.request;
 
-<<<<<<< HEAD
       // If it's the last attempt, rethrow original error to preserve response details
       if (attempt === retries) {
         throw error;
-=======
-      // If it's the last attempt, throw the error
-      if (attempt === retries) {
-        throw new Error(`Failed to fetch analysis after ${retries} attempts: ${error.message}`);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       }
 
       // If not a retryable error, throw the error

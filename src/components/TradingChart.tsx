@@ -6,18 +6,9 @@ import { Clock } from "lucide-react";
 import { RefreshCw } from "lucide-react";
 import { Minimize2 } from "lucide-react";
 import { Maximize2 } from "lucide-react";
-<<<<<<< HEAD
 import { useState, useMemo } from "react";
 import TradingViewWidget from "./charts/TradingViewWidget";
 import { useTheme } from "@/hooks/useTheme";
-=======
-import { SlidersHorizontal } from "lucide-react";
-import { PencilRuler } from "lucide-react";
-import { LayoutGrid } from "lucide-react";
-import { Brain } from "lucide-react";
-import { useState } from "react";
-import TradingViewWidget from "./charts/TradingViewWidget";
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 interface TradingChartProps {
     selectedPair: string;
@@ -27,7 +18,6 @@ interface TradingChartProps {
 
 export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartProps) {
     const [isChartExpanded, setIsChartExpanded] = useState(false);
-<<<<<<< HEAD
     const { theme } = useTheme();
 
     // Resolve theme to 'light' | 'dark' for the widget
@@ -38,9 +28,6 @@ export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartPr
         return theme === "dark" ? "dark" : "light";
     }, [theme]);
 
-=======
-    
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     return (
         <div className={`transition-all duration-300 ${isChartExpanded ? 'fixed inset-0 z-50 m-4' : 'col-span-12 lg:col-span-6 flex flex-col'}`}>
             <Card className={`bg-gradient-glass backdrop-blur-sm border-border/20 flex flex-col ${isChartExpanded ? 'h-[calc(100vh-2rem)]' : 'h-[600px]'}`}>
@@ -123,11 +110,7 @@ export function TradingChart({ selectedPair, selectedTimeframe }: TradingChartPr
                         <TradingViewWidget 
                             symbol={selectedPair}
                             interval={selectedTimeframe}
-<<<<<<< HEAD
                             theme={resolvedChartTheme}
-=======
-                            theme="dark"
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                             style="1"
                             
                             

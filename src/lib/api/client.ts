@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { emitBillingUpdated, emitUpgradeRequired } from "../billingEvents";
-=======
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 // Configuration
 const MAX_RETRIES = 3;
@@ -11,28 +7,17 @@ const BASE_DELAY = 1000; // 1 second
 const TIMEOUT = 60000; // 60 seconds
 
 // List of HTTP methods that are idempotent
-<<<<<<< HEAD
 const IDEMPOTENT_METHODS = ["get", "head", "options", "delete", "put"];
-=======
-const IDEMPOTENT_METHODS = ['get', 'head', 'options', 'delete', 'put'];
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 // List of status codes that should trigger a retry
 const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
-<<<<<<< HEAD
 import { API_BASE_URL } from "../../config/api";
 
 // Optional backup URL from environment
 const BACKUP_API_URL = import.meta.env.VITE_BACKUP_API_URL as
   | string
   | undefined;
-=======
-import { API_BASE_URL } from '../../config/api';
-
-// Optional backup URL from environment
-const BACKUP_API_URL = import.meta.env.VITE_BACKUP_API_URL as string | undefined;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 // Backend URLs - only include backup if configured
 const BACKEND_URLS = [API_BASE_URL, BACKUP_API_URL].filter(Boolean) as string[];
@@ -42,11 +27,7 @@ const apiClient = axios.create({
   timeout: TIMEOUT,
   withCredentials: true, // include cookies for HTTP-only cookie authentication
   headers: {
-<<<<<<< HEAD
     "Content-Type": "application/json",
-=======
-    'Content-Type': 'application/json',
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   },
 });
 
@@ -60,7 +41,6 @@ const calculateDelay = (retryCount: number): number => {
 
 // Check if a request should be retried
 const shouldRetry = (error: AxiosError, retryCount: number): boolean => {
-<<<<<<< HEAD
   const method = error.config?.method?.toLowerCase() || "";
 
   // Don't retry if we've reached max retries
@@ -73,20 +53,6 @@ const shouldRetry = (error: AxiosError, retryCount: number): boolean => {
   if (!error.response) return true; // Network error
   if (RETRY_STATUS_CODES.includes(Number(error.response.status))) return true;
 
-=======
-  const method = error.config?.method?.toLowerCase() || '';
-  
-  // Don't retry if we've reached max retries
-  if (retryCount >= MAX_RETRIES) return false;
-  
-  // Only retry idempotent methods
-  if (!IDEMPOTENT_METHODS.includes(method)) return false;
-  
-  // Retry on network errors or specific status codes
-  if (!error.response) return true; // Network error
-  if (RETRY_STATUS_CODES.includes(Number(error.response.status))) return true;
-  
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   return false;
 };
 
@@ -94,7 +60,6 @@ const shouldRetry = (error: AxiosError, retryCount: number): boolean => {
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-<<<<<<< HEAD
     const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -114,16 +79,6 @@ apiClient.interceptors.request.use(
     // Set the current base URL
     config.baseURL = BACKEND_URLS[currentUrlIndex];
 
-=======
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    // Set the current base URL
-    config.baseURL = BACKEND_URLS[currentUrlIndex];
-    
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     return config;
   },
   (error) => {
@@ -131,7 +86,6 @@ apiClient.interceptors.request.use(
   }
 );
 
-<<<<<<< HEAD
 // Helper to extract a meaningful message/code/details from FastAPI-style error payloads
 function parseFastApiError(data: any): {
   message?: string;
@@ -252,29 +206,10 @@ apiClient.interceptors.response.use(
       }
     }
 
-=======
-// Response interceptor for handling errors and retries
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as (AxiosRequestConfig & { _retryCount?: number });
-    originalRequest._retryCount = originalRequest._retryCount || 0;
-    
-    // Try next URL if available
-    if (error.code === 'ECONNABORTED' || !error.response) {
-      if (currentUrlIndex < BACKEND_URLS.length - 1) {
-        currentUrlIndex++;
-        console.warn(`Switching to backup API URL: ${BACKEND_URLS[currentUrlIndex]}`);
-        return apiClient(originalRequest);
-      }
-    }
-    
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     // Handle retry logic
     if (shouldRetry(error, originalRequest._retryCount)) {
       const delay = calculateDelay(originalRequest._retryCount);
       originalRequest._retryCount++;
-<<<<<<< HEAD
 
       console.warn(
         `Retrying request (${originalRequest._retryCount}/${MAX_RETRIES}) after ${delay}ms`
@@ -285,21 +220,10 @@ apiClient.interceptors.response.use(
       return apiClient(originalRequest);
     }
 
-=======
-      
-      console.warn(`Retrying request (${originalRequest._retryCount}/${MAX_RETRIES}) after ${delay}ms`);
-      
-      // Wait for the delay before retrying
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return apiClient(originalRequest);
-    }
-    
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     // Handle specific error responses
     if (error.response) {
       const status = error.response.status;
       const data = error.response.data as any;
-<<<<<<< HEAD
 
       // Prefer FastAPI-style parsing, then fall back
       const parsed = parseFastApiError(data);
@@ -307,19 +231,12 @@ apiClient.interceptors.response.use(
         parsed.message || error.message || "An error occurred";
       const errorDetails = parsed.details || data?.details || {};
 
-=======
-      
-      const errorMessage = data?.message || error.message || 'An error occurred';
-      const errorDetails = data?.details || {};
-      
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       const enhancedError = new Error(errorMessage) as any;
       enhancedError.status = status;
       enhancedError.details = errorDetails;
       // Preserve original Axios response so callers can inspect error.response
       enhancedError.response = error.response;
       // Preserve Axios error shape hints
-<<<<<<< HEAD
       enhancedError.code = parsed.code ?? data?.detail?.code ?? error.code;
       enhancedError.isAxiosError = true;
 
@@ -388,40 +305,10 @@ apiClient.interceptors.response.use(
         case 500:
           enhancedError.message =
             "Internal server error. Please try again later.";
-=======
-      enhancedError.code = (data?.detail?.code ?? error.code);
-      enhancedError.isAxiosError = true;
-      
-      switch (status) {
-        case 400:
-          enhancedError.message = errorMessage || 'Bad request';
-          break;
-        case 401:
-          enhancedError.message = 'Session expired. Please log in again.';
-          // Optionally clear auth and redirect to login
-          localStorage.removeItem('authToken');
-          window.location.href = '/auth';
-          break;
-        case 403:
-          enhancedError.message = 'You do not have permission to perform this action';
-          break;
-        case 404:
-          enhancedError.message = 'The requested resource was not found';
-          break;
-        case 408:
-          enhancedError.message = 'Request timeout. Please try again.';
-          break;
-        case 429:
-          enhancedError.message = 'Too many requests. Please wait before trying again.';
-          break;
-        case 500:
-          enhancedError.message = 'Internal server error. Please try again later.';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           break;
         case 502:
         case 503:
         case 504:
-<<<<<<< HEAD
           enhancedError.message =
             "Service unavailable. Please try again later.";
           break;
@@ -447,32 +334,12 @@ apiClient.interceptors.response.use(
     } else {
       // Something happened in setting up the request
       console.error("Request setup error:", error.message);
-=======
-          enhancedError.message = 'Service unavailable. Please try again later.';
-          break;
-        default:
-          enhancedError.message = errorMessage || 'An unknown error occurred';
-      }
-      
-      console.error(`API Error [${status}]:`, enhancedError.message, errorDetails);
-      return Promise.reject(enhancedError);
-    } else if (error.request) {
-      // The request was made but no response was received
-      const networkError = new Error('Unable to connect to the server. Please check your internet connection.');
-      return Promise.reject(networkError);
-    } else {
-      // Something happened in setting up the request
-      console.error('Request setup error:', error.message);
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       return Promise.reject(error);
     }
   }
 );
 
-<<<<<<< HEAD
 // Attach friendly mapping to the export for UI access
 (apiClient as any).BACKEND_FRIENDLY_MESSAGES = BACKEND_FRIENDLY_MESSAGES;
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 export default apiClient;

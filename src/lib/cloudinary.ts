@@ -4,10 +4,7 @@
 // - VITE_CLOUDINARY_UPLOAD_PRESET (unsigned preset is recommended for client-side uploads)
 // Optional:
 // - VITE_CLOUDINARY_FOLDER
-<<<<<<< HEAD
 import axios from "axios";
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 export interface CloudinaryUploadResult {
   asset_id: string;
@@ -32,7 +29,6 @@ export async function uploadImageToCloudinary(file: File): Promise<CloudinaryUpl
   formData.append("folder", folder);
 
   const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-<<<<<<< HEAD
   try {
     const res = await axios.post(endpoint, formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -43,17 +39,4 @@ export async function uploadImageToCloudinary(file: File): Promise<CloudinaryUpl
     const text = err?.response?.data ? JSON.stringify(err.response.data) : err?.message;
     throw new Error(`Cloudinary upload failed: ${status ?? ''} ${text ?? ''}`.trim());
   }
-=======
-  const res = await fetch(endpoint, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Cloudinary upload failed: ${res.status} ${text}`);
-  }
-
-  return (await res.json()) as CloudinaryUploadResult;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }

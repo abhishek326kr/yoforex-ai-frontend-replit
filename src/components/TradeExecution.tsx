@@ -9,10 +9,7 @@ import { AlertCircle, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react
 import { fetchTradingAnalysis, CandleData } from "@/lib/api/analysis";
 import formattedTimeframe from "@/lib/api/analysis";
 import { mapToOandaInstrument } from "@/utils/trading";
-<<<<<<< HEAD
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 interface TechnicalAnalysis {
   Support_Level: number;
@@ -50,10 +47,7 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [candleData] = useState<any[]>([]);
-<<<<<<< HEAD
   const [expiredModalOpen, setExpiredModalOpen] = useState(false);
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   const analyzeMarket = async () => {
 
@@ -77,7 +71,6 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
         title: "Analysis Complete",
         description: "Market analysis has been successfully generated.",
       });
-<<<<<<< HEAD
     } catch (err: any) {
       console.error("Error analyzing market:", err);
       const code = err?.response?.data?.detail?.code;
@@ -103,16 +96,6 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
           variant: "destructive",
         });
       }
-=======
-    } catch (err) {
-      console.error("Error analyzing market:", err);
-      setError("Failed to analyze market. Please try again.");
-      toast({
-        title: "Analysis Failed",
-        description: "There was an error analyzing the market. Please try again.",
-        variant: "destructive",
-      });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     } finally {
       setIsLoading(false);
     }
@@ -197,7 +180,6 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
             </p>
           )}
         </CardContent>
-<<<<<<< HEAD
         {/* Plan expired modal */}
         <Dialog open={expiredModalOpen} onOpenChange={setExpiredModalOpen}>
           <DialogContent>
@@ -213,8 +195,6 @@ const TradeExecution: FC<TradeExecutionProps> = ({selectedTimeframe, selectedStr
             </div>
           </DialogContent>
         </Dialog>
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       </Card>
     );
   }
