@@ -22,7 +22,7 @@ const navigation = [
   { name: "Live Trading", href: "/trading", icon: TrendingUp },
   { name: "History", href: "/history", icon: History },
   { name: "Active Trades", href: "/active", icon: Activity },
-  { name: "Forum", href: "/forum", icon: MessageSquare },
+  // { name: "Forum", href: "/forum", icon: MessageSquare },
   // { name: "Journal", href: "/journal", icon: BookOpen }, // hidden
   // { name: "Settings", href: "/settings", icon: Settings }, // hidden
   { name: "Pricing", href: "/pricing", icon: CreditCard },
