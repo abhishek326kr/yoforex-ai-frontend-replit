@@ -84,6 +84,25 @@ type AnalysisShape = {
 function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
   if (!payload || typeof payload !== 'object') return null;
 
+<<<<<<< HEAD
+=======
+  // Handle Gemini response format
+  if (payload.candidates && Array.isArray(payload.candidates)) {
+    try {
+      const firstCandidate = payload.candidates[0];
+      if (firstCandidate?.content?.parts?.[0]?.text) {
+        const jsonText = firstCandidate.content.parts[0].text;
+        // Remove markdown code block markers if present
+        const cleanJson = jsonText.replace(/^```json\n|\n```$/g, '');
+        payload = JSON.parse(cleanJson);
+      }
+    } catch (e) {
+      console.error('Failed to parse Gemini response:', e);
+      return null;
+    }
+  }
+
+>>>>>>> puspal
   // Accept both number and numeric string inputs, coerce safely
   const toNum = (v: any): number | null => {
     if (v === null || v === undefined) return null;
@@ -150,6 +169,25 @@ function extractErrorText(payload: any): string | null {
       }
     }
 
+<<<<<<< HEAD
+=======
+    // Handle Gemini response format
+    if (payload.candidates && Array.isArray(payload.candidates)) {
+      try {
+        const firstCandidate = payload.candidates[0];
+        if (firstCandidate?.content?.parts?.[0]?.text) {
+          const jsonText = firstCandidate.content.parts[0].text;
+          // Remove markdown code block markers if present
+          const cleanJson = jsonText.replace(/^```json\n|\n```$/g, '');
+          const parsed = JSON.parse(cleanJson);
+          return extractErrorText(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to parse Gemini response:', e);
+      }
+    }
+
+>>>>>>> puspal
     if (!payload || typeof payload !== 'object') return null;
 
     // Common shapes

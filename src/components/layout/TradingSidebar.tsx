@@ -10,6 +10,10 @@ import {
   X,
   Home,
   Activity,
+<<<<<<< HEAD
+=======
+  MessageSquare,
+>>>>>>> puspal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +25,10 @@ const navigation = [
   { name: "Live Trading", href: "/trading", icon: TrendingUp },
   { name: "History", href: "/history", icon: History },
   { name: "Active Trades", href: "/active", icon: Activity },
+<<<<<<< HEAD
+=======
+  { name: "Forum", href: "/forum", icon: MessageSquare },
+>>>>>>> puspal
   // { name: "Journal", href: "/journal", icon: BookOpen }, // hidden
   // { name: "Settings", href: "/settings", icon: Settings }, // hidden
   { name: "Pricing", href: "/pricing", icon: CreditCard },

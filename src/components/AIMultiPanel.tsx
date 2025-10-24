@@ -5,6 +5,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { fetchModelsCatalog, type Provider, type MultiAnalysisResponse } from '@/lib/api/aiMulti';
 import { Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+<<<<<<< HEAD
+=======
+import { useBillingSummary } from '@/hooks/useBillingSummary';
+>>>>>>> puspal
 
 interface AIMultiPanelProps {
   pair: string;
@@ -28,6 +32,10 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   const [catalog, setCatalog] = useState<Record<string, string[]>>({});
   const [selectedProvider, setSelectedProvider] = useState<Provider>('gemini');
   const [models, setModels] = useState<Partial<Record<Provider, string>>>({});
+<<<<<<< HEAD
+=======
+  const { data: billing } = useBillingSummary();
+>>>>>>> puspal
   // This component no longer executes runs itself; parent triggers execution.
 
   // Heuristic to treat certain models as paid/locked (non-clickable) per provider
@@ -54,12 +62,31 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
     return list.find((m) => !isPaidModel(provider, m));
   };
 
+<<<<<<< HEAD
   // const isProviderLocked = (provider: Provider): boolean => {
   //   // Lock both OpenAI and Claude providers
   //   if (provider === 'claude' || provider === 'openai') return true;
   //   const list = catalog[provider] || [];
   //   return list.length > 0 && list.every((m) => isPaidModel(provider, m));
   // };
+=======
+  const isProviderLocked = (provider: Provider): boolean => {
+    const userPlan = billing?.plan || 'free';
+    
+    // Free users can only access Gemini and xAI
+    if (userPlan === 'free') {
+      return provider !== 'gemini' && provider !== 'xai';
+    }
+    
+    // Pro users can access Gemini, xAI, and Deepseek
+    if (userPlan === 'pro') {
+      return provider !== 'gemini' && provider !== 'xai' && provider !== 'deepseek';
+    }
+    
+    // Max users can access all providers
+    return false;
+  };
+>>>>>>> puspal
 
   const hasFreeModel = (provider: Provider): boolean => {
     const list = catalog[provider] || [];
@@ -83,16 +110,25 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   const hasSelectedModel = !!models[selectedProvider];
   const canRun = useMemo(() => {
     if (!pair || !timeframe || !strategy || !selectedProvider) return false;
+<<<<<<< HEAD
     // if (isProviderLocked(selectedProvider)) return false;
     const selectedModel = models[selectedProvider];
     // if (selectedModel && isPaidModel(selectedProvider, selectedModel)) return false;
+=======
+    if (isProviderLocked(selectedProvider)) return false;
+    const selectedModel = models[selectedProvider];
+>>>>>>> puspal
     if (needsExplicitModel) return !!hasSelectedModel && !isPaidModel(selectedProvider, selectedModel!);
     // If catalog has entries for this provider, ensure at least one free model exists
     const list = catalog[selectedProvider] || [];
     if (list.length > 0) return hasFreeModel(selectedProvider);
     // No catalog info, allow run (backend may have defaults)
     return true;
+<<<<<<< HEAD
   }, [pair, timeframe, strategy, selectedProvider, needsExplicitModel, hasSelectedModel, models, catalog]);
+=======
+  }, [pair, timeframe, strategy, selectedProvider, needsExplicitModel, hasSelectedModel, models, catalog, billing?.plan]);
+>>>>>>> puspal
 
   const handleModelChange = (prov: Provider, value: string) => {
     setModels(prev => ({ ...prev, [prov]: value }));
@@ -117,6 +153,7 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [models, selectedProvider, catalog]);
 
+<<<<<<< HEAD
   // If selected provider becomes locked (e.g., catalog loads), switch to the first provider with a free model
   // useEffect(() => {
   //   if (!selectedProvider) return;
@@ -128,6 +165,19 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
   //   }
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [selectedProvider, catalog]);
+=======
+  // If selected provider becomes locked (e.g., plan changes), switch to the first provider with a free model
+  useEffect(() => {
+    if (!selectedProvider) return;
+    if (!isProviderLocked(selectedProvider)) return;
+    const providers = Object.keys(PROVIDER_LABELS) as Provider[];
+    const fallback = providers.find((p) => !isProviderLocked(p) && hasFreeModel(p));
+    if (fallback && fallback !== selectedProvider) {
+      setSelectedProvider(fallback);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProvider, catalog, billing?.plan]);
+>>>>>>> puspal
 
   // Notify parent when provider or models change
   useEffect(() => {
@@ -147,8 +197,12 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
       <div>
         <RadioGroup value={selectedProvider} onValueChange={(v) => setSelectedProvider(v as Provider)} className="grid grid-cols-2 gap-2">
           {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => {
+<<<<<<< HEAD
             // const lockedProv = isProviderLocked(p);
             const lockedProv = false;
+=======
+            const lockedProv = isProviderLocked(p);
+>>>>>>> puspal
             return (
               <TooltipProvider key={p}>
                 <Tooltip>
@@ -165,7 +219,15 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
                     </label>
                   </TooltipTrigger>
                   {lockedProv && (
+<<<<<<< HEAD
                     <TooltipContent side="top" className="text-xs">Paid provider — upgrade required</TooltipContent>
+=======
+                    <TooltipContent side="top" className="text-xs">
+                      {billing?.plan === 'free' && p === 'deepseek' ? 'Upgrade to Pro plan to unlock DeepSeek' : 
+                       billing?.plan === 'pro' ? 'Upgrade to Max plan to unlock all providers' : 
+                       'Upgrade required to access this provider'}
+                    </TooltipContent>
+>>>>>>> puspal
                   )}
                 </Tooltip>
               </TooltipProvider>
@@ -184,8 +246,12 @@ export default function AIMultiPanel({ pair, timeframe, strategy, onResult, onCo
             </SelectTrigger>
             <SelectContent>
               {(catalog[selectedProvider] || []).map((m) => {
+<<<<<<< HEAD
                 // const locked = isPaidModel(selectedProvider, m);
                 const locked = false
+=======
+                const locked = isPaidModel(selectedProvider, m) && isProviderLocked(selectedProvider);
+>>>>>>> puspal
                 return (
                   <SelectItem
                     key={m}

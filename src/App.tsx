@@ -35,6 +35,12 @@ import { Refunds } from "@/pages/Refunds";
 import { Contact } from "@/pages/Contact";
 import { Legal } from "@/pages/Legal";
 import { TradingLayout } from "@/components/layout/TradingLayout";
+<<<<<<< HEAD
+=======
+import Forum from "@/pages/Forum";
+import ForumPostDetail from "@/pages/ForumPostDetail";
+import ForumNewPost from "@/pages/ForumNewPost";
+>>>>>>> puspal
 
 const queryClient = new QueryClient();
 
@@ -99,6 +105,28 @@ const App = () => (
                   <About />
                 </TradingLayout>
               </Route>
+<<<<<<< HEAD
+=======
+              
+              {/* Forum routes */}
+              <Route path="/forum">
+                <TradingLayout>
+                  <Forum />
+                </TradingLayout>
+              </Route>
+              <Route path="/forum/post/:postId">
+                <TradingLayout>
+                  <ForumPostDetail />
+                </TradingLayout>
+              </Route>
+              <Route path="/forum/new-post">
+                <ProtectedRoute>
+                  <TradingLayout>
+                    <ForumNewPost />
+                  </TradingLayout>
+                </ProtectedRoute>
+              </Route>
+>>>>>>> puspal
               <Route path="/terms">
                 <TradingLayout>
                   <Terms />
