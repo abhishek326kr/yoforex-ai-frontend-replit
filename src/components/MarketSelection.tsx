@@ -36,6 +36,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
         commodities: generateMarketData(commodities || [])
     };
 
+<<<<<<< HEAD
     // Exclude commodity-style pairs from Forex tab (UI safety net)
     const forexExclusions = new Set([
         'WTICO/USD',
@@ -50,11 +51,21 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
     const filteredMarketData = marketData[selectedMarket]
         .filter(pair => selectedMarket !== 'forex' || !forexExclusions.has(pair.pair))
         .filter(pair => pair.pair.toLowerCase().includes(searchQuery.toLowerCase()));
+=======
+    // Filter pairs based on search query
+    const filteredMarketData = marketData[selectedMarket].filter(pair => 
+        pair.pair.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
     
 
     return (
+<<<<<<< HEAD
         <Card className="bg-gradient-glass backdrop-blur-sm border-border/20 relative z-10">
+=======
+        <Card className="bg-gradient-glass backdrop-blur-sm border-border/20">
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             <Accordion type="single" collapsible defaultValue="market-selection" className="w-full">
                 <AccordionItem value="market-selection" className="border-0">
                     <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 py-3">
@@ -62,6 +73,7 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                             <h3 className="text-lg font-semibold text-foreground">Market Selection</h3>
                         </AccordionTrigger>
                     </div>
+<<<<<<< HEAD
                     <AccordionContent className="px-4 pb-4 pt-2 relative z-20">
                         {/* Currency Pair Tabs */}
                         {/* Market Type Selection - Grid (no horizontal scrollbar) */}
@@ -100,6 +112,40 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                                     Commodities
                                 </Button>
                             </div>
+=======
+                    <AccordionContent className="px-4 pb-4 pt-2">
+                        {/* Currency Pair Tabs */}
+                        {/* Market Type Selection */}
+                        <div className="flex space-x-2 mb-4 pb-2">
+                            <Button
+                                variant={selectedMarket === 'forex' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setSelectedMarket('forex')}
+                            >
+                                Forex
+                            </Button>
+                            <Button
+                                variant={selectedMarket === 'crypto' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setSelectedMarket('crypto')}
+                            >
+                                Crypto
+                            </Button>
+                            <Button
+                                variant={selectedMarket === 'indices' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setSelectedMarket('indices')}
+                            >
+                                Indices
+                            </Button>
+                            <Button
+                                variant={selectedMarket === 'commodities' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setSelectedMarket('commodities')}
+                            >
+                                Commodities
+                            </Button>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                         </div>
 
                         {/* Search */}
@@ -114,7 +160,11 @@ function MarketSelection({ selectedPair, onPairSelect }: MarketSelectionProps) {
                         </div>
 
                         {/* Market Pairs List */}
+<<<<<<< HEAD
                         <div className="space-y-4 flex-1 pr-1 pb-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-primary">
+=======
+                        <div className="space-y-4 flex-1 overflow-hidden pr-1 pb-2 max-h-[400px] overflow-y-auto">
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                             {filteredMarketData.length === 0 ? (
                                 <div className="text-center py-4 text-muted-foreground">
                                     No pairs found matching "{searchQuery}"

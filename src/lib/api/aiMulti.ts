@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import apiClient from "@/lib/api/client";
 import { mapToOandaInstrument } from "@/utils/trading";
 import { toast } from "react-toastify";
@@ -34,6 +35,16 @@ export type TradingStrategyApi =
   | "volatility_breakout"
   | "carry_trade"
   | "options_straddle";
+=======
+import apiClient from '@/lib/api/client';
+import { mapToOandaInstrument } from '@/utils/trading';
+
+export type Provider = 'gemini' | 'claude' | 'deepseek' | 'openai' | 'mistral' | 'cohere' | 'xai';
+
+export type TimeframeAPI = 'M1' | 'M5' | 'M15' | 'M30' | 'H1' | 'H4' | 'H8' | 'D1' | 'W1' | 'M';
+
+export type TradingStrategyApi = 'breakout' | 'ict' | 'advanced_smc' | 'smc' | 'fibonacci' | 'trend_following' | 'momentum' | 'volatility_breakout' | 'carry_trade' | 'options_straddle';
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 export interface ModelsCatalog {
   [provider: string]: string[];
@@ -44,11 +55,14 @@ export interface MultiAnalysisResponse {
   granularity: string;
   candles: any[];
   analysis: Record<string, any>; // keyed by provider
+<<<<<<< HEAD
   billing?: {
     charged_credits: number;
     monthly_credits_remaining: number;
     daily_credits_spent: number;
   };
+=======
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
 
 export interface RunMultiParams {
@@ -63,6 +77,7 @@ export interface RunMultiParams {
 // Local duplicate of the mapping used by analysis.ts
 const formatStrategyForApi = (strategy: string): TradingStrategyApi => {
   switch (strategy) {
+<<<<<<< HEAD
     case "Breakout Strategy":
       return "breakout";
     case "ICT Concept":
@@ -85,11 +100,36 @@ const formatStrategyForApi = (strategy: string): TradingStrategyApi => {
       return "options_straddle";
     default:
       return "breakout";
+=======
+    case 'Breakout Strategy':
+      return 'breakout';
+    case 'ICT Concept':
+      return 'ict';
+    case 'Advanced SMC':
+      return 'advanced_smc';
+    case 'SMC Strategy':
+      return 'smc';
+    case 'Fibonacci Retracement':
+      return 'fibonacci';
+    case 'Trend Following':
+      return 'trend_following';
+    case 'Momentum':
+      return 'momentum';
+    case 'Volatility Breakout':
+      return 'volatility_breakout';
+    case 'Carry Trade':
+      return 'carry_trade';
+    case 'Options Straddle':
+      return 'options_straddle';
+    default:
+      return 'breakout';
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 };
 
 // Local copy of timeframe mapping used by analysis.ts
 const toApiTimeframe = (timeframe: string): TimeframeAPI => {
+<<<<<<< HEAD
   const apiFormats = new Set([
     "M1",
     "M5",
@@ -142,10 +182,36 @@ const toApiTimeframe = (timeframe: string): TimeframeAPI => {
       return "M";
     default:
       return "H1";
+=======
+  const apiFormats = new Set(['M1','M5','M15','M30','H1','H4','D1','W1','M']);
+  if (apiFormats.has(timeframe)) return timeframe as TimeframeAPI;
+  switch (timeframe) {
+    case '1M': return 'M1';
+    case '5M': return 'M5';
+    case '15M': return 'M15';
+    case '30M': return 'M30';
+    case '1H': return 'H1';
+    case '4H': return 'H4';
+    // case '8H': return 'H8';
+    case '1D': return 'D1';
+    case '1W': return 'W1';
+    case '1MO': return 'M';
+    case '1': return 'M1';
+    case '5': return 'M5';
+    case '15': return 'M15';
+    case '30': return 'M30';
+    case '60': return 'H1';
+    case '240': return 'H4';
+    case 'D': return 'D1';
+    case 'W': return 'W1';
+    case 'M': return 'M';
+    default: return 'H1';
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 };
 
 export async function fetchModelsCatalog(): Promise<ModelsCatalog> {
+<<<<<<< HEAD
   const res = await apiClient.get<ModelsCatalog>(
     "/analysis/strategy/ai/models",
     {
@@ -162,6 +228,14 @@ const getProvider = (models: Partial<Record<string, string>>): string => {
     return firstProvider;
 }
 
+=======
+  const res = await apiClient.get<ModelsCatalog>('/analysis/strategy/ai/models', {
+    headers: { Accept: 'application/json' },
+  });
+  return res.data;
+}
+
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAnalysisResponse> {
   const { providers, pair, timeframe, strategy, count = 100, models } = params;
   const formattedPair = mapToOandaInstrument(pair);
@@ -169,6 +243,7 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
   const strategyApi = formatStrategyForApi(strategy);
 
   const qp = new URLSearchParams();
+<<<<<<< HEAD
   providers.forEach((p) => qp.append("providers", p));
   
   qp.append("strategy", strategyApi);
@@ -197,10 +272,21 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
     models && Object.keys(models).length > 0 ? { models } : undefined;
 
   
+=======
+  providers.forEach(p => qp.append('providers', p));
+  qp.append('strategy', strategyApi);
+  qp.append('pair', formattedPair);
+  qp.append('granularity', granularity);
+  qp.append('count', String(count));
+
+  const url = `/analysis/strategy/ai/multi?${qp.toString()}`;
+  const body = models ? { models } : undefined;
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   // Retry logic for transient errors (network/timeout/5xx)
   const maxRetries = 2;
   let lastErr: any;
+<<<<<<< HEAD
   const provider = getProvider(models as Partial<Record<string, string>>);
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -238,6 +324,20 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
       const status = e?.status || e?.response?.status;
       const isTimeout =
         e?.code === "ECONNABORTED" || /timeout/i.test(e?.message || "");
+=======
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await apiClient.post<MultiAnalysisResponse>(url, body, {
+        headers: { Accept: 'application/json' },
+        timeout: 400000,
+        validateStatus: (s) => s < 500, // let axios reject on 5xx
+      });
+      return response.data;
+    } catch (e: any) {
+      lastErr = e;
+      const status = e?.status || e?.response?.status;
+      const isTimeout = e?.code === 'ECONNABORTED' || /timeout/i.test(e?.message || '');
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       const isNetwork = !e?.response && e?.request;
       const isServer = status && status >= 500 && status < 600;
 
@@ -246,7 +346,11 @@ export async function runMultiAnalysis(params: RunMultiParams): Promise<MultiAna
         throw e;
       }
       const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+<<<<<<< HEAD
       await new Promise((r) => setTimeout(r, delay));
+=======
+      await new Promise(r => setTimeout(r, delay));
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     }
   }
   throw lastErr;

@@ -18,8 +18,8 @@
     },
     "ecmaVersion": "latest",
     "sourceType": "module",
-  "project": ["./tsconfig.json", "./tsconfig.node.json"],
-  "tsconfigRootDir": "./"
+    "project": ["./tsconfig.json", "./tsconfig.node.json"],
+    "tsconfigRootDir": "./"
   },
   "overrides": [
     {

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { ReactNode, useEffect, useState } from "react";
+=======
+import { ReactNode } from "react";
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { TradingSidebar } from "./TradingSidebar";
 import { TradingHeader } from "./TradingHeader";
 
@@ -7,6 +11,7 @@ interface TradingLayoutProps {
 }
 
 export function TradingLayout({ children }: TradingLayoutProps) {
+<<<<<<< HEAD
   const [compact, setCompact] = useState<boolean>(false);
 
   useEffect(() => {
@@ -60,6 +65,19 @@ export function TradingLayout({ children }: TradingLayoutProps) {
           </div>
         </main>
       </div>
+=======
+  return (
+    <div className="min-h-screen bg-gradient-dark">
+      <TradingSidebar />
+      <TradingHeader />
+      
+      {/* Main Content */}
+      <main className="md:pl-60 pt-16">
+        <div className="p-4 md:p-6">
+          {children}
+        </div>
+      </main>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Info, TrendingUp, TrendingDown, Target, Shield, BarChart3, RefreshCw } from 'lucide-react';
 
+<<<<<<< HEAD
 interface TechnicalAnalysis {
   trend_strength?: string;
   rsi?: number;
@@ -15,10 +16,16 @@ interface TechnicalAnalysis {
 interface AnalysisDisplayProps {
   analysis: {
     signal: 'BUY' | 'SELL' | 'HOLD' | 'STRADDLE_BUY' | 'STRADDLE_SELL';
+=======
+interface AnalysisDisplayProps {
+  analysis: {
+    signal: 'BUY' | 'SELL' | 'HOLD';
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     confidence: number;
     entry: number;
     stop_loss: number;
     take_profit: number;
+<<<<<<< HEAD
     call_entry?: number;
     put_entry?: number;
     breakeven_upper?: number;
@@ -26,6 +33,11 @@ interface AnalysisDisplayProps {
     risk_reward_ratio: string;
     timeframe: string;
     technical_analysis?: TechnicalAnalysis;
+=======
+    risk_reward_ratio: string;
+    timeframe: string;
+    technical_analysis: Record<string, unknown>; // Flexible type for varying parameter names
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     recommendation: string;
   };
   onRefresh?: () => void; // Optional callback for refreshing the analysis
@@ -35,14 +47,24 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
   const confidencePercentage = analysis.confidence;
   
   const getSignalVariant = () => {
+<<<<<<< HEAD
     if (analysis.signal === 'BUY' || analysis.signal === 'STRADDLE_BUY') return 'bg-emerald-500/10 text-emerald-600 border-emerald-200/20';
     if (analysis.signal === 'SELL' || analysis.signal === 'STRADDLE_SELL') return 'bg-red-500/10 text-red-600 border-red-200/20';
+=======
+    if (analysis.signal === 'BUY') return 'bg-emerald-500/10 text-emerald-600 border-emerald-200/20';
+    if (analysis.signal === 'SELL') return 'bg-red-500/10 text-red-600 border-red-200/20';
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     return 'bg-amber-500/10 text-amber-600 border-amber-200/20';
   };
 
   const getSignalIcon = () => {
+<<<<<<< HEAD
     if (analysis.signal === 'BUY' || analysis.signal === 'STRADDLE_BUY') return <TrendingUp className="h-4 w-4" />;
     if (analysis.signal === 'SELL' || analysis.signal === 'STRADDLE_SELL') return <TrendingDown className="h-4 w-4" />;
+=======
+    if (analysis.signal === 'BUY') return <TrendingUp className="h-4 w-4" />;
+    if (analysis.signal === 'SELL') return <TrendingDown className="h-4 w-4" />;
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     return <BarChart3 className="h-4 w-4" />;
   };
 
@@ -59,6 +81,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
     return price.toFixed(5);
   };
 
+<<<<<<< HEAD
   // Render helper for technical analysis values (numbers, strings, arrays, objects)
   const renderTechValue = (value: unknown) => {
     if (typeof value === 'number') {
@@ -236,6 +259,8 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
     return <Badge variant="secondary" className="font-medium">N/A</Badge>;
   };
 
+=======
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   return (
     <div className="space-y-6">
       {/* Main Signal Card */}
@@ -284,6 +309,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
       <Card className="p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm border-border/20 shadow-lg">
         <div className="flex items-center gap-2 mb-4">
           <Target className="h-5 w-5 text-primary" />
+<<<<<<< HEAD
           <h3 className="text-lg font-semibold text-foreground">
             {analysis.call_entry && analysis.put_entry ? 'Options Straddle Levels' : 'Trading Levels'}
           </h3>
@@ -351,6 +377,33 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
             </div>
           </div>
         )}
+=======
+          <h3 className="text-lg font-semibold text-foreground">Trading Levels</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="text-center p-4 rounded-xl bg-blue-500/5 border border-blue-200/20 hover:bg-blue-500/10 transition-colors">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <p className="text-sm font-medium text-muted-foreground">Entry Price</p>
+            </div>
+            <p className="text-xl font-bold text-blue-600">{formatPrice(analysis.entry)}</p>
+          </div>
+          <div className="text-center p-4 rounded-xl bg-red-500/5 border border-red-200/20 hover:bg-red-500/10 transition-colors">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Shield className="w-3 h-3 text-red-500" />
+              <p className="text-sm font-medium text-muted-foreground">Stop Loss</p>
+            </div>
+            <p className="text-xl font-bold text-red-600">{formatPrice(analysis.stop_loss)}</p>
+          </div>
+          <div className="text-center p-4 rounded-xl bg-emerald-500/5 border border-emerald-200/20 hover:bg-emerald-500/10 transition-colors">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Target className="w-3 h-3 text-emerald-500" />
+              <p className="text-sm font-medium text-muted-foreground">Take Profit</p>
+            </div>
+            <p className="text-xl font-bold text-emerald-600">{formatPrice(analysis.take_profit)}</p>
+          </div>
+        </div>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       </Card>
 
       {/* Technical Analysis */}
@@ -360,7 +413,11 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
           <h3 className="text-lg font-semibold text-foreground">Technical Analysis</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<<<<<<< HEAD
           {Object.entries(analysis.technical_analysis ?? {}).map(([key, value]) => {
+=======
+          {Object.entries(analysis.technical_analysis).map(([key, value]) => {
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             // Helper function to format parameter names for display
             const formatParameterName = (paramName: string) => {
               return paramName
@@ -375,7 +432,11 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
             // Generic styling for all parameters
             const getParameterStyling = () => {
               return {
+<<<<<<< HEAD
                 bgColor: 'bg-gradient-to-br from-background/70 to-background/40 hover:from-background/80 hover:to-background/50 border-border/20 shadow-sm',
+=======
+                bgColor: 'bg-muted/20 border-muted/40 hover:bg-muted/30',
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 textColor: 'text-foreground',
                 dotColor: 'bg-primary',
                 icon: null
@@ -388,6 +449,7 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
             return (
               <div 
                 key={key} 
+<<<<<<< HEAD
                 className={`p-4 rounded-lg border transition-colors hover:shadow-md ${styling.bgColor}`}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -396,6 +458,29 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
                 </div>
                 <div className="text-left">
                   {renderTechValue(value)}
+=======
+                className={`p-4 rounded-xl border transition-colors ${styling.bgColor}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {styling.icon || <div className={`w-3 h-3 rounded-full ${styling.dotColor}`}></div>}
+                    <span className="text-sm font-medium text-muted-foreground">{displayName}</span>
+                  </div>
+                  <div className="text-right">
+                    {typeof value === 'number' ? (
+                      <span className={`text-lg font-bold ${styling.textColor}`}>
+                        {formatPrice(value)}
+                      </span>
+                    ) : (
+                      <Badge 
+                        variant="secondary"
+                        className="font-medium"
+                      >
+                        {String(value)}
+                      </Badge>
+                    )}
+                  </div>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 </div>
               </div>
             );
@@ -403,12 +488,17 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
         </div>
       </Card>
 
+<<<<<<< HEAD
       {/* AI Analysis & Recommendation */}
+=======
+      {/* AI Recommendation */}
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       <Card className="p-6 bg-gradient-to-br from-background/80 to-background/40 backdrop-blur-sm border-border/20 shadow-lg">
         <div className="flex items-center gap-2 mb-4">
           <Info className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">AI Analysis & Recommendation</h3>
         </div>
+<<<<<<< HEAD
         
         <div className="space-y-6">
           {/* Market Context */}
@@ -525,6 +615,12 @@ export function AnalysisDisplay({ analysis, onRefresh }: AnalysisDisplayProps) {
               </p>
             </div>
           )}
+=======
+        <div className="prose prose-sm max-w-none">
+          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
+            {analysis.recommendation}
+          </p>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         </div>
       </Card>
     </div>

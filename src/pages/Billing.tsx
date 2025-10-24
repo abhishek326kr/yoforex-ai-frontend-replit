@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { CashfreePlanCheckout } from "@/components/billing/CashfreePlanCheckout";
 import { CoinPaymentsPlanCheckout } from "@/components/billing/CoinPaymentsPlanCheckout";
 
+=======
+import { useState } from "react";
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
@@ -26,6 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+<<<<<<< HEAD
   listInvoices,
   downloadInvoice,
   type InvoiceInfo,
@@ -44,6 +49,8 @@ import { toast } from "@/components/ui/use-toast";
 import { emitBillingUpdated } from "@/lib/billingEvents";
 
 import {
+=======
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   CreditCard,
   Download,
   Calendar,
@@ -56,6 +63,7 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
+<<<<<<< HEAD
   Search,
 } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
@@ -66,12 +74,72 @@ import { CryptoCurrencySelector } from "@/components/billing/CryptoCurrencySelec
 // removed hardcoded currentPlan; using API-driven plan details
 
 // (transactions API types imported above)
+=======
+  Search
+} from "lucide-react";
+
+const currentPlan = {
+  name: "Pro",
+  price: 69,
+  period: "month",
+  creditsRemaining: 1847,
+  creditsTotal: 2500,
+  renewalDate: "2024-02-15",
+  status: "active"
+};
+
+const transactionHistory = [
+  {
+    id: "TXN-2024-001",
+    type: "subscription",
+    description: "Pro Plan - Monthly Subscription",
+    amount: -69.00,
+    currency: "USD",
+    date: "2024-01-15",
+    status: "completed",
+    paymentMethod: "Cashfree - UPI",
+    invoice: "INV-2024-001"
+  },
+  {
+    id: "TXN-2024-002", 
+    type: "credits",
+    description: "Additional Credits Purchase",
+    amount: -25.00,
+    currency: "USD",
+    date: "2024-01-20",
+    status: "completed",
+    paymentMethod: "Cashfree - Card",
+    credits: 1000
+  },
+  {
+    id: "TXN-2024-003",
+    type: "deposit",
+    description: "Account Deposit",
+    amount: 500.00,
+    currency: "USD",
+    date: "2024-01-10",
+    status: "completed",
+    paymentMethod: "Bank Transfer"
+  },
+  {
+    id: "TXN-2024-004",
+    type: "withdrawal",
+    description: "Profit Withdrawal",
+    amount: -150.00,
+    currency: "USD",
+    date: "2024-01-08",
+    status: "processing",
+    paymentMethod: "Bank Transfer"
+  }
+];
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 const creditUsage = [
   { date: "2024-01-22", single: 12, multiAI: 2, total: 3300 },
   { date: "2024-01-21", single: 8, multiAI: 1, total: 1950 },
   { date: "2024-01-20", single: 15, multiAI: 0, total: 2250 },
   { date: "2024-01-19", single: 6, multiAI: 3, total: 3150 },
+<<<<<<< HEAD
   { date: "2024-01-18", single: 10, multiAI: 1, total: 2250 },
 ];
 
@@ -336,10 +404,24 @@ export function Billing() {
     if (credits in bundlePricesUSD) return bundlePricesUSD[credits];
     // Fallback: linear scaling based on 1M = $7.5
     return (credits / 1_000_000) * 7.5;
+=======
+  { date: "2024-01-18", single: 10, multiAI: 1, total: 2250 }
+];
+
+export function Billing() {
+  const [selectedPeriod, setSelectedPeriod] = useState("30days");
+  const [showAddCredits, setShowAddCredits] = useState(false);
+  const [creditAmount, setCreditAmount] = useState(1000);
+
+  const getCreditCost = (credits: number) => {
+    const baseRate = currentPlan.name === "Max" ? 20 : 25;
+    return (credits / 1000) * baseRate;
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
+<<<<<<< HEAD
       case "completed":
         return "text-trading-profit";
       case "processing":
@@ -370,10 +452,21 @@ export function Billing() {
       </TradingLayout>
     );
   }
+=======
+      case "completed": return "text-trading-profit";
+      case "processing": return "text-yellow-500";
+      case "failed": return "text-trading-loss";
+      default: return "text-muted-foreground";
+    }
+  };
+
+
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
   return (
     <TradingLayout>
       <div className="space-y-6">
+<<<<<<< HEAD
         {(() => {
           const planName = (
             planDetails?.plan ||
@@ -487,11 +580,20 @@ export function Billing() {
             </h1>
             <p className="text-muted-foreground mt-1">
               Manage your subscription, tokens, and payment history
+=======
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold heading-trading">Billing & Payments</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your subscription, credits, and payment history
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             </p>
           </div>
           <div className="flex items-center space-x-3 mt-4 sm:mt-0">
             <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
               <DialogTrigger asChild>
+<<<<<<< HEAD
                 <Button
                   variant="outline"
                   size="sm"
@@ -504,10 +606,16 @@ export function Billing() {
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Buy Tokens
+=======
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Buy Credits
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
+<<<<<<< HEAD
                   <DialogTitle>Purchase Additional Tokens</DialogTitle>
                   <DialogDescription>
                     {isCashfreeLocked
@@ -561,11 +669,31 @@ export function Billing() {
                             userPricing
                           )}
                         </SelectItem>
+=======
+                  <DialogTitle>Purchase Additional Credits</DialogTitle>
+                  <DialogDescription>
+                    Add more credits to your account for additional AI analyses
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="credits">Number of Credits</Label>
+                    <Select onValueChange={(value) => setCreditAmount(parseInt(value))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select credit amount" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1000">1,000 credits - ${getCreditCost(1000)}</SelectItem>
+                        <SelectItem value="2500">2,500 credits - ${getCreditCost(2500)}</SelectItem>
+                        <SelectItem value="5000">5,000 credits - ${getCreditCost(5000)}</SelectItem>
+                        <SelectItem value="10000">10,000 credits - ${getCreditCost(10000)}</SelectItem>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-gradient-dark rounded-lg">
                     <span>Total Cost:</span>
+<<<<<<< HEAD
                     <span className="text-xl font-bold text-foreground">
                       {formatPriceUSDToLocal(
                         getCreditCost(creditAmount),
@@ -775,6 +903,13 @@ export function Billing() {
                         Purchase Tokens
                       </>
                     )}
+=======
+                    <span className="text-xl font-bold text-foreground">${getCreditCost(creditAmount)}</span>
+                  </div>
+                  <Button className="w-full btn-trading-primary">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Purchase Credits
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </Button>
                 </div>
               </DialogContent>
@@ -791,6 +926,7 @@ export function Billing() {
           <Card className="trading-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
+<<<<<<< HEAD
                 <h3 className="text-lg font-semibold text-foreground">
                   Current Plan
                 </h3>
@@ -894,10 +1030,29 @@ export function Billing() {
                   </>
                 );
               })()}
+=======
+                <h3 className="text-lg font-semibold text-foreground">Current Plan</h3>
+                <p className="text-sm text-muted-foreground">Active subscription</p>
+              </div>
+              <Badge className="bg-gradient-primary">
+                {currentPlan.name}
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Monthly Cost:</span>
+                <span className="font-medium text-foreground">${currentPlan.price}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Next Billing:</span>
+                <span className="font-medium text-foreground">{currentPlan.renewalDate}</span>
+              </div>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Status:</span>
                 <div className="flex items-center space-x-1">
                   <CheckCircle className="h-3 w-3 text-trading-profit" />
+<<<<<<< HEAD
                   <span className="text-sm font-medium text-trading-profit">
                     {(planDetails?.status || "active").charAt(0).toUpperCase() +
                       (planDetails?.status || "active").slice(1)}
@@ -932,22 +1087,37 @@ export function Billing() {
                   </Button>
                 );
               })()}
+=======
+                  <span className="text-sm font-medium text-trading-profit">Active</span>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full mt-4">
+                <ArrowUpRight className="h-4 w-4 mr-2" />
+                Upgrade Plan
+              </Button>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             </div>
           </Card>
 
           <Card className="trading-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
+<<<<<<< HEAD
                 <h3 className="text-lg font-semibold text-foreground">
                   Tokens Remaining
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Your monthly tokens
                 </p>
+=======
+                <h3 className="text-lg font-semibold text-foreground">Credits Remaining</h3>
+                <p className="text-sm text-muted-foreground">Today's allowance</p>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
               <Wallet className="h-5 w-5 text-primary" />
             </div>
             <div className="space-y-3">
+<<<<<<< HEAD
               {billingError && (
                 <p className="text-sm text-destructive">{billingError}</p>
               )}
@@ -1017,16 +1187,38 @@ export function Billing() {
                 >
                   <Plus className="h-3 w-3 mr-1" /> Buy Tokens
                 </Button>
+=======
+              <div className="text-center">
+                <p className="text-3xl font-bold text-foreground">{currentPlan.creditsRemaining.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">of {currentPlan.creditsTotal.toLocaleString()} credits</p>
+              </div>
+              <div className="w-full bg-muted/30 rounded-full h-2">
+                <div 
+                  className="bg-gradient-primary h-2 rounded-full" 
+                  style={{ width: `${(currentPlan.creditsRemaining / currentPlan.creditsTotal) * 100}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Resets in 6h 23m</span>
+                <span>{Math.round((currentPlan.creditsRemaining / currentPlan.creditsTotal) * 100)}%</span>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
             </div>
           </Card>
 
+<<<<<<< HEAD
           <Card className="trading-card p-6 hidden ">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
                   Account Balance
                 </h3>
+=======
+          <Card className="trading-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Account Balance</h3>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 <p className="text-sm text-muted-foreground">Available funds</p>
               </div>
               <DollarSign className="h-5 w-5 text-primary" />
@@ -1052,9 +1244,15 @@ export function Billing() {
 
         {/* Billing Tabs */}
         <Tabs defaultValue="transactions" className="space-y-6">
+<<<<<<< HEAD
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
 
+=======
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="credits">Credit Usage</TabsTrigger>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
 
@@ -1064,20 +1262,29 @@ export function Billing() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
+<<<<<<< HEAD
                     <h3 className="text-lg font-semibold text-foreground">
                       Transaction History
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       All account transactions and payments
                     </p>
+=======
+                    <h3 className="text-lg font-semibold text-foreground">Transaction History</h3>
+                    <p className="text-sm text-muted-foreground">All account transactions and payments</p>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+<<<<<<< HEAD
                       <Input
                         placeholder="Search transactions..."
                         className="pl-10 w-64"
                       />
+=======
+                      <Input placeholder="Search transactions..." className="pl-10 w-64" />
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                     </div>
                     <Select defaultValue="all">
                       <SelectTrigger className="w-32">
@@ -1085,16 +1292,24 @@ export function Billing() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
+<<<<<<< HEAD
                         <SelectItem value="subscription">
                           Subscriptions
                         </SelectItem>
                         <SelectItem value="credits">Credits</SelectItem>
+=======
+                        <SelectItem value="subscription">Subscriptions</SelectItem>
+                        <SelectItem value="credits">Credits</SelectItem>
+                        <SelectItem value="deposit">Deposits</SelectItem>
+                        <SelectItem value="withdrawal">Withdrawals</SelectItem>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="space-y-4">
+<<<<<<< HEAD
                   {txnError && (
                     <p className="text-sm text-destructive">{txnError}</p>
                   )}
@@ -1132,10 +1347,34 @@ export function Billing() {
                             </span>
                             <span>•</span>
                             <span>{transaction.paymentMethod}</span>
+=======
+                  {transactionHistory.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-primary/10 flex items-center justify-center">
+                          {transaction.type === 'subscription' && <Calendar className="h-5 w-5 text-primary" />}
+                          {transaction.type === 'credits' && <Wallet className="h-5 w-5 text-secondary" />}
+                          {transaction.type === 'deposit' && <ArrowUpRight className="h-5 w-5 text-trading-profit" />}
+                          {transaction.type === 'withdrawal' && <ArrowDownLeft className="h-5 w-5 text-trading-loss" />}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{transaction.description}</p>
+                          <div className="flex items-center space-x-3 text-sm text-muted-foreground">
+                            <span>{transaction.date}</span>
+                            <span>•</span>
+                            <span>{transaction.paymentMethod}</span>
+                            {transaction.credits && (
+                              <>
+                                <span>•</span>
+                                <span>{transaction.credits.toLocaleString()} credits</span>
+                              </>
+                            )}
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                           </div>
                         </div>
                       </div>
                       <div className="text-right space-y-1">
+<<<<<<< HEAD
                         <p
                           className={`font-semibold ${
                             transaction.amount > 0
@@ -1164,6 +1403,18 @@ export function Billing() {
                           <span className="text-sm font-medium capitalize">
                             {transaction.status}
                           </span>
+=======
+                        <p className={`font-semibold ${
+                          transaction.amount > 0 ? 'text-trading-profit' : 'text-foreground'
+                        }`}>
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                        </p>
+                        <div className={`flex items-center space-x-1 ${getStatusColor(transaction.status)}`}>
+                          {transaction.status === 'completed' && <CheckCircle className="h-3 w-3" />}
+                          {transaction.status === 'processing' && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {transaction.status === 'failed' && <AlertTriangle className="h-3 w-3" />}
+                          <span className="text-sm font-medium capitalize">{transaction.status}</span>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                         </div>
                       </div>
                     </div>
@@ -1173,7 +1424,57 @@ export function Billing() {
             </Card>
           </TabsContent>
 
+<<<<<<< HEAD
           {/* Token Usage */}
+=======
+          {/* Credit Usage */}
+          <TabsContent value="credits">
+            <Card className="trading-card">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Credit Usage Analytics</h3>
+                    <p className="text-sm text-muted-foreground">Daily credit consumption breakdown</p>
+                  </div>
+                  <Select defaultValue={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7days">7 Days</SelectItem>
+                      <SelectItem value="30days">30 Days</SelectItem>
+                      <SelectItem value="90days">90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-4">
+                  {creditUsage.map((usage, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-secondary/10 flex items-center justify-center">
+                          <TrendingUp className="h-5 w-5 text-secondary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{usage.date}</p>
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <span>{usage.single} single analyses</span>
+                            <span>•</span>
+                            <span>{usage.multiAI} multi-AI analyses</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">{usage.total.toLocaleString()}</p>
+                        <p className="text-sm text-muted-foreground">credits used</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
           {/* Invoices */}
           <TabsContent value="invoices">
@@ -1181,6 +1482,7 @@ export function Billing() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
+<<<<<<< HEAD
                     <h3 className="text-lg font-semibold text-foreground">
                       Invoices & Receipts
                     </h3>
@@ -1245,10 +1547,46 @@ export function Billing() {
                     )}
                   </div>
                 )}
+=======
+                    <h3 className="text-lg font-semibold text-foreground">Invoices & Receipts</h3>
+                    <p className="text-sm text-muted-foreground">Download your billing documents</p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download All
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {transactionHistory.filter(t => t.invoice).map((invoice) => (
+                    <div key={invoice.id} className="flex items-center justify-between p-4 rounded-lg bg-gradient-dark border border-border/20">
+                      <div className="flex items-center space-x-4">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-primary/10 flex items-center justify-center">
+                          <CreditCard className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{invoice.invoice}</p>
+                          <p className="text-sm text-muted-foreground">{invoice.description}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="font-medium text-foreground">${Math.abs(invoice.amount).toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">{invoice.date}</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
               </div>
             </Card>
           </TabsContent>
         </Tabs>
+<<<<<<< HEAD
 
         {/* Provider selection modal */}
         <Dialog open={showProvider} onOpenChange={setShowProvider}>
@@ -1348,3 +1686,9 @@ export function Billing() {
     </TradingLayout>
   );
 }
+=======
+      </div>
+    </TradingLayout>
+  );
+}
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2

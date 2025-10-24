@@ -94,13 +94,21 @@ export function UserProfileDropdown() {
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
+<<<<<<< HEAD
           {/* <DropdownMenuItem 
+=======
+          <DropdownMenuItem 
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
             className="cursor-pointer"
             onClick={() => setLocation('/settings')}
           >
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
+<<<<<<< HEAD
           </DropdownMenuItem> */}
+=======
+          </DropdownMenuItem>
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem 

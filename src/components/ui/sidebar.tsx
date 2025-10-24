@@ -402,7 +402,11 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
+<<<<<<< HEAD
         "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden group-data-[collapsible=icon]:overflow-hidden",
+=======
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+>>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         className
       )}
       {...props}
