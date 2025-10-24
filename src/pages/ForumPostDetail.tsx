@@ -355,6 +355,7 @@ const ForumPostDetail: React.FC = () => {
   }
 
   return (
+    <TradingLayout>
     <div className="container mx-auto py-8 px-4">
       <Breadcrumb className="mb-6">
         <BreadcrumbItem>
@@ -495,6 +496,7 @@ const ForumPostDetail: React.FC = () => {
         )}
       </div>
     </div>
+    </TradingLayout>
   );
 };
 

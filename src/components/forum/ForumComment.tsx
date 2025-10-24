@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
-import { ThumbsUp, Reply, MoreHorizontal } from 'lucide-react';
+import { ThumbsUp, Reply, MoreHorizontal, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Textarea } from '../ui/textarea';
@@ -9,8 +9,28 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '../ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip';
 
 interface ForumCommentProps {
   id: number;
@@ -20,6 +40,10 @@ interface ForumCommentProps {
   likeCount: number;
   replies?: ForumCommentProps[];
   isAdmin?: boolean;
+  isAuthor?: boolean;
+  isLiked?: boolean;
+  authorRole?: string;
+  replyCount?: number;
   onReply?: (parentId: number, content: string) => void;
   onLike?: (commentId: number) => void;
   onEdit?: (commentId: number, content: string) => void;
@@ -34,6 +58,10 @@ const ForumComment: React.FC<ForumCommentProps> = ({
   likeCount,
   replies = [],
   isAdmin = false,
+  isAuthor = false,
+  isLiked = false,
+  authorRole = 'user',
+  replyCount = 0,
   onReply,
   onLike,
   onEdit,
@@ -71,39 +99,80 @@ const ForumComment: React.FC<ForumCommentProps> = ({
       .substring(0, 2);
   };
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   return (
     <div className="mb-4">
-      <Card>
+      <Card className={cn("transition-all duration-200", isEditing && "border-primary/50")}>
         <CardHeader className="pb-2 pt-4 flex flex-row items-start gap-4">
-          <Avatar>
+          <Avatar className="h-10 w-10">
             <AvatarFallback>{getInitials(authorUsername)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex justify-between items-center">
-              <div>
-                <span className="font-semibold">{authorUsername}</span>
-                <span className="text-xs text-muted-foreground ml-2">{timeAgo}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold hover:text-primary transition-colors cursor-pointer">
+                  {authorUsername}
+                </span>
+                {authorRole !== 'user' && (
+                  <Badge variant={authorRole === 'admin' ? 'destructive' : 'outline'} className="text-xs">
+                    {authorRole}
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground">{timeAgo}</span>
               </div>
-              {(isAdmin || onEdit || onDelete) && (
+              {(isAdmin || isAuthor) && (onEdit || onDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <MoreHorizontal size={16} />
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {onEdit && (
                       <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                        <Edit2 className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
                     )}
                     {onDelete && (
-                      <DropdownMenuItem 
-                        className="text-red-500"
-                        onClick={() => onDelete(id)}
-                      >
-                        Delete
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuSeparator />
+                        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                              <span className="text-red-500">Delete</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                <div className="flex items-center gap-2">
+                                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                                  Delete Comment
+                                </div>
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your
+                                comment and remove it from our servers.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => {
+                                  setShowDeleteDialog(false);
+                                  onDelete(id);
+                                }}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -118,43 +187,83 @@ const ForumComment: React.FC<ForumCommentProps> = ({
                 value={editContent} 
                 onChange={(e) => setEditContent(e.target.value)}
                 rows={4}
+                className="resize-none"
+                placeholder="Edit your comment..."
               />
               <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditContent(content);
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleEditSubmit}>
-                  Save
+                <Button 
+                  size="sm" 
+                  onClick={handleEditSubmit}
+                  disabled={!editContent.trim() || editContent === content}
+                >
+                  Save Changes
                 </Button>
               </div>
             </div>
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: content }} />
+            <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
           )}
         </CardContent>
         <CardFooter className="pt-0 pb-2 flex justify-between">
           <div className="flex items-center gap-4">
             {onLike && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-1 text-muted-foreground"
-                onClick={() => onLike(id)}
-              >
-                <ThumbsUp size={16} />
-                {likeCount > 0 && <span>{likeCount}</span>}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={cn(
+                        "flex items-center gap-1",
+                        isLiked ? "text-primary" : "text-muted-foreground hover:text-primary"
+                      )}
+                      onClick={() => onLike(id)}
+                    >
+                      <ThumbsUp className={cn("h-4 w-4", isLiked && "fill-current")} />
+                      {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isLiked ? 'Remove like' : 'Like this comment'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
+            
             {onReply && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-1 text-muted-foreground"
-                onClick={() => setIsReplying(!isReplying)}
-              >
-                <Reply size={16} />
-                Reply
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={cn(
+                        "flex items-center gap-1",
+                        isReplying ? "text-primary" : "text-muted-foreground hover:text-primary"
+                      )}
+                      onClick={() => setIsReplying(!isReplying)}
+                    >
+                      <Reply className="h-4 w-4" />
+                      <span className="text-sm">
+                        {isReplying ? 'Cancel' : replyCount > 0 ? `${replyCount} Replies` : 'Reply'}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isReplying ? 'Cancel reply' : 'Reply to this comment'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </CardFooter>
@@ -162,20 +271,43 @@ const ForumComment: React.FC<ForumCommentProps> = ({
       
       {isReplying && (
         <div className="mt-2 ml-12">
-          <Textarea 
-            placeholder="Write your reply..." 
-            value={replyContent}
-            onChange={(e) => setReplyContent(e.target.value)}
-            rows={3}
-          />
-          <div className="flex justify-end gap-2 mt-2">
-            <Button variant="outline" size="sm" onClick={() => setIsReplying(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleReplySubmit}>
-              Post Reply
-            </Button>
-          </div>
+          <Card className="border-primary/30">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{getInitials(authorUsername)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Textarea 
+                    placeholder={`Reply to ${authorUsername}...`}
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setIsReplying(false);
+                        setReplyContent('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleReplySubmit}
+                      disabled={!replyContent.trim()}
+                    >
+                      Post Reply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
       

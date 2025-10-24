@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import RichTextEditor from '@/components/forum/RichTextEditor';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
 import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -174,13 +174,11 @@ const ForumNewPost: React.FC = () => {
           <label htmlFor="content" className="text-sm font-medium">
             Content <span className="text-red-500">*</span>
           </label>
-          <Textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
             placeholder="Write your post content here..."
-            rows={10}
-            required
+            minHeight="300px"
           />
         </div>
 

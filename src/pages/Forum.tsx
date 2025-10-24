@@ -3,13 +3,22 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import SearchBar from "@/components/forum/SearchBar";
 import ForumCategory from "@/components/forum/ForumCategory";
 import ForumPost from "@/components/forum/ForumPost";
 import { useAuth } from "@/hooks/useAuth";
 import axios from "axios";
 import { API_BASE_URL } from "@/config/api";
 import { TradingLayout } from "@/components/layout/TradingLayout";
+
+interface SearchFilters {
+  categoryId?: string;
+  sortBy: 'recent' | 'popular' | 'comments' | 'likes';
+  timeRange: 'all' | 'today' | 'week' | 'month' | 'year';
+  showPinned: boolean;
+  showResolved: boolean;
+}
 
 interface Category {
   id: number;
@@ -43,6 +52,13 @@ const Forum: React.FC = () => {
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [popularPosts, setPopularPosts] = useState<Post[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    categoryId: undefined,
+    sortBy: 'recent',
+    timeRange: 'all',
+    showPinned: false,
+    showResolved: false,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,10 +92,17 @@ const Forum: React.FC = () => {
     fetchForumData();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
-      setLocation(`/forum/search?q=${encodeURIComponent(searchQuery)}`);
+      const queryParams = new URLSearchParams();
+      queryParams.set('q', searchQuery);
+      if (searchFilters.categoryId) queryParams.set('category', searchFilters.categoryId);
+      queryParams.set('sort', searchFilters.sortBy);
+      queryParams.set('time', searchFilters.timeRange);
+      if (searchFilters.showPinned) queryParams.set('pinned', 'true');
+      if (searchFilters.showResolved) queryParams.set('resolved', 'true');
+      
+      setLocation(`/forum/search?${queryParams.toString()}`);
     }
   };
 
@@ -96,15 +119,15 @@ const Forum: React.FC = () => {
           )}
         </div>
 
-        <form onSubmit={handleSearch} className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search forum..."
-            className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </form>
+        <SearchBar
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          filters={searchFilters}
+          onFiltersChange={setSearchFilters}
+          categories={categories}
+          onSearch={handleSearch}
+          className="mb-6"
+        />
 
         <Tabs
           defaultValue={activeTab}
