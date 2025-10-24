@@ -84,8 +84,6 @@ type AnalysisShape = {
 function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
   if (!payload || typeof payload !== 'object') return null;
 
-<<<<<<< HEAD
-=======
   // Handle Gemini response format
   if (payload.candidates && Array.isArray(payload.candidates)) {
     try {
@@ -102,7 +100,6 @@ function normalizeAnalysisPayload(payload: any): AnalysisShape | null {
     }
   }
 
->>>>>>> puspal
   // Accept both number and numeric string inputs, coerce safely
   const toNum = (v: any): number | null => {
     if (v === null || v === undefined) return null;
@@ -169,8 +166,6 @@ function extractErrorText(payload: any): string | null {
       }
     }
 
-<<<<<<< HEAD
-=======
     // Handle Gemini response format
     if (payload.candidates && Array.isArray(payload.candidates)) {
       try {
@@ -187,7 +182,6 @@ function extractErrorText(payload: any): string | null {
       }
     }
 
->>>>>>> puspal
     if (!payload || typeof payload !== 'object') return null;
 
     // Common shapes

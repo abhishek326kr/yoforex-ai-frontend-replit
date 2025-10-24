@@ -230,11 +230,7 @@ export function Auth() {
         });
       } else if (res?.status === 422) {
         const detail = res?.data?.detail;
-<<<<<<< HEAD
-        let title = 'Signup Failed';
-=======
         let title = res?.data[0]?.msg;
->>>>>>> puspal
         let description = 'Validation error occurred.';
         const pickMsg = (d: any) => Array.isArray(d) ? (d[0]?.msg || d[0]) : (typeof d === 'string' ? d : d?.error);
         const msg = pickMsg(detail);
