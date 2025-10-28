@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react';
-=======
-import { useState } from 'react';
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 // import { useToast } from '@/hooks/use-toast';
 import {
   Activity,
@@ -14,7 +10,6 @@ import {
   AlertCircle,
   Lock
 } from 'lucide-react';
-<<<<<<< HEAD
 import formattedTimeframe, { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,8 +42,6 @@ import { useBillingSummary } from '@/hooks/useBillingSummary';
 import { emitBillingUpdated } from '@/lib/billingEvents';
 import { createTrade } from '@/lib/api/trades';
 import { mapToOandaInstrument } from '@/utils/trading';
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 // Type definitions for Technical Analysis Card props
 interface TechnicalAnalysisCardProps {
@@ -61,17 +54,13 @@ interface TechnicalAnalysisCardProps {
   onRunAnalysis: () => void;
   disabled?: boolean;
   children?: React.ReactNode;
-<<<<<<< HEAD
   showRunNew?: boolean;
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
 
 // Import the AnalysisDisplay component
 import { AnalysisDisplay } from '@/components/AnalysisDisplay';
 
 // Technical Analysis Card Component
-<<<<<<< HEAD
 const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children, showRunNew = false }: TechnicalAnalysisCardProps) => (
   <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
     <div className="flex items-center justify-between mb-3">
@@ -89,11 +78,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
         )}
       </div>
     </div>
-=======
-const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children }: TechnicalAnalysisCardProps) => (
-  <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
-    <h3 className="text-lg font-semibold text-foreground mb-3">Market Analysis</h3>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     {analysis.loading ? (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin mr-3 text-primary" />
@@ -105,11 +89,7 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
           <Zap className="h-8 w-8 text-primary" />
         </div>
         <h4 className="text-lg font-medium mb-2">Run Market Analysis</h4>
-<<<<<<< HEAD
-        <p className="text-muted-foreground text-sm mb-6">
-=======
         <p className="text-muted-foreground text-sm mb-6 max-w-md">
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           Get detailed technical analysis, trade signals, and risk assessment for the selected currency pair.
         </p>
         <Button 
@@ -140,7 +120,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
         </Button>
       </div>
     ) : analysis.data?.analysis ? (
-<<<<<<< HEAD
       // If the payload looks like MultiAnalysisResponse (has nested 'analysis'),
       // render children (AIMultiResults) only; otherwise render the single AnalysisDisplay
       ((analysis.data as any)?.analysis?.analysis ? (
@@ -151,12 +130,6 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
           {children}
         </>
       ))
-=======
-      <>
-        <AnalysisDisplay analysis={analysis.data.analysis} onRefresh={onRunAnalysis} />
-        {children}
-      </>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     ) : (
       <div className="flex flex-col items-center p-6 text-center">
         <div className="bg-muted/20 p-4 rounded-full mb-4">
@@ -178,43 +151,11 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
     )}
   </Card>
 );
-<<<<<<< HEAD
  
 
 export function LiveTrading() {
   const { addTrade } = useActiveTrades();
   const { data: billing, refresh: refreshBilling } = useBillingSummary();
-=======
-import { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import TradingTips from '@/components/TradingTips';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-
-import MarketSelection from '@/components/MarketSelection';
-import TradingViewWidget from '@/components/charts/TradingViewWidget';
-import { TradingLayout } from '@/components/layout/TradingLayout';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import LiveSignals from '@/components/LiveSignals';
-import AiModelsSelection from '@/components/AiModelsSelection';
-import TimeframeSelection from '@/components/TimeframeSelection';
-import { TradingChart } from '@/components/TradingChart';
-import StrategySelection from '@/components/StrategySelection';
-import ActivePositions from '@/components/ActivePositions';
-import AIMultiPanel from '@/components/AIMultiPanel';
-import AIMultiResults from '@/components/AIMultiResults';
-import type { MultiAnalysisResponse } from '@/lib/api/aiMulti';
-
-export function LiveTrading() {
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   const [selectedPair, setSelectedPair] = useState("EUR/USD");
   const [selectedTimeframe, setSelectedTimeframe] = useState("1H");
   const [selectedStrategy, setSelectedStrategy] = useState<string>("");
@@ -228,7 +169,6 @@ export function LiveTrading() {
     hasRun: boolean; // Track if analysis has been run
   }>({ loading: false, error: null, data: null, hasRun: false });
   const [multiResult, setMultiResult] = useState<MultiAnalysisResponse | null>(null);
-<<<<<<< HEAD
   // Keep latest AIMultiPanel config so Market Analysis can reuse it
   const [aiConfig, setAiConfig] = useState<{ provider: string; models: Record<string, string> } | null>(null);
   // Track last successful run signature to detect parameter changes
@@ -319,8 +259,6 @@ const saveLastAnalysis = (params: {
       clearPopupTimer();
     };
   }, []);
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   
   // Handle strategy selection from StrategySelection component
   const handleStrategySelect = (strategy: string) => {
@@ -334,14 +272,11 @@ const saveLastAnalysis = (params: {
 
   // Handle AI Analysis button click
   const handleAnalysis = async () => {
-<<<<<<< HEAD
     if (isDailyLocked) {
       setAnalysis({ loading: false, error: 'Daily analysis limit reached. Please try again in 24 hours.', data: null, hasRun: true });
       return;
     }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     if (!selectedPair || !selectedTimeframe || !selectedStrategy) {
       setAnalysis({
         loading: false,
@@ -353,11 +288,8 @@ const saveLastAnalysis = (params: {
     }
     
     try {
-<<<<<<< HEAD
       // Cancel any existing expiry timer before starting a fresh run
       
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       setAnalysis({ loading: true, error: null, data: null, hasRun: true });
       
       const result = await fetchTradingAnalysis({
@@ -368,7 +300,6 @@ const saveLastAnalysis = (params: {
       });
       
       setAnalysis({ loading: false, error: null, data: result, hasRun: true });
-<<<<<<< HEAD
       // Persist last successful single-provider analysis
       saveLastAnalysis({
         analysisData: result,
@@ -594,22 +525,11 @@ const saveLastAnalysis = (params: {
       }
     } finally {
       setShowTradeConfirm(false);
-=======
-    } catch (error) {
-      console.error('Error fetching analysis:', error);
-      setAnalysis({ 
-        loading: false, 
-        error: 'Failed to fetch analysis. Please try again.', 
-        data: null,
-        hasRun: true
-      });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     }
   };
 
   return (
     <TradingLayout>
-<<<<<<< HEAD
       {/* Confirmation dialog to add an Active Trade */}
       <TradeConfirmationDialog
         open={showTradeConfirm}
@@ -638,31 +558,6 @@ const saveLastAnalysis = (params: {
           </div>
           {/* Second line: tagline */}
           <p className="text-muted-foreground text-sm sm:text-base">AI-powered forex analysis and automated trading</p>
-=======
-      <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4 flex-shrink-0">
-          <div>
-            <div className="flex items-baseline mb-2">
-              <h1 className="text-4xl font-bold text-foreground mr-3">Live Trading</h1>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <span className="text-sm opacity-75">powered by</span>
-                <img src="/yoforexai.png" alt="YoforexAI.com" className='h-7 w-auto'/>
-              </div>
-            </div>
-            <p className="text-muted-foreground">AI-powered forex analysis and automated trading</p>
-          </div>
-          <div className="flex items-center space-x-3 mt-2 sm:mt-0">
-            <Badge variant="secondary" className="bg-gradient-profit text-white">
-              <Activity className="h-3 w-3 mr-1" />
-              Live Markets
-            </Badge>
-            {/* <Button className="bg-gradient-primary hover:bg-primary-hover whitespace-nowrap">
-              <Zap className="h-4 w-4 mr-2" />
-              Emergency Stop
-            </Button> */}
-          </div>
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         </div>
 
         <Tabs defaultValue="automated" className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -712,10 +607,7 @@ const saveLastAnalysis = (params: {
                   timeframe={selectedTimeframe}
                   strategy={selectedStrategy}
                   onResult={setMultiResult}
-<<<<<<< HEAD
                   onConfigChange={(cfg) => setAiConfig({ provider: cfg.provider, models: cfg.models as Record<string,string> })}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                 />
               </div>
 
@@ -731,7 +623,6 @@ const saveLastAnalysis = (params: {
                 
                 {/* Market Analysis Card - Expanded to fill space */}
                 <div className="flex-1 min-h-[400px]">
-<<<<<<< HEAD
                   {isDailyLocked && (
                     <div className="mb-3 p-3 rounded-md border border-border/30 bg-muted/20 flex items-center gap-2 text-sm">
                       <Lock className="h-4 w-4 text-muted-foreground" />
@@ -750,12 +641,6 @@ const saveLastAnalysis = (params: {
                         lastRunSig !== JSON.stringify({ pair: selectedPair, tf: selectedTimeframe, strategy: selectedStrategy, ai: aiConfig })
                       )
                     }
-=======
-                  <TechnicalAnalysisCard 
-                    analysis={analysis}
-                    onRunAnalysis={handleAnalysis}
-                    disabled={!selectedPair || !selectedTimeframe || !selectedStrategy}
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   />
                   {/* AI Providers Results moved under Market Analysis */}
                   <div className="mt-4">

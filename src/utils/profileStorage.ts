@@ -3,10 +3,7 @@
 
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../config/api';
-<<<<<<< HEAD
 import apiClient from '@/lib/api/client';
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 
 export interface ProfileData {
   id?: number;
@@ -55,7 +52,6 @@ class ProfileStorageService {
   
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const url = `${this.baseUrl}${endpoint}`;
-<<<<<<< HEAD
     const method = (options.method || 'GET') as any;
     const body = (options as any).body;
     const headers = (options.headers as any) || {};
@@ -91,44 +87,6 @@ class ProfileStorageService {
       const statusText = typeof status === 'number' ? `HTTP error! status: ${status}` : (err?.message || 'Request failed');
       throw new Error(statusText);
     }
-=======
-    
-    const token =
-      typeof window !== 'undefined'
-        ? (localStorage.getItem('authToken') || localStorage.getItem('access_token'))
-        : null;
-
-    const defaultHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(url, {
-      ...options,
-      credentials: 'include', // Always include cookies for HTTP-only cookie authentication
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Clear any stale auth state and redirect to login
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userPreferences');
-        localStorage.removeItem('userSecurity');
-        throw new Error('Not authenticated');
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response;
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 
   // --- Phone change with WATI OTP ---
@@ -161,10 +119,7 @@ class ProfileStorageService {
             const parsed = JSON.parse(cached);
             parsed.phone = data.phone;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
-<<<<<<< HEAD
             try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { field: 'phone' } })); } catch {}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           }
         } catch {
           toast.error("No phone number found!")
@@ -207,10 +162,7 @@ class ProfileStorageService {
             const parsed = JSON.parse(cached);
             parsed.email = data.email;
             localStorage.setItem('userProfile', JSON.stringify(parsed));
-<<<<<<< HEAD
             try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { field: 'email' } })); } catch {}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           }
         } catch {
           toast.error("No email is found!")
@@ -224,7 +176,6 @@ class ProfileStorageService {
     }
   }
 
-<<<<<<< HEAD
   // --- Password change ---
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     try {
@@ -242,8 +193,6 @@ class ProfileStorageService {
     }
   }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   // Build a payload with only defined, non-empty values to avoid overwriting with blanks
   private buildPayload(data: Record<string, any>): Record<string, any> {
     const payload: Record<string, any> = {};
@@ -322,10 +271,7 @@ class ProfileStorageService {
           ...updatedProfile,
           ...normalized,
         }));
-<<<<<<< HEAD
         try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { source: 'saveProfile' } })); } catch {}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       } catch {
         toast.error('Failed to update local cache after saving profile');
       }
@@ -382,10 +328,7 @@ class ProfileStorageService {
       
       // Cache the response for future use
       localStorage.setItem('userProfile', JSON.stringify(data));
-<<<<<<< HEAD
       try { window.dispatchEvent(new CustomEvent('profile:updated', { detail: { source: 'getProfile' } })); } catch {}
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
       
       return data;
     } catch (error) {
@@ -400,15 +343,12 @@ class ProfileStorageService {
         method: 'PUT',
         body: JSON.stringify(preferences)
       });
-<<<<<<< HEAD
       // Update local cache so layout can react immediately (e.g., compact_view)
       try {
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
       } catch (e) {
         // ignore localStorage caching errors (quota, privacy mode, etc.)
       }
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     } catch (error) {
       console.error('Failed to save preferences:', error);
       throw error;

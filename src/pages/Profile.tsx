@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { TradingLayout } from "@/components/layout/TradingLayout";
-<<<<<<< HEAD
 import { toast, useToast } from "@/hooks/use-toast";
 import { showApiError } from '@/lib/ui/errorToast';
-=======
-import { useToast } from "@/hooks/use-toast";
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,14 +68,8 @@ export function Profile() {
             preferred_pairs: profile.preferred_pairs || '',
             risk_tolerance: profile.risk_tolerance || ''
           });
-<<<<<<< HEAD
         }
 
-=======
-
-        }
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         // Load preferences
         const userPrefs = await profileStorage.getPreferences();
         if (userPrefs) {
@@ -94,7 +84,6 @@ export function Profile() {
             compactView: userPrefs.compact_view,
             autoSave: userPrefs.auto_save
           });
-<<<<<<< HEAD
           // Apply compact class immediately based on loaded prefs
           try {
             if (userPrefs.compact_view) {
@@ -107,10 +96,6 @@ export function Profile() {
           }
         }
 
-=======
-        }
-        
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         // Load security settings
         const secSettings = await profileStorage.getSecuritySettings();
         if (secSettings) {
@@ -124,37 +109,16 @@ export function Profile() {
       } catch (error: any) {
         if (error?.message === 'User not verified' || error?.message === 'Not authenticated') {
           // Show message and redirect to auth page
-<<<<<<< HEAD
           showApiError(error, { title: 'Authentication Required', defaultMessage: 'Please log in to access your profile settings.' });
-=======
-          toast({
-            title: "Authentication Required",
-            description: "Please log in to access your profile settings.",
-            variant: "destructive"
-          });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
           setTimeout(() => setLocation('/auth'), 1500);
           return;
         } else {
           console.error('Failed to load profile data:', error);
-<<<<<<< HEAD
           showApiError(error, { title: 'Error', defaultMessage: 'Failed to load profile data. Please try again.' });
-=======
-          toast({
-            title: "Error",
-            description: "Failed to load profile data. Please try again.",
-            variant: "destructive"
-          });
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
         }
       }
     };
 
-<<<<<<< HEAD
-=======
-  
-    
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     loadProfileData();
   }, [user, toast]);
 
@@ -197,7 +161,6 @@ export function Profile() {
     allowApiAccess: false
   });
 
-<<<<<<< HEAD
   // Password change form state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -260,8 +223,6 @@ export function Profile() {
     }
   };
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   const handleSaveProfile = async () => {
     try {
       await profileStorage.initializeTables();
@@ -618,7 +579,6 @@ export function Profile() {
                     </div>
                     <Switch 
                       checked={preferences.compactView}
-<<<<<<< HEAD
                       onCheckedChange={(checked) => {
                         setPreferences(prev => ({...prev, compactView: checked}));
                         // Update localStorage cache so layout reacts immediately
@@ -641,11 +601,6 @@ export function Profile() {
                           document.documentElement.classList.remove('compact');
                         }
                       }}
-=======
-                      onCheckedChange={(checked) => 
-                        setPreferences(prev => ({...prev, compactView: checked}))
-                      }
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                     />
                   </div>
 
@@ -782,49 +737,36 @@ export function Profile() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword" className="text-sm font-medium text-foreground">Current Password</Label>
-<<<<<<< HEAD
                     <Input
                       id="currentPassword"
                       type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                     />
-=======
-                    <Input id="currentPassword" type="password" />
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="newPassword" className="text-sm font-medium text-foreground">New Password</Label>
-<<<<<<< HEAD
                     <Input
                       id="newPassword"
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
-=======
-                    <Input id="newPassword" type="password" />
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm New Password</Label>
-<<<<<<< HEAD
                     <Input
                       id="confirmPassword"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
-=======
-                    <Input id="confirmPassword" type="password" />
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-border/20">
-<<<<<<< HEAD
                   <Button
                     onClick={handleChangePassword}
                     disabled={changingPassword}
@@ -832,17 +774,6 @@ export function Profile() {
                   >
                     <Lock className="h-4 w-4 mr-2" />
                     {changingPassword ? 'Updating...' : 'Update Password'}
-=======
-                  <Button 
-                    onClick={() => toast({
-                      title: "Password Updated",
-                      description: "Your password has been changed successfully.",
-                    })}
-                    className="btn-trading-primary w-full"
-                  >
-                    <Lock className="h-4 w-4 mr-2" />
-                    Update Password
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
                   </Button>
                 </div>
               </Card>

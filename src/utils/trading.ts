@@ -2,19 +2,10 @@
 const MAJOR_FOREX_PAIRS = [
   'EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD',
   'USD/CHF', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY',
-<<<<<<< HEAD
-  // Additional cross pairs
-  'AUD/CHF', 'AUD/NZD', 'AUD/JPY', 'EUR/AUD', 'EUR/CAD',
-  'EUR/NZD', 'EUR/CHF', 'GBP/AUD', 'GBP/CAD', 'GBP/NZD',
-  // Major commodity forex-style pairs
-  'XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD'// WTI Crude
-   // Brent Crude
-=======
   // Major commodity forex-style pairs
   'XAU/USD', 'XAG/USD', 'XPT/USD', 'XPD/USD', 'WTICO/USD', // WTI Crude
   'BCO/USD', // Brent Crude
   'NATGAS/USD', 'COPPER/USD', 'PLATINUM/USD', 'PALLADIUM/USD'
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 ];
 
 // Crypto pairs with their TradingView symbols
@@ -38,20 +29,10 @@ const CRYPTO_PAIRS: Record<string, string> = {
 
 // Stock indices list
 const STOCK_INDICES = [
-<<<<<<< HEAD
   'S&P 500', 'DOW', 'NASDAQ', 'DAX',
   'NIKKEI 225'
   // Indian Indices
   
-=======
-  'S&P 500', 'DOW', 'NASDAQ', 'FTSE 100', 'DAX',
-  'NIKKEI 225', 'HANG SENG', 'ASX 200', 'CAC 40',
-  // Indian Indices
-  'SENSEX', 'NIFTY 50', 'NIFTY BANK', 'NIFTY NEXT 50',
-  'NIFTY IT', 'NIFTY AUTO', 'NIFTY PHARMA', 'NIFTY FIN SERVICE',
-  'NIFTY FMCG', 'NIFTY METAL', 'NIFTY REALTY', 'NIFTY PSU BANK',
-  'NIFTY MEDIA', 'NIFTY PVT BANK', 'NIFTY CONSUMER DURABLES'
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 ];
 
 // Indian stocks list
@@ -91,16 +72,9 @@ const COMMODITY_SYMBOLS: Record<string, string> = {
   'BCO/USD': 'TVC:UKOIL',     
   'NATGAS/USD': 'NATGASUSD', 
   'COPPER/USD': 'XCUUSD',   
-<<<<<<< HEAD
   
   'XPT/USD': 'XPTUSD',
   'XPD/USD': 'XPDUSD'
-=======
-  'PLATINUM/USD': 'TVC:PLATINUM',
-  'PALLADIUM/USD': 'TVC:PALLADIUM',
-  'XPT/USD': 'TVC:PLATINUM',
-  'XPD/USD': 'TVC:PALLADIUM'
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 };
 
 interface FormattedSymbol {
@@ -157,7 +131,6 @@ export const formatTradingViewSymbol = (pair: string): FormattedSymbol => {
 };
 
 export const getTradingPairs = () => ({
-<<<<<<< HEAD
   // Exclude all commodity-style pairs from the forex list
   // This filters out metals (XAU/USD, XAG/USD, XPT/USD, XPD/USD) and energy/metal commodities
   // like WTICO/USD, BCO/USD, NATGAS/USD, COPPER/USD, PLATINUM/USD, PALLADIUM/USD
@@ -169,11 +142,6 @@ export const getTradingPairs = () => ({
   crypto: Object.keys(CRYPTO_PAIRS),
   // Remove all NIFTY indices from UI
   indices: STOCK_INDICES.filter(name => !name.toUpperCase().includes('NIFTY')),
-=======
-  forex: MAJOR_FOREX_PAIRS.filter(pair => !pair.startsWith('X') || !pair.endsWith('/USD')),
-  crypto: Object.keys(CRYPTO_PAIRS),
-  indices: STOCK_INDICES,
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   indianStocks: Object.keys(INDIAN_STOCKS).sort(),
   commodities: Object.keys(COMMODITY_SYMBOLS)
 });
@@ -194,11 +162,7 @@ export const mapToOandaInstrument = (pair: string): string => {
 
   // Commodities in OANDA format (same as forex style but with underscore)
   if (COMMODITY_SYMBOLS[pair]) {
-<<<<<<< HEAD
-    return COMMODITY_SYMBOLS[pair].replace('/', '_');
-=======
     return COMMODITY_SYMBOLS[pair];
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 
   // Crypto — OANDA doesn’t list BINANCE symbols, map only if they exist there

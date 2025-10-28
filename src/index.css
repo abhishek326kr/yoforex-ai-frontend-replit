@@ -87,7 +87,6 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease-out;
 
-<<<<<<< HEAD
     /* Responsive Breakpoints */
     --screen-xs: 480px;
     --screen-sm: 640px;
@@ -96,8 +95,6 @@
     --screen-xl: 1280px;
     --screen-2xl: 1440px;
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
     /* Border Radius */
     --radius: 0.75rem;
     --radius-card: 1rem;
@@ -190,17 +187,13 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased transition-colors duration-300;
-<<<<<<< HEAD
     /* Prevent horizontal scroll globally */
     overflow-x: hidden;
     width: 100%;
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 
   html {
     scroll-behavior: smooth;
-<<<<<<< HEAD
     /* Prevent horizontal scroll globally */
     overflow-x: hidden;
     max-width: 100%;
@@ -210,8 +203,6 @@
   #root {
     overflow-x: hidden;
     max-width: 100%;
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   }
 }
 
@@ -303,7 +294,6 @@
     @apply bg-gradient-glass backdrop-blur-md border border-border/30;
   }
 
-<<<<<<< HEAD
   /* Responsive container */
   .container {
     width: 100%;
@@ -373,8 +363,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   /* Professional Scrollbars */
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -397,7 +385,6 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground));
   }
-<<<<<<< HEAD
 
   /* Themed scrollbar using primary color */
   .scrollbar-primary {
@@ -455,19 +442,14 @@
       hsla(var(--primary-hover) / 0.65)
     );
   }
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
 
 @layer utilities {
   /* Custom utilities for use with @apply */
-<<<<<<< HEAD
   /* Utility to explicitly disable horizontal scroll on any container */
   .no-x-scroll {
     overflow-x: hidden !important;
   }
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
   .bg-gradient-glass {
     background: var(--gradient-glass);
   }
@@ -516,7 +498,6 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-<<<<<<< HEAD
 
   /* Compact View Overrides */
   .compact body {
@@ -535,6 +516,4 @@
   .compact .space-y-6 > :not([hidden]) ~ :not([hidden]) { --tw-space-y-reverse: 0; margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse))) !important; margin-bottom: calc(1rem * var(--tw-space-y-reverse)) !important; }
   .compact .space-y-4 > :not([hidden]) ~ :not([hidden]) { --tw-space-y-reverse: 0; margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse))) !important; margin-bottom: calc(0.75rem * var(--tw-space-y-reverse)) !important; }
   .compact .trading-card { border-radius: 0.5rem !important; }
-=======
->>>>>>> b4124768c1c2556d3f28e2a049b8eb07f3794dc2
 }
