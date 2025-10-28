@@ -71,8 +71,7 @@ const COMMODITY_SYMBOLS: Record<string, string> = {
   'WTICO/USD': 'TVC:USOIL',   
   'BCO/USD': 'TVC:UKOIL',     
   'NATGAS/USD': 'NATGASUSD', 
-  'COPPER/USD': 'XCUUSD',   
-  
+  'COPPER/USD': 'XCUUSD',     
   'XPT/USD': 'XPTUSD',
   'XPD/USD': 'XPDUSD'
 };

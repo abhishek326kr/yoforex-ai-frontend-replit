@@ -15,6 +15,63 @@ import RecentAISignals from "@/components/RecentAISignals";
 import { API_BASE_URL } from "@/config/api";
 
 
+const portfolioStats = [
+	{
+		title: "Active Trades",
+		value: "7",
+		change: "+3",
+		changePercent: "Today",
+		positive: true,
+		icon: Activity,
+	},
+	{
+		title: "Win Rate",
+		value: "73.4%",
+		change: "+2.1%",
+		changePercent: "This month",
+		positive: true,
+		icon: Target,
+	},
+	{
+		title: "AI Signals",
+		value: "156",
+		change: "+23",
+		changePercent: "24h",
+		positive: true,
+		icon: Brain,
+	},
+];
+
+const recentSignals = [
+	{
+		pair: "EUR/USD",
+		direction: "BUY",
+		confidence: 89,
+		entry: "1.0847",
+		target: "1.0875",
+		time: "2 min ago",
+		aiModel: "GPT-4.1",
+	},
+	{
+		pair: "GBP/JPY",
+		direction: "SELL",
+		confidence: 82,
+		entry: "189.45",
+		target: "188.20",
+		time: "8 min ago",
+		aiModel: "Claude 4 Sonnet",
+	},
+	{
+		pair: "USD/CAD",
+		direction: "BUY",
+		confidence: 76,
+		entry: "1.3612",
+		target: "1.3648",
+		time: "15 min ago",
+		aiModel: "Gemini 2.5 Pro",
+	},
+];
+
 
 
 export function Dashboard() {
