@@ -239,36 +239,7 @@ const App = () => (
           </AuthProvider>
         </Router>
         <Footer />
-        <Router>
-          <AuthProvider>
-          <Switch>
-            {/* Public routes */}
-            <Route path="/auth">
-              <Auth />
-            </Route>
-
-            {/* Protected routes */}
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/trading" component={LiveTrading} />
-            <Route path="/history" component={History} />
-            <Route path="/active" component={ActiveTrades} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/profile" component={Profile} />
-            <Route path="/pricing" component={Pricing} />
-            <Route path="/billing" component={Billing} />
-            <Route path="/help" component={HelpSupport} />
-            <Route path="/journal" component={Journal}/>
-            
-            {/* Catch-all route - redirects based on auth status */}
-            <Route path="/">
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            </Route>
-            <Route component={NotFound} />
-          </Switch>
-          </AuthProvider>
-        </Router>
+       
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
