@@ -54,6 +54,16 @@ export default defineConfig(({ command, mode }) => {
   // Base URL for the application
   const base = isProduction ? '/' : '/';
   
+  // Replit HMR configuration
+  const replitDomain = process.env.REPLIT_DEV_DOMAIN;
+  const hmrConfig = replitDomain ? {
+    protocol: 'wss',
+    host: replitDomain,
+    clientPort: 443,
+  } : {
+    clientPort: 443,
+  };
+  
   // Production configuration
   if (isProduction) {
     return {
@@ -82,6 +92,8 @@ export default defineConfig(({ command, mode }) => {
         host: '0.0.0.0',
         port: 5000,
         strictPort: true,
+        hmr: hmrConfig,
+        allowedHosts: ['all'],
         proxy: {
           '/api': {
             target: apiBaseUrl,
@@ -144,6 +156,8 @@ export default defineConfig(({ command, mode }) => {
       host: '0.0.0.0',
       port: 5000,
       strictPort: true,
+      hmr: hmrConfig,
+      allowedHosts: ['all'],
       proxy: devProxy,
       open: false,
       historyApiFallback: {

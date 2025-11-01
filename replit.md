@@ -4,6 +4,23 @@
 
 YoForex AI is a comprehensive AI-powered forex and crypto trading platform that provides real-time market analysis, trading signals, and portfolio management tools. The platform combines modern web technologies with AI-driven insights to help traders make informed decisions across multiple asset classes including forex pairs, cryptocurrencies, indices, and commodities.
 
+## Deployment
+
+**Current Platform:** Replit  
+**Previous Platform:** Vercel (migrated November 2025)
+
+### Running on Replit
+- Development server runs on port 5000 bound to 0.0.0.0 for Replit compatibility
+- Hot Module Replacement (HMR) configured for secure WebSocket over wss:// protocol
+- Uses `REPLIT_DEV_DOMAIN` environment variable for proper preview domain routing
+- All environment variables (API keys, Cloudinary config) stored in Replit Secrets
+
+### Environment Variables Required
+- `VITE_PUBLIC_API_BASE_URL` - Backend API URL
+- `VITE_CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name for image uploads
+- `VITE_CLOUDINARY_UPLOAD_PRESET` - Cloudinary upload preset
+- `VITE_CLOUDINARY_FOLDER` - Optional folder path in Cloudinary
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

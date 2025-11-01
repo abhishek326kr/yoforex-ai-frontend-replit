@@ -80,7 +80,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    setLocation("/auth", { replace: true });
     return null;
   }
 
