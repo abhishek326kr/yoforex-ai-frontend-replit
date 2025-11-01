@@ -6,7 +6,47 @@ YoForex AI is a comprehensive AI-powered forex and crypto trading platform desig
 
 ## Recent Changes (November 1, 2025)
 
-### Page Enhancements Completed:
+### Latest Session - Page Enhancements & Documentation:
+-   **Settings Page:** Comprehensive redesign with professional trading features
+    -   Color-coded tabs with icons (Risk=red/yellow, Preferences=blue, Security=green, API=purple)
+    -   Trading Tab: Favorite pairs selector, session presets, position size, profit targets, visual risk indicators
+    -   Notifications Tab: Schedule settings, priority levels, sound preferences, collapsible sections
+    -   Security Tab: Security score (78/100), active sessions viewer, trusted devices, password strength meter, account export
+    -   API & Data Tab: Usage statistics (1,247/5,000 daily calls), export/import, webhook testing, rate limiting
+    -   UX: Unsaved changes warning, keyboard shortcuts (Ctrl+S), toast notifications, recently changed badges
+-   **Profile Page:** Enhanced with trading statistics and better user experience
+    -   Trading Statistics Summary: Total trades, win rate, total P&L, most traded pair, 30-day sparkline chart
+    -   Personal Info: Avatar upload with preview, experience level, trading style, years of experience, about me
+    -   Trading Preferences: Favorite pairs, preferred timeframes, risk tolerance slider, default lot size, trading goals
+    -   Preferences: Language, date/number formats with examples, regional settings
+    -   Security: Password strength meter, verification badges, account creation date
+    -   Billing: Current plan badge, credits remaining, renewal date, payment methods, billing history link
+    -   Profile completion indicator (0-100%) with tooltip
+-   **Pricing Page:** Premium SaaS design with high conversion features
+    -   Enhanced cards: Large animated icons, gradient text, hover effects (scale, glow, rotate)
+    -   Detailed comparison table: 13+ features across 3 categories, expandable, zebra striping
+    -   Trust indicators: Customer testimonials (3), security badges (SSL, 14-day guarantee), "10,000+ traders" badge
+    -   Feature highlights: 4 key differentiators with gradient icon cards
+    -   FAQ section: 10 questions with search functionality, category filters, accordion UI
+    -   "Most Popular" effects: Pulsing glow animation, elevated card, animated star badge
+    -   Interactive calculator: ROI calculator showing cost per analysis for each plan
+    -   Bottom CTA: "Ready to Transform Your Trading?" with benefits checklist and dual CTAs
+-   **Polished Legal/Info Pages:** Professional design for About, Contact, Legal, Terms, Privacy, Refunds
+    -   All pages feature gradient cards with icons, better typography, mobile-responsive
+    -   About: Our Values (4 cards), Meet the Team (3 teams), mission & disclaimer
+    -   Contact: 4 contact cards (Email, Phone, Address, Hours), FAQ accordion, billing info
+    -   Legal: Table of contents, company details, related documents section
+    -   Terms: 10 sections with collapsible accordion, highlighted cancellation section
+    -   Privacy: GDPR badges (4), section icons, "Your Rights" cards (6 rights), security highlights
+    -   Refunds: Policy cards (4 key points), managing renewals steps, FAQ accordion
+-   **Comprehensive Documentation:** Created 5 detailed documentation files (50,000+ words total)
+    -   USER_GUIDE.md: Getting started, dashboard, AI analysis, trades, history, subscriptions, settings, community
+    -   FAQ.md: 50+ Q&A covering general, billing, trading, technical, security topics
+    -   TROUBLESHOOTING.md: Login, API, analysis, payment, UI issues with solutions
+    -   API_INTEGRATION.md: Developer guide with endpoints, authentication, rate limits, code examples
+    -   CHANGELOG.md: Version history with added/improved/fixed features
+
+### Previous Enhancements:
 -   **ActiveTrades Page:** Complete redesign with modern UI matching LiveTrading quality
     -   Added header section with quick stats (Total Active, Total P&L, Win/Loss Ratio, Risk Exposure)
     -   Implemented comprehensive filters (search, direction, profitability, strategy, sort options)
@@ -78,7 +118,8 @@ The frontend communicates with a FastAPI (Python) backend via an API-first desig
 
 ## External Dependencies
 
--   **Backend API:** FastAPI (Python) hosted at `https://backend.axiontrust.com`.
+-   **Backend API:** FastAPI (Python) hosted at `https://backend.yoforexai.com`.
+-   **⚠️ CRITICAL ISSUE:** Backend CORS configuration must whitelist Replit domain for API calls to work. Current frontend domain: `f4dbd08b-4383-44fb-aa22-dddbab14983e-00-3dphvgwz22lyu.riker.replit.dev`
 -   **Real-time Data & Charting:** TradingView Widgets.
 -   **AI Providers:** OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Mistral, Cohere, xAI.
 -   **Image Uploads:** Cloudinary.
