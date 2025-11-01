@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { showApiError } from '@/lib/ui/errorToast';
@@ -22,9 +21,6 @@ import {
   ArrowRight,
   CheckCircle,
   Loader2,
-  Zap,
-  Brain,
-  TrendingUp
 } from "lucide-react";
 import apiClient from "@/lib/api/client";
 
@@ -619,9 +615,6 @@ export function Auth() {
       // API returns 200 for successful login
       if (response.status === 200) {
         const { access_token, user_data } = response.data; // Extract access_token and user_data from response
-        if (!access_token) {
-          throw new Error('No access token received from server');
-        }
         // Store user data in localStorage for immediate use
         if (user_data) {
           localStorage.setItem('userProfile', JSON.stringify(user_data.profile));
@@ -692,109 +685,72 @@ export function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-end">
+      <div className="w-full max-w-md">
+        {/* Theme Toggle */}
+        <div className="flex justify-end mb-6">
           <ThemeToggle />
         </div>
+
         {/* Logo and Brand */}
-        <div className="text-center space-y-4">
-          <div className="flex flex-col items-center justify-center space-y-2">
-            {/* <div className="p-3 bg-blue-600 rounded-xl">
-              <Zap className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">YoForex AI</h1>
-              <p className="text-gray-400">Advanced Trading Platform</p>
-            </div> */}
-            {/* <img src="/logo_signin_optimized.png" alt="YoForex Logo"/> */}
-            <h1
-              className="text-3xl sm:text-4xl md:text-5xl mb-1 font-brand font-semibold tracking-tight leading-tight text-foreground"
-              aria-label="YoForex AI"
-            >
-              YoForex AI
-            </h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              powered by
-              <img src="/yoforexai.png" alt="YoForex Logo" className="h-5 w-auto opacity-90" />
-            </p>
-          </div>
-          <div className="flex items-center justify-center space-x-2 mt-[0px]">
-            <Badge variant="secondary" className="bg-gradient-profit text-white">
-              <Brain className="h-3 w-3 mr-1" />
-              AI-Powered
-            </Badge>
-            <Badge variant="secondary" className="bg-gradient-primary text-white">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Real-time
-            </Badge>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
+            YoForex AI
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Advanced Trading Platform
+          </p>
         </div>
 
         {/* Auth Card */}
-        <Card className="bg-gradient-glass border-border/20 shadow-glass p-6 space-y-6">
+        <Card className="p-6 shadow-lg">
           <Tabs
             value={activeTab}
             onValueChange={(v) => { setActiveTab(v); }}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-2 bg-muted/20">
-              <TabsTrigger
-                value="signup"
-                className="data-[state=active]:bg-primary"
-              >
-                Sign Up
-              </TabsTrigger>
-              <TabsTrigger value="login" className="data-[state=active]:bg-primary">
-                Login
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login">Login</TabsTrigger>
             </TabsList>
 
             {/* Signup Tab */}
             <TabsContent value="signup" className="space-y-4">
               {SIGNUP_LOCKED && (<div className="p-3 text-sm rounded-md border border-destructive/30 bg-destructive/10 text-destructive">Signups are currently disabled. Please use Login.</div>)}
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name" className="text-sm font-medium text-foreground pb-[10px]">
-                    Full Name
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="name"
                       type="text"
                       placeholder="Enter your full name"
                       value={formData.name || ""}
                       onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground pb-[10px]">
-                    Email Address
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div className="phone-input">
-                  <Label
-                    htmlFor="phone"
-                    className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]"
-                  >
-                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
-                    <span>Whatsapp Number</span>
-
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    WhatsApp Number
                   </Label>
                   <CountryPhoneInput
                     id="phone"
@@ -803,24 +759,20 @@ export function Auth() {
                     onChange={(v) => handleInputChange('phone', v)}
                     defaultCountry="in"
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
-                    className="mt-1"
                   />
                 </div>
 
-
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground pb-[10px]">
-                    Password
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Create a strong password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="pl-10 pr-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10 pr-10"
                     />
                     <Button
                       type="button"
@@ -840,15 +792,21 @@ export function Auth() {
 
                 <Button
                   onClick={handleSignup}
-                  
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  disabled={isLoading}
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Creating Account...
+                    </>
                   ) : (
-                    <ArrowRight className="h-4 w-4 mr-2" />
+                    <>
+                      Create Account
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
                   )}
-                  Create Account
                 </Button>
               </div>
             </TabsContent>
@@ -856,36 +814,32 @@ export function Auth() {
             {/* Login Tab */}
             <TabsContent value="login" className="space-y-4">
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="login-email" className="text-sm font-medium text-foreground pb-[10px]">
-                    Email Address
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-email"
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="login-password" className="text-sm font-medium text-foreground pb-[10px]">
-                    Password
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="pl-10 pr-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10 pr-10"
                     />
                     <Button
                       type="button"
@@ -906,33 +860,35 @@ export function Auth() {
                 <Button
                   onClick={handleEmailLogin}
                   disabled={isLoading}
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Logging in...
+                    </>
                   ) : (
-                    <ArrowRight className="h-4 w-4 mr-2" />
+                    <>
+                      Login with Email
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
                   )}
-                  Login with Email
                 </Button>
 
-                <div className="relative">
+                <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
+                    <Separator />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-card px-2 text-muted-foreground">Or</span>
                   </div>
                 </div>
 
-                <div className="phone-input">
-                  <Label
-                    htmlFor="phone"
-                    className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]"
-                  >
-                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
-                    <span>Whatsapp Number</span>
-
+                <div className="space-y-2">
+                  <Label htmlFor="login-phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    WhatsApp Number
                   </Label>
                   <CountryPhoneInput
                     id="login-phone"
@@ -941,7 +897,6 @@ export function Auth() {
                     onChange={(v) => handleInputChange('phone', v)}
                     defaultCountry="in"
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
-                    className="mt-1"
                   />
                 </div>
 
@@ -949,22 +904,27 @@ export function Auth() {
                   onClick={handleRequestLoginOTP}
                   disabled={isLoading}
                   variant="outline"
-                  className="w-full border-border/30 hover:bg-muted/20"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Sending OTP...
+                    </>
                   ) : (
-                    <Shield className="h-4 w-4 mr-2" />
+                    <>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Login with OTP
+                    </>
                   )}
-                  Login with OTP
                 </Button>
 
-                {/* Forgot password link at the bottom of the Login card */}
-                <div className="flex justify-center">
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('forgot-password')}
-                    className="text-sm text-primary hover:underline mt-2"
+                    className="text-sm text-primary hover:underline"
                   >
                     Forgot Password?
                   </button>
@@ -975,10 +935,17 @@ export function Auth() {
             {/* Forgot Password: Request OTP */}
             <TabsContent value="forgot-password" className="space-y-4">
               <div className="space-y-4">
-                <div className="phone-input">
-                  <Label htmlFor="fp-phone" className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]">
-                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
-                    <span>Whatsapp Number</span>
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold">Reset Password</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your phone number to receive a reset code
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fp-phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    WhatsApp Number
                   </Label>
                   <CountryPhoneInput
                     id="fp-phone"
@@ -987,28 +954,33 @@ export function Auth() {
                     onChange={(v) => handleInputChange('phone', v)}
                     defaultCountry="in"
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
-                    className="mt-1"
                   />
                 </div>
 
                 <Button
                   onClick={handleRequestPasswordReset}
                   disabled={isLoading}
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Sending...
+                    </>
                   ) : (
-                    <ArrowRight className="h-4 w-4 mr-2" />
+                    <>
+                      Send Reset Code
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
                   )}
-                  Send Reset Code
                 </Button>
 
-                <div className="flex justify-center">
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('login')}
-                    className="text-xs text-muted-foreground hover:underline"
+                    className="text-sm text-muted-foreground hover:text-foreground"
                   >
                     Back to Login
                   </button>
@@ -1019,10 +991,17 @@ export function Auth() {
             {/* Reset Password: Verify OTP and set new password */}
             <TabsContent value="reset-password" className="space-y-4">
               <div className="space-y-4">
-                <div className="phone-input">
-                  <Label htmlFor="rp-phone" className="text-sm font-medium text-foreground flex items-center gap-1 pb-[10px]">
-                    <img src="/whatsapp.png" alt="Whatsapp" className="w-4 h-4 inline-block mr-[5px]" />
-                    <span>Whatsapp Number</span>
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold">Set New Password</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enter the code sent to your phone
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rp-phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    WhatsApp Number
                   </Label>
                   <CountryPhoneInput
                     id="rp-phone"
@@ -1031,37 +1010,36 @@ export function Auth() {
                     onChange={(v) => handleInputChange('phone', v)}
                     defaultCountry="in"
                     preferredCountries={["in", "us", "gb", "ae", "sa"]}
-                    className="mt-1"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="rp-otp" className="text-sm font-medium text-foreground pb-[10px]">Verification Code</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="rp-otp">Verification Code</Label>
                   <div className="relative">
-                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Shield className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="rp-otp"
                       type="text"
                       placeholder="Enter 4-digit code"
                       value={formData.otp || ''}
                       onChange={(e) => handleInputChange('otp', e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                       maxLength={4}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="rp-new" className="text-sm font-medium text-foreground pb-[10px]">New Password</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="rp-new">New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="rp-new"
                       type="password"
                       placeholder="Enter new password"
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                     />
                   </div>
                 </div>
@@ -1069,21 +1047,27 @@ export function Auth() {
                 <Button
                   onClick={handleResetPassword}
                   disabled={isLoading}
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Resetting...
+                    </>
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Reset Password
+                    </>
                   )}
-                  Reset Password
                 </Button>
 
-                <div className="flex justify-center">
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={() => setActiveTab('login')}
-                    className="text-xs text-muted-foreground hover:underline"
+                    className="text-sm text-muted-foreground hover:text-foreground"
                   >
                     Back to Login
                   </button>
@@ -1093,28 +1077,30 @@ export function Auth() {
 
             {/* Verify Signup OTP Tab */}
             <TabsContent value="verify-signup" className="space-y-4">
-              <div className="text-center space-y-2">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-                <h3 className="text-lg font-semibold text-foreground">Verify Your Account</h3>
-                <p className="text-sm text-muted-foreground">
-                  We've sent a verification code to your phone number.
-                </p>
+              <div className="text-center space-y-3 mb-6">
+                <div className="mx-auto w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Verify Your Account</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    We've sent a verification code to your phone
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="signup-otp" className="text-sm font-medium text-foreground">
-                    Verification Code
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-otp">Verification Code</Label>
                   <div className="relative">
-                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Shield className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-otp"
                       type="text"
                       placeholder="Enter 4-digit code"
                       value={formData.otp || ""}
                       onChange={(e) => handleInputChange("otp", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                       maxLength={4}
                     />
                   </div>
@@ -1123,23 +1109,30 @@ export function Auth() {
                 <Button
                   onClick={handleVerifySignupOTP}
                   disabled={isLoading}
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Verifying...
+                    </>
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Verify Account
+                    </>
                   )}
-                  Verify Account
                 </Button>
-                <div className="flex justify-center">
+
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={handleResendSignupOTP}
                     disabled={isLoading || resendSignupIn > 0}
-                    className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+                    className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
-                    {resendSignupIn > 0 ? `Resend OTP (${resendSignupIn}s)` : 'Resend OTP'}
+                    {resendSignupIn > 0 ? `Resend in ${resendSignupIn}s` : 'Resend Code'}
                   </button>
                 </div>
               </div>
@@ -1147,28 +1140,30 @@ export function Auth() {
 
             {/* Verify Login OTP Tab */}
             <TabsContent value="verify-login" className="space-y-4">
-              <div className="text-center space-y-2">
-                <Shield className="h-12 w-12 text-blue-500 mx-auto" />
-                <h3 className="text-lg font-semibold text-foreground">Login Verification</h3>
-                <p className="text-sm text-muted-foreground">
-                  We've sent a login code to your phone number.
-                </p>
+              <div className="text-center space-y-3 mb-6">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Login Verification</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    We've sent a login code to your phone
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="login-otp" className="text-sm font-medium text-foreground">
-                    Verification Code
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="login-otp">Verification Code</Label>
                   <div className="relative">
-                    <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Shield className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-otp"
                       type="text"
                       placeholder="Enter 4-digit code"
                       value={formData.otp || ""}
                       onChange={(e) => handleInputChange("otp", e.target.value)}
-                      className="pl-10 bg-muted/20 border-border/30 focus:border-primary/50"
+                      className="pl-10"
                       maxLength={4}
                     />
                   </div>
@@ -1177,56 +1172,37 @@ export function Auth() {
                 <Button
                   onClick={handleVerifyLoginOTP}
                   disabled={isLoading}
-                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 text-white font-medium"
+                  className="w-full"
+                  size="lg"
                 >
                   {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Verifying...
+                    </>
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Verify & Login
+                    </>
                   )}
-                  Verify & Login
                 </Button>
-                <div className="flex justify-center">
+
+                <div className="text-center pt-2">
                   <button
                     type="button"
                     onClick={handleResendLoginOTP}
                     disabled={isLoading || resendLoginIn > 0}
-                    className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+                    className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
-                    {resendLoginIn > 0 ? `Resend OTP (${resendLoginIn}s)` : 'Resend OTP'}
+                    {resendLoginIn > 0 ? `Resend in ${resendLoginIn}s` : 'Resend Code'}
                   </button>
                 </div>
               </div>
             </TabsContent>
           </Tabs>
         </Card>
-
-        {/* Features Preview */}
-        <div className="text-center space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center space-y-2">
-              <div className="p-2 bg-gradient-profit/20 rounded-lg mx-auto w-fit">
-                <Brain className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-xs text-muted-foreground">AI-Powered</p>
-            </div>
-            <div className="text-center space-y-2">
-              <div className="p-2 bg-gradient-primary/20 rounded-lg mx-auto w-fit">
-                <TrendingUp className="h-5 w-5 text-blue-500" />
-              </div>
-              <p className="text-xs text-muted-foreground">Real-time</p>
-            </div>
-            <div className="text-center space-y-2">
-              <div className="p-2 bg-gradient-secondary/20 rounded-lg mx-auto w-fit">
-                <Zap className="h-5 w-5 text-yellow-500" />
-              </div>
-              <p className="text-xs text-muted-foreground">Fast</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
-} 
-
-
+}
