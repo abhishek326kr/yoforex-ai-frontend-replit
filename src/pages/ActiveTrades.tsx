@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -13,11 +12,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TrendingDown, Clock, AlertTriangle, X, Edit3, Copy } from "lucide-react";
+import { 
+  TrendingDown, 
+  TrendingUp, 
+  Clock, 
+  AlertTriangle, 
+  X, 
+  Edit3, 
+  Copy, 
+  Filter, 
+  Search,
+  DollarSign,
+  Activity,
+  Target,
+  ShieldAlert
+} from "lucide-react";
 import { useActiveTrades } from "@/context/ActiveTradesContext";
 import { useToast } from "@/components/ui/use-toast";
 import { showApiError } from '@/lib/ui/errorToast';
 import { closeTrade as closeTradeApi } from "@/lib/api/trades";
+import { navigate } from "wouter/use-browser-location";
+
+type FilterState = {
+  search: string;
+  direction: 'all' | 'BUY' | 'SELL';
+  profitable: 'all' | 'profit' | 'loss';
+  strategy: string;
+  sort: 'newest' | 'oldest' | 'highest_pl' | 'lowest_pl';
+};
 
 export function ActiveTrades() {
   const { trades, updateTrade, removeTrade } = useActiveTrades();
@@ -25,7 +47,6 @@ export function ActiveTrades() {
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closeTargetId, setCloseTargetId] = useState<string | null>(null);
-  // Modify dialog state
   const [showModifyDialog, setShowModifyDialog] = useState(false);
   const [modifyId, setModifyId] = useState<string | null>(null);
   const [formDirection, setFormDirection] = useState<'BUY' | 'SELL'>('BUY');
@@ -36,18 +57,85 @@ export function ActiveTrades() {
   const [formNotes, setFormNotes] = useState('');
   const [formRisk, setFormRisk] = useState<'Low' | 'Medium' | 'High'>('Medium');
 
-  // Find the selected trade data
+  const [filters, setFilters] = useState<FilterState>({
+    search: '',
+    direction: 'all',
+    profitable: 'all',
+    strategy: 'all',
+    sort: 'newest'
+  });
+
   const selectedTradeData = trades.find(trade => trade.id === selectedTrade) as any;
   const closeTargetTrade = trades.find(t => t.id === closeTargetId) as any;
 
-  // Close all positions: attempt backend close for numeric IDs, then clear locally
+  const parsePL = useCallback((plString: string | undefined): number => {
+    if (!plString) return 0;
+    const cleaned = plString.replace(/[^0-9.-]/g, '');
+    return parseFloat(cleaned) || 0;
+  }, []);
+
+  const quickStats = useMemo(() => {
+    const totalTrades = trades.length;
+    const totalPL = trades.reduce((sum, trade) => sum + parsePL((trade as any).unrealizedPL), 0);
+    const winCount = trades.filter(trade => (trade as any).profitable).length;
+    const lossCount = totalTrades - winCount;
+    const totalRisk = trades.length;
+
+    return { totalTrades, totalPL, winCount, lossCount, totalRisk };
+  }, [trades, parsePL]);
+
+  const uniqueStrategies = useMemo(() => {
+    const strategies = new Set(trades.map(t => (t as any).strategy).filter(Boolean));
+    return Array.from(strategies);
+  }, [trades]);
+
+  const filteredAndSortedTrades = useMemo(() => {
+    let filtered = trades.filter(trade => {
+      const t = trade as any;
+      if (filters.search && !t.pair?.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      if (filters.direction !== 'all' && t.direction !== filters.direction) {
+        return false;
+      }
+      if (filters.profitable === 'profit' && !t.profitable) {
+        return false;
+      }
+      if (filters.profitable === 'loss' && t.profitable) {
+        return false;
+      }
+      if (filters.strategy !== 'all' && t.strategy !== filters.strategy) {
+        return false;
+      }
+      return true;
+    });
+
+    filtered = [...filtered].sort((a, b) => {
+      const aData = a as any;
+      const bData = b as any;
+      switch (filters.sort) {
+        case 'newest':
+          return 0;
+        case 'oldest':
+          return 0;
+        case 'highest_pl':
+          return parsePL(bData.unrealizedPL) - parsePL(aData.unrealizedPL);
+        case 'lowest_pl':
+          return parsePL(aData.unrealizedPL) - parsePL(bData.unrealizedPL);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [trades, filters, parsePL]);
+
   const handleCloseAll = async () => {
     if (!trades.length) {
       toast({ title: "No positions to close" });
       return;
     }
     try {
-      // Prefer serverTradeId when present; otherwise, try numeric parse of local id
       const numericIds = trades
         .map(t => (t as any).serverTradeId != null ? Number((t as any).serverTradeId) : Number(t.id))
         .filter((n: number) => !Number.isNaN(n) && Number.isFinite(n));
@@ -58,16 +146,13 @@ export function ActiveTrades() {
         );
         const failed = results.filter(r => r.status === 'rejected').length;
         const succeeded = results.length - failed;
-        // Remove all locally regardless of backend outcome to reflect closure in UI
         trades.forEach(t => removeTrade(t.id));
         toast({ title: `Closed ${succeeded}/${results.length} server trades`, description: failed ? `${failed} failed on server; removed locally.` : undefined });
       } else {
-        // No numeric IDs; just clear locally
         trades.forEach(t => removeTrade(t.id));
         toast({ title: "All positions closed locally" });
       }
     } catch (e: any) {
-      // Even if something unexpected happened, clear locally so the user isn't blocked
       trades.forEach(t => removeTrade(t.id));
       showApiError(e, { title: 'Closed positions (local)', defaultMessage: 'Some errors occurred while closing on server.' });
     }
@@ -76,7 +161,304 @@ export function ActiveTrades() {
   return (
     <TradingLayout>
       <div className="space-y-6">
-        {/* Trade Details Dialog */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Active Positions</h1>
+            <p className="text-muted-foreground mt-1">Manage your open trades in real-time</p>
+          </div>
+          <Button 
+            className="bg-gradient-to-r from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 mt-4 sm:mt-0" 
+            onClick={handleCloseAll}
+            disabled={trades.length === 0}
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Close All Positions
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Active Trades</CardTitle>
+              <Activity className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{quickStats.totalTrades}</div>
+              <p className="text-xs text-muted-foreground mt-1">Open positions</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total P&L</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${quickStats.totalPL >= 0 ? 'text-trading-profit' : 'text-trading-loss'}`}>
+                {quickStats.totalPL >= 0 ? '+' : ''}${quickStats.totalPL.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Unrealized profit/loss</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Win/Loss Ratio</CardTitle>
+              <Target className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <span className="text-trading-profit">{quickStats.winCount}</span>
+                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-trading-loss">{quickStats.lossCount}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Profitable vs losing</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Risk Exposure</CardTitle>
+              <ShieldAlert className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{quickStats.totalRisk}</div>
+              <p className="text-xs text-muted-foreground mt-1">Active positions</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters & Search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by pair..."
+                  value={filters.search}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+
+              <Select value={filters.direction} onValueChange={(val) => setFilters(prev => ({ ...prev, direction: val as any }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Direction" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Directions</SelectItem>
+                  <SelectItem value="BUY">BUY</SelectItem>
+                  <SelectItem value="SELL">SELL</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.profitable} onValueChange={(val) => setFilters(prev => ({ ...prev, profitable: val as any }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Profitability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Trades</SelectItem>
+                  <SelectItem value="profit">Profitable</SelectItem>
+                  <SelectItem value="loss">Loss</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.strategy} onValueChange={(val) => setFilters(prev => ({ ...prev, strategy: val }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Strategy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Strategies</SelectItem>
+                  {uniqueStrategies.map(strategy => (
+                    <SelectItem key={strategy} value={strategy}>{strategy}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filters.sort} onValueChange={(val) => setFilters(prev => ({ ...prev, sort: val as any }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="highest_pl">Highest P&L</SelectItem>
+                  <SelectItem value="lowest_pl">Lowest P&L</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+          <CardHeader>
+            <CardTitle>All Positions ({filteredAndSortedTrades.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredAndSortedTrades.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-6 rounded-2xl mb-6">
+                    <TrendingUp className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-semibold mb-2">No Active Positions</h3>
+                  <p className="text-muted-foreground text-center mb-6 max-w-md">
+                    Start trading to see your positions here. Use AI-powered analysis to make informed trading decisions.
+                  </p>
+                  <Button 
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                    onClick={() => navigate('/trading')}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    Start Trading
+                  </Button>
+                </div>
+              ) : (
+                filteredAndSortedTrades.map((trade) => {
+                  const t = trade as any;
+                  const isProfitable = t.profitable;
+                  return (
+                    <Card 
+                      key={trade.id} 
+                      className="p-6 bg-gradient-to-br from-card to-card/50 border border-border/30 hover:border-border/50 transition-all cursor-pointer hover:shadow-lg"
+                      onClick={() => setSelectedTrade(trade.id)}
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div className="lg:col-span-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <Badge 
+                                variant={trade.direction === 'BUY' ? 'default' : 'destructive'}
+                                className={trade.direction === 'BUY' ? 'signal-buy' : 'signal-sell'}
+                              >
+                                {trade.direction}
+                              </Badge>
+                              <span className="text-lg font-bold text-foreground">{trade.pair}</span>
+                              {isProfitable ? (
+                                <TrendingUp className="h-4 w-4 text-trading-profit" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4 text-trading-loss" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Lot Size:</span>
+                              <span className="font-medium text-foreground">{t.lotSize || '0.10'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Strategy:</span>
+                              <span className="font-medium text-foreground">{t.strategy || '-'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">AI Model:</span>
+                              <span className="font-medium text-foreground">{t.aiModel || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-3">
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Entry Price</p>
+                              <p className="text-lg font-bold text-foreground">{t.entryPrice}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Current Price</p>
+                              <p className="text-lg font-bold text-foreground">{t.currentPrice || '-'}</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">{t.duration || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-2">
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Stop Loss</p>
+                              <p className="text-sm font-medium text-trading-loss">{t.stopLoss || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Take Profit</p>
+                              <p className="text-sm font-medium text-trading-profit">{t.takeProfit || '-'}</p>
+                            </div>
+                            <Badge 
+                              variant={t.risk === 'Low' ? 'secondary' : t.risk === 'Medium' ? 'default' : 'destructive'}
+                              className="text-xs"
+                            >
+                              {t.risk} Risk
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-4">
+                          <div className="flex items-center justify-between h-full">
+                            <div className="text-center">
+                              <p className="text-xs text-muted-foreground mb-1">Unrealized P&L</p>
+                              <p className={`text-2xl font-bold ${
+                                isProfitable ? 'text-trading-profit' : 'text-trading-loss'
+                              }`}>
+                                {t.unrealizedPL || '-'}
+                              </p>
+                              <div className="flex items-center justify-center space-x-1 mt-1">
+                                <div className={`h-2 w-2 rounded-full ${isProfitable ? 'bg-trading-profit' : 'bg-trading-loss'}`} />
+                                <span className="text-xs text-muted-foreground">{(t.confidence ?? 0)}% confidence</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full hover:bg-primary/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setModifyId(trade.id);
+                                  setFormDirection(t.direction);
+                                  setFormLot(t.lotSize || '0.10');
+                                  setFormEntry(t.entryPrice || '');
+                                  setFormSL(t.stopLoss || '');
+                                  setFormTP(t.takeProfit || '');
+                                  setFormNotes(t.notes || '');
+                                  setFormRisk((t.risk as any) || 'Medium');
+                                  setShowModifyDialog(true);
+                                }}
+                              >
+                                <Edit3 className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCloseTargetId(trade.id);
+                                  setShowCloseDialog(true);
+                                }}
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Close
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Dialog open={!!selectedTrade} onOpenChange={(open) => !open && setSelectedTrade(null)}>
           <DialogContent className="sm:max-w-2xl">
             {selectedTradeData && (
@@ -148,172 +530,6 @@ export function ActiveTrades() {
           </DialogContent>
         </Dialog>
 
-        {/* Header - only Close All Positions */}
-        <div className="flex justify-end">
-          <Button className="btn-trading-primary" onClick={handleCloseAll}>
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            Close All Positions
-          </Button>
-        </div>
-
-        {/* All Positions */}
-        <Card className="trading-card">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">All Positions</h2>
-            <div className="space-y-4">
-              {trades.length === 0 ? (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  No active positions
-                </div>
-              ) : (
-              trades.map((trade) => (
-                <Card 
-                  key={trade.id} 
-                  className="p-6 bg-gradient-dark border border-border/20 hover:border-border/40 transition-colors cursor-pointer"
-                  onClick={() => setSelectedTrade(trade.id)}
-                >
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Position Info */}
-                    <div className="lg:col-span-3">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <Badge 
-                            variant={trade.direction === 'BUY' ? 'default' : 'destructive'}
-                            className={trade.direction === 'BUY' ? 'signal-buy' : 'signal-sell'}
-                          >
-                            {trade.direction}
-                          </Badge>
-                          <span className="text-lg font-bold text-foreground">{trade.pair}</span>
-                          {!trade.profitable && (
-                            <TrendingDown className="h-4 w-4 text-destructive" />
-                          )}
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {trade.id}
-                        </Badge>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Lot Size:</span>
-                          <span className="font-medium text-foreground">{trade.lotSize || '0.10'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Strategy:</span>
-                          <span className="font-medium text-foreground">{trade.strategy || '-'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">AI Model:</span>
-                          <span className="font-medium text-foreground">{trade.aiModel || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price Info */}
-                        <div className="lg:col-span-3">
-                          <div className="space-y-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">Entry Price</p>
-                              <p className="text-lg font-bold text-foreground">{trade.entryPrice}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">Current Price</p>
-                              <p className="text-lg font-bold text-foreground">{trade.currentPrice || '-'}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">{trade.duration || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Risk Management */}
-                        <div className="lg:col-span-2">
-                          <div className="space-y-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">Stop Loss</p>
-                              <p className="text-sm font-medium text-trading-loss">{trade.stopLoss || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground mb-1">Take Profit</p>
-                              <p className="text-sm font-medium text-trading-profit">{trade.takeProfit || '-'}</p>
-                            </div>
-                            <Badge 
-                              variant={trade.risk === 'Low' ? 'secondary' : trade.risk === 'Medium' ? 'default' : 'destructive'}
-                              className="text-xs"
-                            >
-                              {trade.risk} Risk
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {/* P&L and Actions */}
-                        <div className="lg:col-span-4">
-                          <div className="flex items-center justify-between h-full">
-                            <div className="text-center">
-                              <p className="text-xs text-muted-foreground mb-1">Unrealized P&L</p>
-                              <p className={`text-2xl font-bold ${
-                                trade.profitable ? 'text-profit' : 'text-loss'
-                              }`}>
-                                {trade.unrealizedPL || '-'}
-                              </p>
-                              <div className="flex items-center justify-center space-x-1 mt-1">
-                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                <span className="text-xs text-muted-foreground">{(trade.confidence ?? 0)}% confidence</span>
-                              </div>
-                            </div>
-                            <div className="flex flex-col space-y-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // open modify with this trade
-                                  setModifyId(trade.id);
-                                  setFormDirection(trade.direction);
-                                  setFormLot(trade.lotSize || '0.10');
-                                  setFormEntry(trade.entryPrice || '');
-                                  setFormSL(trade.stopLoss || '');
-                                  setFormTP(trade.takeProfit || '');
-                                  setFormNotes(trade.notes || '');
-                                  setFormRisk((trade.risk as any) || 'Medium');
-                                  setShowModifyDialog(true);
-                                }}
-                              >
-                                <Edit3 className="h-3 w-3 mr-1" />
-                                Modify
-                              </Button>
-                              <Button size="sm" variant="outline" className="w-full">
-                                <Copy className="h-3 w-3 mr-1" />
-                                Copy
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive" 
-                                className="w-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCloseTargetId(trade.id);
-                                  setShowCloseDialog(true);
-                                }}
-                              >
-                                <X className="h-3 w-3 mr-1" />
-                                Close
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* AI Notes removed per requirement */}
-                    </Card>
-                  ))
-              )}
-              </div>
-            </div>
-          </Card>
-
-        {/* Close Position Confirm Dialog - Top Level */}
         <Dialog open={showCloseDialog} onOpenChange={(open) => {
           setShowCloseDialog(open);
           if (!open) setCloseTargetId(null);
@@ -336,7 +552,6 @@ export function ActiveTrades() {
                 onClick={async () => {
                   try {
                     if (closeTargetId) {
-                      // Prefer serverTradeId when available, else try to parse numeric id
                       const target = trades.find(t => t.id === closeTargetId) as any;
                       const candidateId: number | undefined = (target?.serverTradeId != null)
                         ? Number(target.serverTradeId)
@@ -344,7 +559,6 @@ export function ActiveTrades() {
                       if (candidateId && !Number.isNaN(candidateId) && Number.isFinite(candidateId)) {
                         await closeTradeApi(candidateId, { result: 'manual_close', hit_reason: 'manual' });
                       }
-                      // Remove from local state regardless (to reflect closure)
                       removeTrade(closeTargetId);
                       toast({ title: "Position closed" });
                     }
@@ -362,7 +576,6 @@ export function ActiveTrades() {
           </DialogContent>
         </Dialog>
                 
-        {/* Modify Position Dialog */}
         <Dialog open={showModifyDialog} onOpenChange={(open) => {
           setShowModifyDialog(open);
           if (!open) setModifyId(null);

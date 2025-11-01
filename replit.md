@@ -4,6 +4,28 @@
 
 YoForex AI is a comprehensive AI-powered forex and crypto trading platform designed to provide real-time market analysis, trading signals, and portfolio management tools. It combines modern web technologies with AI-driven insights to assist traders in making informed decisions across various asset classes, including forex pairs, cryptocurrencies, indices, and commodities. The platform aims to be a leading solution for traders seeking advanced analytical capabilities and robust trading support.
 
+## Recent Changes (November 1, 2025)
+
+### Page Enhancements Completed:
+-   **ActiveTrades Page:** Complete redesign with modern UI matching LiveTrading quality
+    -   Added header section with quick stats (Total Active, Total P&L, Win/Loss Ratio, Risk Exposure)
+    -   Implemented comprehensive filters (search, direction, profitability, strategy, sort options)
+    -   Enhanced trade cards with gradient backgrounds and better visual hierarchy
+    -   Added beautiful empty state with call-to-action
+    -   Improved quick action buttons and hover effects
+-   **History Page:** Major improvements for better analysis tracking
+    -   Added header with 4 stat cards (Total Analyses, This Month, Most Used Strategy, Most Analyzed Pair)
+    -   Implemented bar chart showing "Analyses per Day" for last 7 days using recharts
+    -   Added 6-filter system (search, date range, pair, strategy, signal type, provider)
+    -   Enhanced history cards with gradient design, confidence progress bars, time-ago formatting
+    -   Implemented CSV export functionality with proper data formatting
+    -   Improved pagination with "Showing X-Y of Z" counter and better navigation
+    -   Added "Copy Analysis" feature to quickly copy trade details
+-   **Dashboard API Infrastructure:** Created complete backend API specifications
+    -   API client functions in `src/lib/api/dashboard.ts` (8 endpoints)
+    -   React hooks in `src/hooks/useDashboard.ts` for easy data fetching
+    -   Comprehensive documentation in `docs/DASHBOARD_API_SPEC.md` for backend team
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
