@@ -20,6 +20,8 @@ import { navigate } from "wouter/use-browser-location";
 import RecentAISignals from "@/components/RecentAISignals";
 import { API_BASE_URL } from "@/config/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardSkeleton } from "@/components/ui/loading-skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 const portfolioStats = [
   {
@@ -86,29 +88,34 @@ export function Dashboard() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadUserProfile = async () => {
-      if (user?.email) {
-        try {
-          await profileStorage.initializeTables();
-          const profile = await profileStorage.getProfile();
-          if (profile) {
-            setUserProfile(profile);
-          } else {
-            setUserProfile(user);
-          }
-        } catch (error) {
-          console.error("Failed to load user profile:", error);
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    
+    if (user?.email) {
+      try {
+        await profileStorage.initializeTables();
+        const profile = await profileStorage.getProfile();
+        if (profile) {
+          setUserProfile(profile);
+        } else {
           setUserProfile(user);
         }
-      } else {
-        setUserProfile(null);
+      } catch (err: any) {
+        console.error("Failed to load user profile:", err);
+        setError(err?.message || "Failed to load dashboard data");
+        setUserProfile(user);
       }
-      setLoading(false);
-    };
+    } else {
+      setUserProfile(null);
+    }
+    setLoading(false);
+  };
 
-    loadUserProfile();
+  useEffect(() => {
+    loadDashboard();
   }, [user]);
 
   const displayName = userProfile?.name || user?.name || "Trader";
@@ -121,6 +128,29 @@ export function Dashboard() {
         ? "dark"
         : "light"
       : themeHook.theme || "light";
+
+  if (loading) {
+    return (
+      <TradingLayout>
+        <DashboardSkeleton />
+      </TradingLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <TradingLayout>
+        <ErrorState
+          title="Failed to Load Dashboard"
+          message={error}
+          onRetry={loadDashboard}
+          showHomeButton={false}
+          showSupportButton={true}
+          fullPage={true}
+        />
+      </TradingLayout>
+    );
+  }
 
   return (
     <TradingLayout>

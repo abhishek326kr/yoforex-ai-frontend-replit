@@ -29,6 +29,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import  NotFound from "@/pages/NotFound";
 import HelpSupport from "./components/HelpSupport";
+import Help from "@/pages/Help";
 import { Journal } from "./components/Journal";
 import UpgradeModal from "@/components/billing/UpgradeModal";
 import TicketView from "@/pages/TicketView";
@@ -213,6 +214,11 @@ const App = () => (
                 </ProtectedRoute>
               </Route>
               <Route path="/help">
+                <ProtectedRoute>
+                  <Help />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/help/submit">
                 <ProtectedRoute>
                   <HelpSupport />
                 </ProtectedRoute>

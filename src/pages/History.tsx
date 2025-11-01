@@ -21,13 +21,17 @@ import {
   Copy,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react";
+import { navigate } from "wouter/use-browser-location";
 import apiClient from "@/lib/api/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast";
+import { StatCardSkeleton, ChartSkeleton, HistoryCardSkeleton } from "@/components/ui/loading-skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 type AnalysisHistoryItem = {
   id: number;
@@ -354,77 +358,90 @@ Date: ${new Date(item.created_at).toLocaleString()}`;
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Analyses</CardTitle>
-              <Activity className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{quickStats.totalAnalyses}</div>
-              <p className="text-xs text-muted-foreground mt-1">All time</p>
-            </CardContent>
-          </Card>
+        {loading && items.length === 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <StatCardSkeleton key={i} />
+              ))}
+            </div>
+            <ChartSkeleton height={200} />
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Analyses</CardTitle>
+                  <Activity className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{quickStats.totalAnalyses}</div>
+                  <p className="text-xs text-muted-foreground mt-1">All time</p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{quickStats.thisMonthCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Analyses this month</p>
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+                  <Calendar className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{quickStats.thisMonthCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Analyses this month</p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Most Used Strategy</CardTitle>
-              <Target className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold truncate">{quickStats.mostUsedStrategy}</div>
-              <p className="text-xs text-muted-foreground mt-1">Top strategy</p>
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Most Used Strategy</CardTitle>
+                  <Target className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-lg font-bold truncate">{quickStats.mostUsedStrategy}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Top strategy</p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Most Analyzed Pair</CardTitle>
-              <Brain className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold">{quickStats.mostAnalyzedPair}</div>
-              <p className="text-xs text-muted-foreground mt-1">Top pair</p>
-            </CardContent>
-          </Card>
-        </div>
+              <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Most Analyzed Pair</CardTitle>
+                  <Brain className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-lg font-bold">{quickStats.mostAnalyzedPair}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Top pair</p>
+                </CardContent>
+              </Card>
+            </div>
 
-        <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Analyses per Day (Last 7 Days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Analyses per Day (Last 7 Days)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="day" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
           <CardHeader>
@@ -513,12 +530,20 @@ Date: ${new Date(item.created_at).toLocaleString()}`;
             <CardTitle>Analysis Results ({filteredItems.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
+            {error && !loading && (
+              <ErrorState
+                title="Failed to Load History"
+                message={error}
+                onRetry={() => { setPage(1); setItems([]); setHasMore(true); }}
+                variant="error"
+              />
+            )}
             
             {loading && filteredItems.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mr-3" />
-                <span className="text-muted-foreground">Loading analyses...</span>
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <HistoryCardSkeleton key={i} />
+                ))}
               </div>
             ) : (
               <div className="space-y-4">
@@ -615,16 +640,35 @@ Date: ${new Date(item.created_at).toLocaleString()}`;
                 })}
                 
                 {filteredItems.length === 0 && !loading && (
-                  <div className="text-center py-12">
-                    <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-6 rounded-2xl mb-4 inline-block">
-                      <BarChart3 className="h-12 w-12 text-primary" />
+                  <div className="flex flex-col items-center justify-center py-16 px-4">
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mb-6">
+                      <Brain className="h-10 w-10 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">No Analysis Found</h3>
-                    <p className="text-muted-foreground">
-                      {filters.search || filters.pair !== 'all' || filters.strategy !== 'all' || filters.signal !== 'all' || filters.provider !== 'all' || filters.dateRange !== 'all'
-                        ? 'Try adjusting your filters to see more results.'
-                        : 'No analysis history available yet.'}
+                    <h3 className="text-2xl font-semibold mb-2">
+                      {items.length === 0 ? 'No Analysis History' : 'No Results Found'}
+                    </h3>
+                    <p className="text-muted-foreground text-center mb-6 max-w-md">
+                      {items.length === 0
+                        ? 'Start analyzing market trends with our AI tools to build your analysis history.'
+                        : 'Try adjusting your filters or search terms to find what you\'re looking for.'}
                     </p>
+                    {items.length === 0 ? (
+                      <Button 
+                        className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                        onClick={() => navigate('/dashboard')}
+                      >
+                        <Brain className="h-4 w-4 mr-2" />
+                        Start Analysis
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="outline"
+                        onClick={() => setFilters({ search: '', pair: 'all', strategy: 'all', signal: 'all', provider: 'all', dateRange: 'all' })}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Clear Filters
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

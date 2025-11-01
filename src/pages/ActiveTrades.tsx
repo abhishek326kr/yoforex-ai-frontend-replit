@@ -1,10 +1,11 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { TradingLayout } from "@/components/layout/TradingLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatCardSkeleton, TradeCardSkeleton } from "@/components/ui/loading-skeleton";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ type FilterState = {
 export function ActiveTrades() {
   const { trades, updateTrade, removeTrade } = useActiveTrades();
   const { toast } = useToast();
+  const [initialLoading, setInitialLoading] = useState(true);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closeTargetId, setCloseTargetId] = useState<string | null>(null);
@@ -64,6 +66,11 @@ export function ActiveTrades() {
     strategy: 'all',
     sort: 'newest'
   });
+
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const selectedTradeData = trades.find(trade => trade.id === selectedTrade) as any;
   const closeTargetTrade = trades.find(t => t.id === closeTargetId) as any;
@@ -157,6 +164,40 @@ export function ActiveTrades() {
       showApiError(e, { title: 'Closed positions (local)', defaultMessage: 'Some errors occurred while closing on server.' });
     }
   };
+
+  if (initialLoading) {
+    return (
+      <TradingLayout>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Active Positions</h1>
+              <p className="text-muted-foreground mt-1">Manage your open trades in real-time</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+
+          <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+            <CardHeader>
+              <CardTitle>Loading positions...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <TradeCardSkeleton key={i} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TradingLayout>
+    );
+  }
 
   return (
     <TradingLayout>
@@ -304,20 +345,33 @@ export function ActiveTrades() {
             <div className="space-y-4">
               {filteredAndSortedTrades.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4">
-                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-6 rounded-2xl mb-6">
-                    <TrendingUp className="h-12 w-12 text-primary" />
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mb-6">
+                    <TrendingUp className="h-10 w-10 text-primary" />
                   </div>
-                  <h3 className="text-2xl font-semibold mb-2">No Active Positions</h3>
+                  <h3 className="text-2xl font-semibold mb-2">
+                    {trades.length === 0 ? 'No Active Positions' : 'No Matching Positions'}
+                  </h3>
                   <p className="text-muted-foreground text-center mb-6 max-w-md">
-                    Start trading to see your positions here. Use AI-powered analysis to make informed trading decisions.
+                    {trades.length === 0 
+                      ? 'Start trading to see your positions here. Use AI-powered analysis to make informed trading decisions.'
+                      : 'Try adjusting your filters to see more positions.'}
                   </p>
-                  <Button 
-                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                    onClick={() => navigate('/trading')}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Start Trading
-                  </Button>
+                  {trades.length === 0 ? (
+                    <Button 
+                      className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                      onClick={() => navigate('/trading')}
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Start Trading
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setFilters({ search: '', direction: 'all', profitable: 'all', strategy: 'all', sort: 'newest' })}
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
               ) : (
                 filteredAndSortedTrades.map((trade) => {

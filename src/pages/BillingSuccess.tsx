@@ -3,15 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { CheckCircle, Download, ArrowRight, Loader2, Copy } from "lucide-react";
+import { CheckCircle, Download, ArrowRight, Loader2, Copy, TrendingUp, CreditCard, Calendar, Package, ChartBar, Settings } from "lucide-react";
 import { useBillingSummary } from "@/hooks/useBillingSummary";
 import { downloadInvoice, listInvoices, checkCashfreeFinalized, finalizeCashfreeNow } from "@/lib/api/billing";
 import { emitBillingUpdated } from "@/lib/billingEvents";
+import { motion } from "framer-motion";
 
 export default function BillingSuccess() {
   const [, navigate] = useLocation();
   const { data: billing, refresh } = useBillingSummary();
-  // Guard to prevent duplicate polling loops when component re-renders
   const startedRef = (typeof window !== 'undefined') ? (window as any).__billing_success_started ?? { current: false } : { current: false };
   if (typeof window !== 'undefined' && !(window as any).__billing_success_started) {
     (window as any).__billing_success_started = startedRef;
@@ -20,7 +20,6 @@ export default function BillingSuccess() {
   const [checking, setChecking] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Refresh billing on mount
   useEffect(() => { try { refresh?.(); emitBillingUpdated(); } catch {} }, []);
 
   const spInit = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ""), []);
@@ -34,13 +33,9 @@ export default function BillingSuccess() {
   }, [spInit]);
   const [cpChecking, setCpChecking] = useState<boolean>(false);
 
-  // Poll webhook completion
-  // Cashfree: check invoice INV-<orderId> or finalized status.
-  // CoinPayments: no orderId query by default; poll for plan change and recent invoice with provider coinpayments.
   useEffect(() => {
     let cancelled = false;
     const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
-    // If we were navigated here with an explicit cancelled status, don't poll/finalize
     if (statusParam === 'cancelled') {
       setChecking(false);
       return () => { cancelled = true; };
@@ -50,13 +45,11 @@ export default function BillingSuccess() {
     }
     startedRef.current = true;
 
-    // CoinPayments flow
     if (provider === 'coinpayments') {
       const runCp = async () => {
         setChecking(true);
         setCpChecking(true);
-        const maxTries = 15; // ~30s
-        // expected plan from localStorage (optional hint)
+        const maxTries = 15;
         let expected: 'pro' | 'max' | undefined;
         try {
           const s = localStorage.getItem('cp_last_plan');
@@ -65,14 +58,12 @@ export default function BillingSuccess() {
 
         for (let i = 0; i < maxTries && !cancelled; i++) {
           try {
-            // Check plan from latest hook state; refresh sparingly
             try { await refresh?.(); } catch {}
             const planNow = (window as any).__latest_billing_plan || (billing?.plan || '').toLowerCase();
             if ((expected && planNow === expected) || (planNow === 'pro' || planNow === 'max')) {
               setWebhookDone(true);
               break;
             }
-            // Check invoices for any recent CoinPayments invoice
             try {
               const invs = await listInvoices();
               const recentCoin = invs.find(inv => (inv.provider || '').toLowerCase() === 'coinpayments');
@@ -91,11 +82,10 @@ export default function BillingSuccess() {
       return () => { cancelled = true; };
     }
 
-    // Cashfree flow (default)
     const run = async () => {
       if (!orderId) { setChecking(false); return; }
       setChecking(true);
-      const maxTries = 12; // ~24s total before attempting manual finalize
+      const maxTries = 12;
       for (let i = 0; i < maxTries && !cancelled; i++) {
         try {
           const invs = await listInvoices();
@@ -113,15 +103,10 @@ export default function BillingSuccess() {
               break;
             }
           } catch {}
-          // refresh less aggressively; rely on next loop iteration
         } catch {}
         await delay(2000);
       }
-      // If webhook hasn't confirmed within the polling window, do NOT auto-finalize from the client.
-      // Finalization requires server-side verification from Cashfree webhooks. Showing 'pending'
-      // avoids mistakenly creating invoices when the user cancelled or closed the checkout.
       if (!cancelled && !webhookDone && orderId) {
-        // Stop checking and leave the finalization responsibility to server-side webhooks.
         setChecking(false);
       } else {
         if (!cancelled) setChecking(false);
@@ -131,70 +116,297 @@ export default function BillingSuccess() {
     return () => { cancelled = true; };
   }, [provider, orderId]);
 
-  // Optional auto-return after success finalization
   useEffect(() => {
     if (!webhookDone) return;
-    const t = setTimeout(() => navigate('/billing'), 4000);
+    const t = setTimeout(() => navigate('/billing'), 6000);
     return () => clearTimeout(t);
   }, [webhookDone, navigate]);
 
+  const isCancelled = statusParam === 'cancelled';
+  const isPending = statusParam === 'pending';
+  const isSuccess = !isCancelled && !isPending;
+
+  const planPurchased = useMemo(() => {
+    if (billing?.plan) {
+      const plan = billing.plan.toLowerCase();
+      if (plan === 'pro') return 'Pro Plan';
+      if (plan === 'max') return 'Max Plan';
+    }
+    return 'Subscription Plan';
+  }, [billing]);
+
   return (
     <TradingLayout>
-      <div className="max-w-2xl mx-auto">
-        <Card className="trading-card p-8 text-center">
-          <div className="flex flex-col items-center space-y-3">
-            <CheckCircle className="h-10 w-10 text-trading-profit" />
-            <h1 className="text-2xl font-bold heading-trading">{statusParam === 'cancelled' ? 'Upgrade cancelled' : (statusParam === 'pending' ? 'Payment pending' : 'Payment Successful')}</h1>
-            <p className="text-muted-foreground">{statusParam === 'cancelled' ? (orderId ? `Order ${orderId} was cancelled.` : 'The upgrade was cancelled.') : (statusParam === 'pending' ? (orderId ? `Order ${orderId} is pending confirmation.` : 'Your payment is pending confirmation.') : (orderId ? `Order ${orderId} has been confirmed.` : 'Your payment has been confirmed.'))}</p>
-            {checking && (
-              <div className="flex items-center justify-center text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> {provider === 'coinpayments' ? 'Waiting for crypto confirmation…' : 'Finalizing your upgrade…'}
-              </div>
-            )}
-            {!checking && !webhookDone && statusParam !== 'cancelled' && (
-              <p className="text-xs text-muted-foreground">This may take a moment. If your plan has not updated, please refresh the Billing page.</p>
-            )}
-            {statusParam === 'cancelled' && (
-              <p className="text-xs text-muted-foreground">You closed or cancelled the checkout. No changes were made to your plan.</p>
-            )}
-            {webhookDone && (
-              <p className="text-xs text-trading-profit">Invoice generated and upgrade finalized.</p>
-            )}
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button className="btn-trading-primary" onClick={() => navigate('/billing')}>
-              <ArrowRight className="h-4 w-4 mr-2" /> Go to Billing
-            </Button>
-            {orderId && (
-              <Button variant="outline" onClick={() => downloadInvoice(`INV-${orderId}`)}>
-                <Download className="h-4 w-4 mr-2" /> Download Invoice
-              </Button>
-            )}
-          </div>
-
-          {orderId && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <span>Order ID: {orderId}</span>
-              <button
-                className="inline-flex items-center gap-1 hover:text-foreground"
-                onClick={async () => { try { await navigator.clipboard.writeText(orderId); setCopied(true); setTimeout(()=>setCopied(false),1500);} catch {} }}
-                title="Copy order ID"
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="trading-card p-8 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
               >
-                <Copy className="h-3 w-3" /> {copied ? 'Copied' : 'Copy'}
-              </button>
-            </div>
-          )}
+                <CheckCircle className={`h-24 w-24 ${isCancelled ? 'text-muted-foreground' : 'text-trading-profit'}`} />
+              </motion.div>
+              
+              <motion.h1
+                className="text-4xl font-bold bg-gradient-to-r from-trading-profit via-green-400 to-trading-profit bg-clip-text text-transparent"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {isCancelled ? 'Upgrade Cancelled' : (isPending ? 'Payment Pending' : 'Payment Successful!')}
+              </motion.h1>
+              
+              <motion.p
+                className="text-lg text-muted-foreground max-w-md"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                {isCancelled 
+                  ? 'You closed or cancelled the checkout. No changes were made to your plan.' 
+                  : (isPending 
+                    ? 'Your payment is being processed. This may take a few moments.' 
+                    : 'Your payment has been successfully processed and your account has been upgraded!')}
+              </motion.p>
 
-          <div className="mt-3 text-[11px] text-muted-foreground">
-            <p>
-              {provider === 'coinpayments'
-                ? 'Crypto confirmations may take a few minutes. This page will reflect your upgrade once confirmed.'
-                : 'Finalizing your upgrade. If it takes longer than a minute, you can safely return to Billing; your plan will update automatically.'}
-            </p>
-            <p className="mt-1">Need help? Contact support at info@yoforex.net.</p>
-          </div>
-        </Card>
+              {checking && (
+                <motion.div
+                  className="flex items-center justify-center text-sm text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {provider === 'coinpayments' ? 'Waiting for crypto confirmation…' : 'Finalizing your upgrade…'}
+                </motion.div>
+              )}
+
+              {webhookDone && (
+                <motion.div
+                  className="flex items-center gap-2 text-sm text-trading-profit"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Upgrade confirmed and invoice generated!
+                </motion.div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+
+        {!isCancelled && orderId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
+            <Card className="trading-card mt-6 p-6 bg-gradient-to-br from-card to-card/50">
+              <h2 className="text-xl font-semibold mb-4 heading-trading">Transaction Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Order ID</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-sm font-medium">{orderId}</p>
+                      <button
+                        className="inline-flex items-center gap-1 text-xs hover:text-primary transition-colors"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(orderId);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 1500);
+                          } catch {}
+                        }}
+                        title="Copy order ID"
+                      >
+                        <Copy className="h-3 w-3" />
+                        {copied ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Plan Purchased</p>
+                    <p className="font-medium">{planPurchased}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Transaction Date</p>
+                    <p className="font-medium">{new Date().toLocaleDateString()}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Payment Method</p>
+                    <p className="font-medium capitalize">{provider || 'Cashfree'}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {!isCancelled && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="mt-8"
+          >
+            <h2 className="text-2xl font-bold mb-4 text-center heading-trading">What's Next?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="trading-card p-6 h-full cursor-pointer bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-shadow" onClick={() => navigate('/trading')}>
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-full bg-trading-profit/10">
+                      <TrendingUp className="h-8 w-8 text-trading-profit" />
+                    </div>
+                    <h3 className="font-semibold text-lg">Start Trading</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Begin using your AI-powered trading signals and start making profitable trades.
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="trading-card p-6 h-full cursor-pointer bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-shadow" onClick={() => navigate('/billing')}>
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-full bg-primary/10">
+                      <Settings className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg">Manage Your Plan</h3>
+                    <p className="text-sm text-muted-foreground">
+                      View your subscription details, invoices, and manage billing settings.
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Card className="trading-card p-6 h-full cursor-pointer bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-shadow" onClick={() => navigate('/dashboard')}>
+                  <div className="flex flex-col items-center text-center space-y-3">
+                    <div className="p-3 rounded-full bg-blue-500/10">
+                      <ChartBar className="h-8 w-8 text-blue-500" />
+                    </div>
+                    <h3 className="font-semibold text-lg">View Dashboard</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Check your portfolio performance, analytics, and trading statistics.
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="mt-8 flex flex-col sm:flex-row gap-3 justify-center"
+        >
+          {!isCancelled && (
+            <>
+              <Button
+                size="lg"
+                className="btn-trading-primary"
+                onClick={() => navigate('/trading')}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Start Trading
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/billing')}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                View Billing
+              </Button>
+              {orderId && (
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  onClick={() => downloadInvoice(`INV-${orderId}`)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Invoice
+                </Button>
+              )}
+            </>
+          )}
+          {isCancelled && (
+            <>
+              <Button
+                size="lg"
+                className="btn-trading-primary"
+                onClick={() => navigate('/billing')}
+              >
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Back to Billing
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+              >
+                Go to Dashboard
+              </Button>
+            </>
+          )}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
+          className="mt-8 text-center text-sm text-muted-foreground"
+        >
+          <p>
+            {provider === 'coinpayments'
+              ? 'Crypto confirmations may take a few minutes. Your plan will update automatically once confirmed.'
+              : !isCancelled && 'Your upgrade will be reflected immediately. You can now access all premium features.'}
+          </p>
+          <p className="mt-2">
+            Need help? Contact support at{' '}
+            <a href="mailto:info@yoforex.net" className="text-primary hover:underline">
+              info@yoforex.net
+            </a>
+          </p>
+        </motion.div>
       </div>
     </TradingLayout>
   );

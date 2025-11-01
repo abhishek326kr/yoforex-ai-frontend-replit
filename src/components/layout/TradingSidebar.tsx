@@ -62,24 +62,27 @@ export function TradingSidebar() {
     const logoSrc = isDark ? "/logo.png" : "/logo_light.png";
 
     return (
-      <div
+      <aside
         className={cn(
           "flex h-full w-64 flex-col bg-sidebar-background border-r border-sidebar-border fixed top-0 left-0 bottom-0 z-50 transform transition-transform duration-300 ease-in-out shadow-lg",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           "lg:translate-x-0 lg:fixed lg:top-0 lg:left-0 lg:h-screen lg:bottom-auto lg:overflow-hidden"
         )}
+        aria-label="Main navigation sidebar"
       >
         {/* Logo Section */}
         <div className="flex h-16 justify-start items-center border-b border-sidebar-border">
-          <img
-            src={logoSrc}
-            alt="Yoforex AI logo"
-            className="mt-[10px] mx-[20px] w-[180px]"
-          />
+          <Link href="/dashboard" aria-label="Yoforex AI - Return to dashboard">
+            <img
+              src={logoSrc}
+              alt="Yoforex AI"
+              className="mt-[10px] mx-[20px] w-[180px]"
+            />
+          </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Primary navigation">
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -89,18 +92,20 @@ export function TradingSidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                  "group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-sidebar-background",
                   active
                     ? "bg-gradient-primary text-white shadow-glow"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
                 onClick={() => setIsMobileOpen(false)}
+                aria-current={active ? "page" : undefined}
               >
                 <Icon
                   className={cn(
                     "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
                     active ? "text-white" : "text-sidebar-foreground/60"
                   )}
+                  aria-hidden="true"
                 />
                 {item.name}
               </Link>
@@ -109,10 +114,10 @@ export function TradingSidebar() {
         </nav>
 
         {/* Credit Counter */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border" role="region" aria-label="Credit usage">
           <div className="bg-gradient-glass backdrop-blur-sm rounded-lg p-4 border border-border/20 transition-colors duration-300">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-sidebar-foreground">
+              <span className="text-sm font-medium text-sidebar-foreground" id="credits-label">
                 Credits
               </span>
               <span className="text-xs text-sidebar-foreground/60">
@@ -124,7 +129,7 @@ export function TradingSidebar() {
               </span>
             </div>
             <div className="mb-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm" id="credits-status">
                 {(() => {
                   const remaining = data?.monthly_credits_remaining ?? 0;
                   const max = data?.monthly_credits_max ?? 0;
@@ -146,7 +151,15 @@ export function TradingSidebar() {
                   );
                 })()}
               </div>
-              <div className="mt-1 h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="mt-1 h-2 bg-muted rounded-full overflow-hidden"
+                role="progressbar"
+                aria-labelledby="credits-label"
+                aria-describedby="credits-status"
+                aria-valuenow={data?.monthly_credits_remaining ?? 0}
+                aria-valuemin={0}
+                aria-valuemax={data?.monthly_credits_max ?? 0}
+              >
                 {(() => {
                   const remaining = data?.monthly_credits_remaining ?? 0;
                   const max = data?.monthly_credits_max ?? 0;
@@ -165,11 +178,11 @@ export function TradingSidebar() {
             </div>
             {/* Daily cap UI removed (no daily cap enforcement) */}
             {error && (
-              <p className="text-xs text-red-500">Failed to load credits</p>
+              <p className="text-xs text-red-500" role="alert">Failed to load credits</p>
             )}
           </div>
         </div>
-      </div>
+      </aside>
     );
   };
 
@@ -179,10 +192,12 @@ export function TradingSidebar() {
       <div className="lg:hidden fixed top-4 left-4 z-[60]">
         <button
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-colors duration-200"
+          className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200"
           aria-expanded={isMobileOpen}
+          aria-label={isMobileOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-controls="mobile-sidebar"
         >
-          <span className="sr-only">Open main menu</span>
+          <span className="sr-only">{isMobileOpen ? "Close" : "Open"} main menu</span>
           {isMobileOpen ? (
             <X className="block h-6 w-6" aria-hidden="true" />
           ) : (
@@ -196,10 +211,11 @@ export function TradingSidebar() {
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
           onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      <div className={"block lg:block"} aria-hidden={!isMobileOpen}>
+      <div className={"block lg:block"} id="mobile-sidebar" aria-hidden={!isMobileOpen}>
         <SidebarContent mobileOpen={isMobileOpen} />
       </div>
     </>
