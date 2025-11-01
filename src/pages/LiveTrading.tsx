@@ -49,7 +49,9 @@ import {
   Brain,
   Bookmark,
   BookmarkPlus,
-  RefreshCcw
+  RefreshCcw,
+  Globe,
+  Send
 } from 'lucide-react';
 import formattedTimeframe, { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
@@ -234,21 +236,37 @@ export function LiveTrading() {
   const [stopLossPrice, setStopLossPrice] = useState("");
 
   // Manual AI Confirmation State
-  const [uploadedChartImage, setUploadedChartImage] = useState<string | null>(null);
-  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [uploadedChartImages, setUploadedChartImages] = useState<Array<{id: string; url: string; name: string}>>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [customTemplates, setCustomTemplates] = useState<Array<{id: string; name: string; content: string}>>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const [selectedDrawingTool, setSelectedDrawingTool] = useState<string | null>(null);
   const [chartLayout, setChartLayout] = useState<'single' | 'split' | 'quad'>('single');
+  const [marketCondition, setMarketCondition] = useState<'trending' | 'ranging' | 'volatile'>('trending');
+  const [analysisDepth, setAnalysisDepth] = useState<'quick' | 'standard' | 'deep'>('standard');
+  const [selectedModels, setSelectedModels] = useState<string[]>(['gpt4', 'claude', 'gemini']);
   const [manualAnalysisLoading, setManualAnalysisLoading] = useState(false);
+  const [manualAnalysisProgress, setManualAnalysisProgress] = useState(0);
   const [manualAnalysisError, setManualAnalysisError] = useState<string | null>(null);
   const [manualAnalysisResult, setManualAnalysisResult] = useState<any | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
   const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([]);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showComparisonMode, setShowComparisonMode] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [estimatedTokens, setEstimatedTokens] = useState(0);
   const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
+  const [analysisQualityScore, setAnalysisQualityScore] = useState(0);
+  const [alternativeScenarios, setAlternativeScenarios] = useState<any[]>([]);
+  const [confidenceBreakdown, setConfidenceBreakdown] = useState<any>(null);
+  const [riskMatrix, setRiskMatrix] = useState<any>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   // Save last successful analysis to localStorage
   // Find this function:
@@ -647,15 +665,36 @@ const saveLastAnalysis = (params: {
   const marketOpen = isMarketOpen();
 
   // Manual AI Confirmation Helper Functions
-  const handleFileUpload = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedChartImage(reader.result as string);
-        setUploadedFileName(file.name);
-      };
-      reader.readAsDataURL(file);
+  
+  // Multi-Image Upload Handlers
+  const handleFileUpload = (files: FileList) => {
+    const remainingSlots = 5 - uploadedChartImages.length;
+    if (remainingSlots <= 0) {
+      setManualAnalysisError("Maximum 5 images allowed. Please remove some images first.");
+      setTimeout(() => setManualAnalysisError(null), 3000);
+      return;
     }
+    
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+    
+    filesToAdd.forEach(file => {
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const newImage = {
+            id: Date.now().toString() + Math.random(),
+            url: reader.result as string,
+            name: file.name
+          };
+          setUploadedChartImages(prev => {
+            const updated = [...prev, newImage];
+            setSelectedImageIndex(updated.length - 1);
+            return updated;
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -663,7 +702,7 @@ const saveLastAnalysis = (params: {
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      handleFileUpload(files[0]);
+      handleFileUpload(files);
     }
   };
 
@@ -676,25 +715,54 @@ const saveLastAnalysis = (params: {
     setIsDragging(false);
   };
 
-  const removeUploadedImage = () => {
-    setUploadedChartImage(null);
-    setUploadedFileName("");
+  const removeUploadedImage = (id: string) => {
+    setUploadedChartImages(prev => prev.filter(img => img.id !== id));
+    if (selectedImageIndex >= uploadedChartImages.length - 1) {
+      setSelectedImageIndex(Math.max(0, uploadedChartImages.length - 2));
+    }
   };
 
+  const clearAllImages = () => {
+    setUploadedChartImages([]);
+    setSelectedImageIndex(0);
+  };
+
+  // Voice Recording with Timer
   const toggleVoiceRecording = () => {
     setIsRecording(!isRecording);
-    // In a real implementation, this would start/stop voice recording
+    if (!isRecording) {
+      setRecordingDuration(0);
+      const interval = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+      // Store interval to clear later
+      (window as any).recordingInterval = interval;
+    } else {
+      if ((window as any).recordingInterval) {
+        clearInterval((window as any).recordingInterval);
+      }
+    }
+  };
+
+  // Template Management
+  const defaultTemplates = {
+    technical: "Analyze the current technical setup for this chart. Identify key support and resistance levels, trend direction, and potential entry/exit points based on price action and indicators.",
+    sentiment: "What is the current market sentiment for this pair? Analyze recent price movements, volume patterns, and potential market-moving factors that could impact the trade.",
+    risk: "Evaluate the risk/reward ratio for entering a position here. What stop loss and take profit levels would you recommend? Calculate optimal position sizing for 2% account risk.",
+    multi: "Provide a comprehensive multi-timeframe analysis. Check the higher timeframe trend, current timeframe setup, and lower timeframe entry confirmation. Include key levels and trade plan.",
+    breakout: "Analyze potential breakout scenarios. Identify consolidation patterns, volume buildup, and key breakout levels. What are the targets if price breaks up/down?",
+    reversal: "Evaluate reversal signals at this level. Check for divergences, candlestick patterns, and overextension indicators. Is this a high-probability reversal zone?"
   };
 
   const applyTemplate = (templateType: string) => {
-    const templates = {
-      technical: "Analyze the current technical setup for this chart. Identify key support and resistance levels, trend direction, and potential entry/exit points based on price action and indicators.",
-      sentiment: "What is the current market sentiment for this pair? Analyze recent price movements, volume patterns, and potential market-moving factors that could impact the trade.",
-      risk: "Evaluate the risk/reward ratio for entering a position here. What stop loss and take profit levels would you recommend? Calculate optimal position sizing for 2% account risk.",
-      multi: "Provide a comprehensive multi-timeframe analysis. Check the higher timeframe trend, current timeframe setup, and lower timeframe entry confirmation. Include key levels and trade plan."
-    };
-    setAnalysisText(templates[templateType as keyof typeof templates] || "");
+    const template = customTemplates.find(t => t.id === templateType);
+    if (template) {
+      setAnalysisText(template.content);
+    } else {
+      setAnalysisText(defaultTemplates[templateType as keyof typeof defaultTemplates] || "");
+    }
     setSelectedTemplate(templateType);
+    saveDraft();
   };
 
   const toggleFavoriteTemplate = (templateName: string) => {
@@ -705,81 +773,225 @@ const saveLastAnalysis = (params: {
     }
   };
 
+  const saveCustomTemplate = (name: string, content: string) => {
+    const newTemplate = {
+      id: Date.now().toString(),
+      name,
+      content
+    };
+    setCustomTemplates(prev => [...prev, newTemplate]);
+  };
+
+  const deleteCustomTemplate = (id: string) => {
+    setCustomTemplates(prev => prev.filter(t => t.id !== id));
+  };
+
+  // AI Model Selection
+  const toggleModel = (modelId: string) => {
+    if (selectedModels.includes(modelId)) {
+      setSelectedModels(prev => prev.filter(m => m !== modelId));
+    } else {
+      setSelectedModels(prev => [...prev, modelId]);
+    }
+  };
+
+  // Auto-save Draft
+  const saveDraft = () => {
+    if (autoSaveEnabled) {
+      localStorage.setItem('manual_analysis_draft', JSON.stringify({
+        text: analysisText,
+        images: uploadedChartImages,
+        template: selectedTemplate,
+        timestamp: Date.now()
+      }));
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    }
+  };
+
+  const loadDraft = () => {
+    const draft = localStorage.getItem('manual_analysis_draft');
+    if (draft) {
+      const parsed = JSON.parse(draft);
+      setAnalysisText(parsed.text || '');
+      setUploadedChartImages(parsed.images || []);
+      setSelectedTemplate(parsed.template || '');
+    }
+  };
+
+  // Auto-save when text changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (analysisText.trim()) {
+        saveDraft();
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [analysisText, uploadedChartImages]);
+
   const runManualAnalysis = async () => {
-    if (!analysisText.trim() && !uploadedChartImage) {
+    if (!analysisText.trim() && uploadedChartImages.length === 0) {
       setManualAnalysisError("Please provide either text analysis or upload a chart image.");
       return;
     }
 
     setManualAnalysisLoading(true);
     setManualAnalysisError(null);
+    setManualAnalysisProgress(0);
 
     try {
       // TODO: Backend Integration Required
       // Replace this mock implementation with actual API call to backend
-      // API should accept: { text: analysisText, image: uploadedChartImage, pair: selectedPair }
+      // API should accept: { 
+      //   text: analysisText, 
+      //   images: uploadedChartImages, 
+      //   pair: selectedPair,
+      //   depth: analysisDepth,
+      //   models: selectedModels,
+      //   marketCondition: marketCondition
+      // }
       // Expected response format matches manualAnalysisResult structure below
       
-      // Simulated API call for demo purposes
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulated progressive API call for demo purposes
+      const progressSteps = [
+        { progress: 20, msg: "Analyzing images..." },
+        { progress: 40, msg: "Processing text..." },
+        { progress: 60, msg: "Querying AI models..." },
+        { progress: 80, msg: "Generating consensus..." },
+        { progress: 100, msg: "Complete" }
+      ];
+
+      for (const step of progressSteps) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+        setManualAnalysisProgress(step.progress);
+      }
       
-      // Mock result - REPLACE WITH REAL API RESPONSE
-      setManualAnalysisResult({
+      // Mock comprehensive result - REPLACE WITH REAL API RESPONSE
+      const mockResult = {
         consensus: "BUY",
         confidence: 89,
+        qualityScore: 92,
         entryPrice: "1.0847",
         stopLoss: "1.0820",
         takeProfit: "1.0875",
         riskReward: "1:1.04",
         positionSize: "2%",
-        models: [
-          {
-            name: "GPT-4 Omni",
-            confidence: 87,
-            signal: "BUY",
-            analysis: "Strong bullish momentum identified with breakout above key resistance. RSI divergence suggests continuation."
-          },
-          {
-            name: "Claude 3.5 Sonnet",
-            confidence: 91,
-            signal: "BUY",
-            analysis: "Market structure supports bullish bias. Clean break of previous high with strong volume confirmation."
-          }
+        models: selectedModels.map((model, idx) => ({
+          name: model === 'gpt4' ? 'GPT-4 Omni' : model === 'claude' ? 'Claude 3.5 Sonnet' : 'Gemini Pro',
+          confidence: 85 + idx * 3,
+          signal: "BUY",
+          analysis: `${marketCondition.charAt(0).toUpperCase() + marketCondition.slice(1)} market analysis with ${analysisDepth} depth. Strong bullish momentum identified with breakout above key resistance. ${idx === 0 ? 'RSI divergence suggests continuation.' : idx === 1 ? 'Market structure supports bullish bias.' : 'Volume confirmation present.'}`
+        })),
+        confidenceBreakdown: {
+          technical: 92,
+          fundamental: 85,
+          sentiment: 87,
+          risk: 90
+        },
+        riskMatrix: {
+          probability: 'High',
+          impact: 'Medium',
+          riskLevel: 'Moderate'
+        },
+        alternativeScenarios: [
+          { scenario: 'Bull Case', probability: 65, target: '1.0920', reasoning: 'Breakout continuation with momentum' },
+          { scenario: 'Base Case', probability: 25, target: '1.0875', reasoning: 'Normal profit target reached' },
+          { scenario: 'Bear Case', probability: 10, target: '1.0820', reasoning: 'False breakout, stop hit' }
         ]
-      });
+      };
+
+      setManualAnalysisResult(mockResult);
+      setAnalysisQualityScore(mockResult.qualityScore);
+      setConfidenceBreakdown(mockResult.confidenceBreakdown);
+      setRiskMatrix(mockResult.riskMatrix);
+      setAlternativeScenarios(mockResult.alternativeScenarios);
 
       // Add to history
       setAnalysisHistory(prev => [{
+        id: Date.now().toString(),
         timestamp: new Date().toISOString(),
         pair: selectedPair,
         text: analysisText,
-        hasImage: !!uploadedChartImage,
-        result: "BUY"
-      }, ...prev.slice(0, 4)]);
+        images: uploadedChartImages.length,
+        result: mockResult.consensus,
+        confidence: mockResult.confidence,
+        depth: analysisDepth,
+        models: selectedModels.length
+      }, ...prev.slice(0, 9)]);
 
     } catch (error) {
       setManualAnalysisError("Failed to analyze. Please try again.");
     } finally {
       setManualAnalysisLoading(false);
+      setManualAnalysisProgress(0);
     }
   };
 
-  const exportAnalysis = () => {
-    // Export analysis as PDF/image - would be implemented with a library
-    console.log("Exporting analysis...");
+  const exportAnalysis = (format: 'pdf' | 'json' | 'csv' | 'image' = 'pdf') => {
+    if (!manualAnalysisResult) return;
+    
+    const data = {
+      timestamp: new Date().toISOString(),
+      pair: selectedPair,
+      analysis: analysisText,
+      result: manualAnalysisResult,
+      images: uploadedChartImages.length,
+      models: selectedModels,
+      depth: analysisDepth,
+      marketCondition
+    };
+
+    switch (format) {
+      case 'json':
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `analysis-${selectedPair}-${Date.now()}.json`;
+        a.click();
+        break;
+      case 'csv':
+        // CSV export logic
+        console.log('Exporting as CSV...');
+        break;
+      case 'pdf':
+        // PDF export logic - would use library like jsPDF
+        console.log('Exporting as PDF...');
+        break;
+      case 'image':
+        // Image export logic
+        console.log('Exporting as Image...');
+        break;
+    }
   };
 
   const shareAnalysis = () => {
-    // Share analysis link - would generate a shareable link
-    console.log("Sharing analysis...");
+    if (!manualAnalysisResult) return;
+    // Generate shareable link
+    const shareData = btoa(JSON.stringify({
+      pair: selectedPair,
+      signal: manualAnalysisResult.consensus,
+      confidence: manualAnalysisResult.confidence
+    }));
+    navigator.clipboard.writeText(`${window.location.origin}/shared/${shareData}`);
+    // Show toast notification
+    console.log('Link copied to clipboard!');
   };
 
-  // Estimate tokens based on text length
+  const compareWithHistory = (historyItem: any) => {
+    // Compare current analysis with historical one
+    setShowComparisonMode(true);
+    console.log('Comparing with:', historyItem);
+  };
+
+  // Estimate tokens based on text length and images
   useEffect(() => {
+    const depthMultiplier = analysisDepth === 'quick' ? 0.5 : analysisDepth === 'deep' ? 1.5 : 1;
     const textTokens = Math.ceil(analysisText.length / 4);
-    const imageTokens = uploadedChartImage ? 1000 : 0; // Rough estimate
-    setEstimatedTokens(textTokens + imageTokens);
-  }, [analysisText, uploadedChartImage]);
+    const imageTokens = uploadedChartImages.length * 1000; // 1000 tokens per image estimate
+    const modelTokens = selectedModels.length * 500; // Additional tokens per model
+    setEstimatedTokens(Math.ceil((textTokens + imageTokens + modelTokens) * depthMultiplier));
+  }, [analysisText, uploadedChartImages, analysisDepth, selectedModels]);
 
   return (
     <TradingLayout>
@@ -1138,50 +1350,170 @@ const saveLastAnalysis = (params: {
             </div>
           </TabsContent>
 
-          {/* Manual AI Confirmation Tab - REDESIGNED */}
+          {/* Manual AI Confirmation Tab - ULTRA-PROFESSIONAL REDESIGNED */}
           <TabsContent value="manual" className='flex-1 min-h-0 flex flex-col overflow-hidden'>
-            {/* Top Action Bar */}
-            <div className="flex items-center justify-between mb-4 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Estimated Cost: <span className="text-primary">{estimatedTokens} tokens</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">≈ ${(estimatedTokens * 0.00002).toFixed(4)}</p>
+            {/* Enhanced Top Action Bar with ALL new features */}
+            <div className="space-y-3 mb-4 flex-shrink-0">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Market Condition Selector */}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border/30">
+                    {[
+                      { id: 'trending' as const, label: 'Trending', icon: TrendingUp, color: 'text-green-500 bg-green-500/10 border-green-500/30' },
+                      { id: 'ranging' as const, label: 'Ranging', icon: Minus, color: 'text-blue-500 bg-blue-500/10 border-blue-500/30' },
+                      { id: 'volatile' as const, label: 'Volatile', icon: Activity, color: 'text-orange-500 bg-orange-500/10 border-orange-500/30' }
+                    ].map((condition) => (
+                      <Badge
+                        key={condition.id}
+                        variant={marketCondition === condition.id ? "default" : "outline"}
+                        className={`cursor-pointer transition-all duration-300 gap-1 ${marketCondition === condition.id ? condition.color : 'hover:bg-muted'}`}
+                        onClick={() => setMarketCondition(condition.id)}
+                      >
+                        <condition.icon className="h-3 w-3" />
+                        {condition.label}
+                      </Badge>
+                    ))}
                   </div>
+
+                  {/* Analysis Depth Selector */}
+                  <Select value={analysisDepth} onValueChange={(v: any) => setAnalysisDepth(v)}>
+                    <SelectTrigger className="w-[140px] h-8 bg-gradient-to-r from-purple-500/10 to-purple-500/5 border-purple-500/30 hover:border-purple-500/50 transition-all duration-300">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quick">
+                        <div className="flex items-center gap-2">
+                          <Zap className="h-3 w-3 text-yellow-500" />
+                          <span>Quick</span>
+                          <Badge variant="outline" className="text-[10px]">0.5x</Badge>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="standard">
+                        <div className="flex items-center gap-2">
+                          <Gauge className="h-3 w-3 text-blue-500" />
+                          <span>Standard</span>
+                          <Badge variant="outline" className="text-[10px]">1x</Badge>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="deep">
+                        <div className="flex items-center gap-2">
+                          <Brain className="h-3 w-3 text-purple-500" />
+                          <span>Deep</span>
+                          <Badge variant="outline" className="text-[10px]">1.5x</Badge>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Model Selector Button */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowModelSelector(!showModelSelector)}
+                    className="gap-2 bg-gradient-to-r from-orange-500/10 to-orange-500/5 border-orange-500/30 hover:border-orange-500/50 transition-all duration-300"
+                  >
+                    <Settings className="h-3.5 w-3.5 text-orange-500" />
+                    Models ({selectedModels.length})
+                  </Button>
+
+                  {/* Auto-save Indicator */}
+                  {draftSaved && (
+                    <Badge variant="outline" className="gap-1 bg-green-500/10 border-green-500/30 text-green-600 animate-in fade-in duration-300">
+                      <Check className="h-3 w-3" />
+                      Draft saved
+                    </Badge>
+                  )}
+
+                  {/* Quality Score Badge */}
+                  {analysisQualityScore > 0 && (
+                    <Badge 
+                      className={`gap-1 transition-all duration-300 ${
+                        analysisQualityScore >= 80 ? 'bg-green-500 text-white' : 
+                        analysisQualityScore >= 60 ? 'bg-blue-500 text-white' : 
+                        'bg-yellow-500 text-white'
+                      }`}
+                    >
+                      <Award className="h-3 w-3" />
+                      Quality: {analysisQualityScore}%
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
+                    className="gap-2 hover:bg-primary/5 transition-all duration-300"
+                  >
+                    <Info className="h-4 w-4" />
+                    Shortcuts
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={runManualAnalysis}
+                    disabled={manualAnalysisLoading || (!analysisText.trim() && uploadedChartImages.length === 0)}
+                    className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    {manualAnalysisLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="h-4 w-4" />
+                        Run Analysis
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
-                  className="gap-2"
-                >
-                  <Info className="h-4 w-4" />
-                  Shortcuts
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={runManualAnalysis}
-                  disabled={manualAnalysisLoading || (!analysisText.trim() && !uploadedChartImage)}
-                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 gap-2"
-                >
-                  {manualAnalysisLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="h-4 w-4" />
-                      Run Analysis
-                    </>
-                  )}
-                </Button>
-              </div>
+
+              {/* Multi-step Progress Bar */}
+              {manualAnalysisLoading && (
+                <Card className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 animate-in fade-in duration-300">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-foreground">Analysis in Progress</span>
+                      <span className="text-sm font-medium text-primary">{manualAnalysisProgress}%</span>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500 ease-out"
+                        style={{ width: `${manualAnalysisProgress}%` }}
+                      />
+                    </div>
+
+                    {/* Steps Indicator */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: 'Analyzing Images', progress: 25 },
+                        { label: 'Processing Text', progress: 50 },
+                        { label: 'Querying Models', progress: 75 },
+                        { label: 'Generating Consensus', progress: 100 }
+                      ].map((step, idx) => (
+                        <div 
+                          key={idx}
+                          className={`text-center p-2 rounded-lg transition-all duration-300 ${
+                            manualAnalysisProgress >= step.progress 
+                              ? 'bg-primary/20 border-2 border-primary/50' 
+                              : 'bg-muted/20 border border-border/20'
+                          }`}
+                        >
+                          <p className={`text-xs font-medium ${
+                            manualAnalysisProgress >= step.progress ? 'text-primary' : 'text-muted-foreground'
+                          }`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
 
             <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
@@ -1202,7 +1534,7 @@ const saveLastAnalysis = (params: {
                     </Badge>
                   </div>
                   
-                  {!uploadedChartImage ? (
+                  {uploadedChartImages.length === 0 ? (
                     <div
                       onDrop={handleDrop}
                       onDragOver={handleDragOver}
@@ -1216,43 +1548,138 @@ const saveLastAnalysis = (params: {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                        multiple
+                        onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
                       <div className="p-8 text-center">
                         <Upload className="h-10 w-10 text-primary mx-auto mb-3" />
                         <p className="text-sm font-medium text-foreground mb-1">
-                          {isDragging ? 'Drop here' : 'Drop chart screenshot'}
+                          {isDragging ? 'Drop here' : 'Upload up to 5 charts'}
                         </p>
                         <p className="text-xs text-muted-foreground mb-3">
-                          or click to browse
+                          Drop multiple files or click to browse
                         </p>
                         <Badge variant="secondary" className="text-xs">
-                          PNG, JPG, WebP • Max 10MB
+                          PNG, JPG, WebP • Max 10MB each
                         </Badge>
                       </div>
                     </div>
                   ) : (
-                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
-                      <img 
-                        src={uploadedChartImage} 
-                        alt="Uploaded chart" 
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                        <p className="text-xs font-medium text-white truncate">
-                          {uploadedFileName}
-                        </p>
+                    <div className="space-y-3">
+                      {/* Image Counter and Clear All */}
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs font-medium">
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          {uploadedChartImages.length}/5 images
+                        </Badge>
                         <Button
                           size="sm"
-                          variant="destructive"
-                          onClick={removeUploadedImage}
-                          className="h-6 w-6 p-0"
+                          variant="ghost"
+                          onClick={clearAllImages}
+                          className="h-6 text-xs text-muted-foreground hover:text-destructive"
                         >
-                          <X className="h-3 w-3" />
+                          Clear All
                         </Button>
                       </div>
+
+                      {/* Main Image Display */}
+                      <div className="relative rounded-xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 group">
+                        <img 
+                          src={uploadedChartImages[selectedImageIndex]?.url} 
+                          alt={uploadedChartImages[selectedImageIndex]?.name || 'Chart'} 
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                        
+                        {/* Image Name and Remove Button */}
+                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+                          <Badge variant="secondary" className="text-xs font-medium backdrop-blur-sm bg-background/80">
+                            {selectedImageIndex + 1} / {uploadedChartImages.length}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeUploadedImage(uploadedChartImages[selectedImageIndex]?.id)}
+                            className="h-7 px-2 backdrop-blur-sm"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+
+                        {/* Previous/Next Navigation Arrows */}
+                        {uploadedChartImages.length > 1 && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setSelectedImageIndex(prev => prev > 0 ? prev - 1 : uploadedChartImages.length - 1)}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 rounded-full backdrop-blur-sm bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight className="h-4 w-4 rotate-180" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setSelectedImageIndex(prev => prev < uploadedChartImages.length - 1 ? prev + 1 : 0)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 rounded-full backdrop-blur-sm bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+
+                        {/* Image Name at Bottom */}
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-xs font-medium text-white truncate">
+                            {uploadedChartImages[selectedImageIndex]?.name}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Thumbnail Navigation */}
+                      {uploadedChartImages.length > 1 && (
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {uploadedChartImages.map((image, idx) => (
+                            <button
+                              key={image.id}
+                              onClick={() => setSelectedImageIndex(idx)}
+                              className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                selectedImageIndex === idx 
+                                  ? 'border-primary ring-2 ring-primary/20 scale-105' 
+                                  : 'border-border/30 hover:border-primary/50 opacity-60 hover:opacity-100'
+                              }`}
+                            >
+                              <img 
+                                src={image.url} 
+                                alt={image.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                              <div className="absolute bottom-0.5 left-0.5 right-0.5">
+                                <p className="text-[9px] font-medium text-white truncate">
+                                  {idx + 1}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                          
+                          {/* Add More Button */}
+                          {uploadedChartImages.length < 5 && (
+                            <label className="relative flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-border/40 hover:border-primary/50 cursor-pointer flex items-center justify-center bg-muted/20 hover:bg-muted/30 transition-all group">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                                className="hidden"
+                              />
+                              <Plus className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </label>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </Card>
@@ -1341,7 +1768,7 @@ const saveLastAnalysis = (params: {
 
                 {/* Analysis History */}
                 {analysisHistory.length > 0 && (
-                  <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30">
+                  <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg hover:shadow-xl transition-all duration-300">
                     <div className="flex items-center gap-2 mb-4">
                       <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-green-500/10">
                         <History className="h-4 w-4 text-green-500" />
@@ -1375,6 +1802,135 @@ const saveLastAnalysis = (params: {
                     </div>
                   </Card>
                 )}
+
+                {/* Custom Template Manager Card */}
+                <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-500/10">
+                        <Bookmark className="h-4 w-4 text-indigo-500" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Custom Templates</h4>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowTemplateEditor(true)}
+                      className="h-7 gap-1 hover:bg-indigo-500/10 transition-all duration-300"
+                    >
+                      <Plus className="h-3 w-3" />
+                      New
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {customTemplates.length === 0 ? (
+                      <div className="text-center py-6 px-4 rounded-lg bg-muted/20 border border-dashed border-border/30">
+                        <BookmarkPlus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground mb-1">No custom templates yet</p>
+                        <p className="text-[10px] text-muted-foreground">Create templates for faster analysis</p>
+                      </div>
+                    ) : (
+                      customTemplates.map((template) => (
+                        <div
+                          key={template.id}
+                          className="group p-3 rounded-lg bg-gradient-to-br from-indigo-500/5 to-indigo-500/10 border border-indigo-500/20 hover:border-indigo-500/40 transition-all duration-300 cursor-pointer"
+                          onClick={() => applyTemplate(template.id)}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-semibold text-foreground">{template.name}</span>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowTemplateEditor(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Pen className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteCustomTemplate(template.id);
+                                }}
+                                className="h-6 w-6 p-0 hover:text-red-500"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground line-clamp-2">{template.content}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </Card>
+
+                {/* Session Markers Card */}
+                <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-500/10">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground">Trading Sessions</h4>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {[
+                      { name: 'Asian', hours: '00:00 - 09:00 UTC', color: 'bg-blue-500', active: new Date().getUTCHours() < 9 },
+                      { name: 'London', hours: '08:00 - 17:00 UTC', color: 'bg-green-500', active: new Date().getUTCHours() >= 8 && new Date().getUTCHours() < 17 },
+                      { name: 'New York', hours: '13:00 - 22:00 UTC', color: 'bg-purple-500', active: new Date().getUTCHours() >= 13 && new Date().getUTCHours() < 22 }
+                    ].map((session) => (
+                      <div
+                        key={session.name}
+                        className={`p-3 rounded-lg border transition-all duration-300 ${
+                          session.active 
+                            ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-md' 
+                            : 'bg-muted/20 border-border/20 hover:border-border/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-2 w-2 rounded-full ${session.color} ${session.active ? 'animate-pulse' : 'opacity-50'}`} />
+                            <span className="text-xs font-semibold text-foreground">{session.name}</span>
+                          </div>
+                          {session.active && (
+                            <Badge variant="outline" className="text-[10px] bg-primary/10 border-primary/30 text-primary">
+                              ACTIVE
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground ml-4">{session.hours}</p>
+                        
+                        {/* Session Activity Bar */}
+                        <div className="mt-2 ml-4">
+                          <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                            <div 
+                              className={`h-full ${session.color} transition-all duration-500`}
+                              style={{ 
+                                width: session.active ? '75%' : '25%',
+                                opacity: session.active ? 1 : 0.3
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Timezone Info */}
+                  <div className="mt-4 pt-4 border-t border-border/20">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>Current UTC: {new Date().toUTCString().split(' ')[4]}</span>
+                    </div>
+                  </div>
+                </Card>
               </div>
 
               {/* Center Panel - Advanced Interactive Chart */}
@@ -1636,6 +2192,237 @@ const saveLastAnalysis = (params: {
                           Execute Trade
                         </Button>
                       </div>
+
+                      {/* Confidence Breakdown Card */}
+                      {manualAnalysisResult.confidenceBreakdown && (
+                        <Card className="p-5 mt-4 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10">
+                              <Gauge className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <h4 className="text-sm font-semibold text-foreground">Confidence Breakdown</h4>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            {[
+                              { label: 'Technical', value: manualAnalysisResult.confidenceBreakdown.technical, color: 'text-green-500', bg: 'from-green-500/20 to-green-500/5' },
+                              { label: 'Fundamental', value: manualAnalysisResult.confidenceBreakdown.fundamental, color: 'text-blue-500', bg: 'from-blue-500/20 to-blue-500/5' },
+                              { label: 'Sentiment', value: manualAnalysisResult.confidenceBreakdown.sentiment, color: 'text-purple-500', bg: 'from-purple-500/20 to-purple-500/5' },
+                              { label: 'Risk', value: manualAnalysisResult.confidenceBreakdown.risk, color: 'text-red-500', bg: 'from-red-500/20 to-red-500/5' }
+                            ].map((item, idx) => (
+                              <div key={idx} className={`p-3 rounded-lg bg-gradient-to-br ${item.bg} border border-border/20 hover:border-border/40 transition-all duration-300`}>
+                                <div className="flex items-center justify-center mb-2">
+                                  <div className="relative w-16 h-16">
+                                    <svg className="transform -rotate-90 w-16 h-16">
+                                      <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted/20" />
+                                      <circle 
+                                        cx="32" 
+                                        cy="32" 
+                                        r="28" 
+                                        stroke="currentColor" 
+                                        strokeWidth="4" 
+                                        fill="none" 
+                                        className={item.color}
+                                        strokeDasharray={`${2 * Math.PI * 28}`}
+                                        strokeDashoffset={`${2 * Math.PI * 28 * (1 - item.value / 100)}`}
+                                        strokeLinecap="round"
+                                      />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className={`text-sm font-bold ${item.color}`}>{item.value}%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <p className="text-xs font-medium text-center text-foreground">{item.label}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Risk Assessment Matrix Card */}
+                      {manualAnalysisResult.riskMatrix && (
+                        <Card className="p-5 mt-4 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-red-500/20 to-red-500/10">
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                            </div>
+                            <h4 className="text-sm font-semibold text-foreground">Risk Assessment</h4>
+                          </div>
+                          
+                          {/* Heat Map */}
+                          <div className="mb-4 p-4 rounded-lg bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-red-500/20">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs font-medium text-foreground">Probability vs Impact</span>
+                              <Badge 
+                                className={`${
+                                  manualAnalysisResult.riskMatrix.riskLevel === 'Low' ? 'bg-green-500' : 
+                                  manualAnalysisResult.riskMatrix.riskLevel === 'Medium' ? 'bg-yellow-500' : 
+                                  'bg-red-500'
+                                } text-white`}
+                              >
+                                {manualAnalysisResult.riskMatrix.riskLevel} Risk
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              {['High', 'Medium', 'Low'].map((prob, i) => (
+                                <div key={i} className="space-y-1">
+                                  {['High', 'Med', 'Low'].map((impact, j) => {
+                                    const isActive = (
+                                      (prob === manualAnalysisResult.riskMatrix.probability && impact === 'High') ||
+                                      (prob === 'High' && impact === 'Med')
+                                    );
+                                    return (
+                                      <div 
+                                        key={j}
+                                        className={`h-8 rounded flex items-center justify-center text-xs font-medium transition-all duration-300 ${
+                                          isActive 
+                                            ? 'bg-red-500 text-white scale-110 shadow-lg' 
+                                            : j === 0 ? 'bg-red-500/30 text-red-100' : 
+                                              j === 1 ? 'bg-yellow-500/30 text-yellow-100' : 
+                                              'bg-green-500/30 text-green-100'
+                                        }`}
+                                      >
+                                        {isActive && '●'}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                              <span>Low Prob</span>
+                              <span>High Prob</span>
+                            </div>
+                          </div>
+
+                          {/* Risk Factors */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-foreground mb-2">Key Risk Factors</p>
+                            {[
+                              { icon: TrendingDown, text: 'Market volatility increased', severity: 'high' },
+                              { icon: AlertCircle, text: 'News event scheduled', severity: 'medium' },
+                              { icon: Activity, text: 'Low liquidity period', severity: 'low' }
+                            ].map((factor, idx) => (
+                              <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20 hover:bg-muted/30 transition-all duration-300">
+                                <factor.icon className={`h-3 w-3 ${
+                                  factor.severity === 'high' ? 'text-red-500' : 
+                                  factor.severity === 'medium' ? 'text-yellow-500' : 
+                                  'text-green-500'
+                                }`} />
+                                <span className="text-xs text-foreground">{factor.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Alternative Scenarios Card */}
+                      {manualAnalysisResult.alternativeScenarios && manualAnalysisResult.alternativeScenarios.length > 0 && (
+                        <Card className="p-5 mt-4 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-500/10">
+                              <Sparkles className="h-4 w-4 text-purple-500" />
+                            </div>
+                            <h4 className="text-sm font-semibold text-foreground">Alternative Scenarios</h4>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            {manualAnalysisResult.alternativeScenarios.map((scenario: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className={`p-4 rounded-lg border-2 transition-all duration-300 hover:shadow-md ${
+                                  scenario.scenario === 'Bull Case' 
+                                    ? 'bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/30 hover:border-green-500/50' : 
+                                  scenario.scenario === 'Base Case' 
+                                    ? 'bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/30 hover:border-blue-500/50' : 
+                                    'bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/30 hover:border-red-500/50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm font-semibold text-foreground">{scenario.scenario}</span>
+                                  <Badge 
+                                    variant="outline"
+                                    className={`text-xs ${
+                                      scenario.scenario === 'Bull Case' ? 'bg-green-500/10 border-green-500/30 text-green-600' : 
+                                      scenario.scenario === 'Base Case' ? 'bg-blue-500/10 border-blue-500/30 text-blue-600' : 
+                                      'bg-red-500/10 border-red-500/30 text-red-600'
+                                    }`}
+                                  >
+                                    {scenario.probability}%
+                                  </Badge>
+                                </div>
+                                
+                                <div className="mb-3">
+                                  <div className="h-2 rounded-full bg-muted/30 overflow-hidden">
+                                    <div 
+                                      className={`h-full transition-all duration-500 ${
+                                        scenario.scenario === 'Bull Case' ? 'bg-green-500' : 
+                                        scenario.scenario === 'Base Case' ? 'bg-blue-500' : 
+                                        'bg-red-500'
+                                      }`}
+                                      style={{ width: `${scenario.probability}%` }}
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-foreground/70">Target Price:</span>
+                                    <span className="font-semibold text-foreground">{scenario.target}</span>
+                                  </div>
+                                  <p className="text-xs text-foreground/80 leading-relaxed">{scenario.reasoning}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Advanced Export Menu */}
+                      <Card className="p-5 mt-4 bg-gradient-to-br from-card to-card/50 border-border/30 shadow-lg">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-500/10">
+                            <Download className="h-4 w-4 text-indigo-500" />
+                          </div>
+                          <h4 className="text-sm font-semibold text-foreground">Export Analysis</h4>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {[
+                            { format: 'PDF', icon: FileText, desc: 'Professional report', color: 'text-red-500 bg-red-500/10 hover:bg-red-500/20' },
+                            { format: 'JSON', icon: FileText, desc: 'Raw data export', color: 'text-blue-500 bg-blue-500/10 hover:bg-blue-500/20' },
+                            { format: 'CSV', icon: FileText, desc: 'Spreadsheet format', color: 'text-green-500 bg-green-500/10 hover:bg-green-500/20' },
+                            { format: 'Image', icon: ImageIcon, desc: 'Chart screenshot', color: 'text-purple-500 bg-purple-500/10 hover:bg-purple-500/20' }
+                          ].map((option, idx) => (
+                            <button
+                              key={idx}
+                              className={`w-full p-3 rounded-lg border border-border/20 ${option.color} transition-all duration-300 flex items-center gap-3 group`}
+                              onClick={() => {}}
+                            >
+                              <option.icon className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                              <div className="flex-1 text-left">
+                                <p className="text-sm font-semibold text-foreground">{option.format}</p>
+                                <p className="text-xs text-muted-foreground">{option.desc}</p>
+                              </div>
+                              <Download className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-border/20">
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2 hover:bg-primary/5 transition-all duration-300"
+                            onClick={() => {}}
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                            Copy Shareable Link
+                          </Button>
+                        </div>
+                      </Card>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -1667,37 +2454,413 @@ const saveLastAnalysis = (params: {
               </div>
             </div>
 
-            {/* Keyboard Shortcuts Modal */}
+            {/* Enhanced Keyboard Shortcuts Modal */}
             {showKeyboardShortcuts && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-md p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h3>
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                <Card className="w-full max-w-2xl p-6 shadow-2xl animate-in zoom-in duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                        <Info className="h-5 w-5 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">Keyboard Shortcuts</h3>
+                    </div>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setShowKeyboardShortcuts(false)}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="space-y-2">
-                    {[
-                      { key: 'Ctrl + Enter', action: 'Run Analysis' },
-                      { key: 'Ctrl + U', action: 'Upload Chart' },
-                      { key: 'Ctrl + M', action: 'Toggle Mic' },
-                      { key: 'Ctrl + K', action: 'Clear Text' },
-                      { key: 'Ctrl + S', action: 'Save Template' }
-                    ].map((shortcut) => (
-                      <div
-                        key={shortcut.key}
-                        className="flex items-center justify-between p-2 rounded-lg bg-muted/20"
+                  
+                  <div className="space-y-4">
+                    {/* Navigation Category */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                        <Move className="h-4 w-4" />
+                        Navigation
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'Tab', action: 'Switch Tabs' },
+                          { key: 'Esc', action: 'Close Modal' }
+                        ].map((shortcut) => (
+                          <div
+                            key={shortcut.key}
+                            className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-blue-500/5 to-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300"
+                          >
+                            <span className="text-sm font-medium text-foreground">{shortcut.action}</span>
+                            <Badge variant="outline" className="text-xs font-mono bg-background">{shortcut.key}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions Category */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Actions
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'Ctrl + Enter', action: 'Run Analysis' },
+                          { key: 'Ctrl + U', action: 'Upload Chart' },
+                          { key: 'Ctrl + M', action: 'Toggle Mic' },
+                          { key: 'Ctrl + K', action: 'Clear Text' }
+                        ].map((shortcut) => (
+                          <div
+                            key={shortcut.key}
+                            className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-green-500/5 to-green-500/10 border border-green-500/20 hover:border-green-500/40 transition-all duration-300"
+                          >
+                            <span className="text-sm font-medium text-foreground">{shortcut.action}</span>
+                            <Badge variant="outline" className="text-xs font-mono bg-background">{shortcut.key}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Templates Category */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                        <Bookmark className="h-4 w-4" />
+                        Templates
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'Ctrl + S', action: 'Save Template' },
+                          { key: 'Ctrl + T', action: 'Open Templates' },
+                          { key: 'Ctrl + 1-6', action: 'Quick Template' },
+                          { key: 'Ctrl + D', action: 'Load Draft' }
+                        ].map((shortcut) => (
+                          <div
+                            key={shortcut.key}
+                            className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-br from-purple-500/5 to-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300"
+                          >
+                            <span className="text-sm font-medium text-foreground">{shortcut.action}</span>
+                            <Badge variant="outline" className="text-xs font-mono bg-background">{shortcut.key}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-border/20">
+                    <p className="text-xs text-muted-foreground text-center">
+                      Press <Badge variant="outline" className="text-[10px] font-mono mx-1">?</Badge> anytime to see shortcuts
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Template Editor Modal */}
+            {showTemplateEditor && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                <Card className="w-full max-w-3xl p-6 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500/20 to-indigo-500/10">
+                        <Bookmark className="h-5 w-5 text-indigo-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">Template Editor</h3>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowTemplateEditor(false)}
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Template Name */}
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">Template Name</label>
+                      <input
+                        type="text"
+                        placeholder="My Custom Analysis Template"
+                        className="w-full px-4 py-3 rounded-lg border border-border/30 bg-background/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300"
+                      />
+                    </div>
+
+                    {/* Template Content */}
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">Template Content</label>
+                      <Textarea
+                        placeholder="Write your template content here..."
+                        className="min-h-[200px] resize-none rounded-lg border-border/30 bg-background/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                      />
+                    </div>
+
+                    {/* Variables Helper */}
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+                      <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        Available Variables
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {[
+                          { var: '{{pair}}', desc: 'Currency Pair' },
+                          { var: '{{timeframe}}', desc: 'Timeframe' },
+                          { var: '{{date}}', desc: 'Current Date' },
+                          { var: '{{time}}', desc: 'Current Time' },
+                          { var: '{{market}}', desc: 'Market Condition' },
+                          { var: '{{session}}', desc: 'Trading Session' }
+                        ].map((variable) => (
+                          <div
+                            key={variable.var}
+                            className="p-2 rounded-lg bg-background/80 border border-border/20 hover:border-primary/40 cursor-pointer transition-all duration-300 group"
+                            onClick={() => {}}
+                          >
+                            <code className="text-xs font-mono text-primary group-hover:text-primary/80">{variable.var}</code>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{variable.desc}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Preview Section */}
+                    <div className="p-4 rounded-lg bg-muted/20 border border-border/20">
+                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <Eye className="h-4 w-4" />
+                        Preview
+                      </h4>
+                      <p className="text-sm text-muted-foreground italic">
+                        Template preview will appear here...
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3 pt-4">
+                      <Button
+                        onClick={() => setShowTemplateEditor(false)}
+                        variant="outline"
+                        className="flex-1 hover:bg-muted/50 transition-all duration-300"
                       >
-                        <span className="text-sm text-foreground">{shortcut.action}</span>
-                        <Badge variant="outline" className="text-xs font-mono">{shortcut.key}</Badge>
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          saveCustomTemplate('New Template', 'Template content...');
+                          setShowTemplateEditor(false);
+                        }}
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 gap-2 shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        <Save className="h-4 w-4" />
+                        Save Template
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Model Selector Panel */}
+            {showModelSelector && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+                <Card className="w-full max-w-2xl p-6 shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-orange-500/10">
+                        <Settings className="h-5 w-5 text-orange-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">AI Model Selection</h3>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowModelSelector(false)}
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-all duration-300"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="flex gap-2 mb-6">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedModels(['gpt4', 'claude', 'gemini', 'perplexity'])}
+                      className="flex-1 hover:bg-primary/5 transition-all duration-300"
+                    >
+                      Select All
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedModels(['gpt4', 'claude'])}
+                      className="flex-1 hover:bg-primary/5 transition-all duration-300"
+                    >
+                      Optimal Selection
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedModels([])}
+                      className="flex-1 hover:bg-destructive/5 transition-all duration-300"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+
+                  {/* Model List */}
+                  <div className="space-y-3">
+                    {[
+                      { id: 'gpt4', name: 'GPT-4 Omni', desc: 'Most accurate, slower', speed: 'Slow', cost: 0.03, icon: Brain },
+                      { id: 'claude', name: 'Claude 3.5 Sonnet', desc: 'Balanced performance', speed: 'Medium', cost: 0.02, icon: Sparkles },
+                      { id: 'gemini', name: 'Gemini Pro', desc: 'Fast and efficient', speed: 'Fast', cost: 0.01, icon: Zap },
+                      { id: 'perplexity', name: 'Perplexity', desc: 'Real-time data focus', speed: 'Fast', cost: 0.01, icon: Globe }
+                    ].map((model) => (
+                      <div
+                        key={model.id}
+                        className={`p-4 rounded-lg border-2 transition-all duration-300 cursor-pointer ${
+                          selectedModels.includes(model.id)
+                            ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-primary/50 shadow-md'
+                            : 'bg-card border-border/20 hover:border-border/40'
+                        }`}
+                        onClick={() => toggleModel(model.id)}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${selectedModels.includes(model.id) ? 'bg-primary/20' : 'bg-muted/30'}`}>
+                              <model.icon className={`h-4 w-4 ${selectedModels.includes(model.id) ? 'text-primary' : 'text-muted-foreground'}`} />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-semibold text-foreground">{model.name}</h4>
+                              <p className="text-xs text-muted-foreground">{model.desc}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <Badge variant="outline" className="text-xs mb-1">
+                                {model.speed}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground">${model.cost}/run</p>
+                            </div>
+                            <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                              selectedModels.includes(model.id)
+                                ? 'bg-primary border-primary'
+                                : 'border-border'
+                            }`}>
+                              {selectedModels.includes(model.id) && (
+                                <Check className="h-3 w-3 text-white" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Estimated Cost */}
+                  <div className="mt-6 p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Coins className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-foreground">Estimated Total Cost:</span>
+                      </div>
+                      <span className="text-lg font-bold text-green-600">
+                        ${(selectedModels.length * 0.02).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Apply Button */}
+                  <Button
+                    onClick={() => setShowModelSelector(false)}
+                    className="w-full mt-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Apply Selection ({selectedModels.length} models)
+                  </Button>
+                </Card>
+              </div>
+            )}
+
+            {/* AI Assistant Panel */}
+            {showAIAssistant && (
+              <div className="fixed right-4 bottom-4 w-96 h-[500px] shadow-2xl z-50 animate-in slide-in-from-right duration-300">
+                <Card className="h-full flex flex-col">
+                  <div className="p-4 border-b border-border/20 bg-gradient-to-r from-primary/10 to-primary/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-primary/20">
+                          <Brain className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-bold text-foreground">AI Assistant</h3>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowAIAssistant(false)}
+                          className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Ask questions about your analysis in real-time</p>
+                  </div>
+
+                  {/* Chat Messages */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div className="flex items-start gap-2">
+                      <div className="p-1.5 rounded-full bg-primary/20">
+                        <Brain className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="flex-1 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                        <p className="text-xs text-foreground">
+                          Hello! I'm here to help you understand your analysis. What would you like to know?
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Suggestions */}
+                  <div className="p-3 border-t border-border/20 bg-muted/20">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Quick Questions:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        'Explain this signal',
+                        'Risk factors?',
+                        'Best entry point?'
+                      ].map((suggestion) => (
+                        <Badge
+                          key={suggestion}
+                          variant="outline"
+                          className="text-xs cursor-pointer hover:bg-primary/10 transition-all duration-300"
+                        >
+                          {suggestion}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Input */}
+                  <div className="p-4 border-t border-border/20">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ask a question..."
+                        className="flex-1 px-3 py-2 rounded-lg border border-border/30 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
+                      />
+                      <Button size="sm" className="px-3">
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               </div>
