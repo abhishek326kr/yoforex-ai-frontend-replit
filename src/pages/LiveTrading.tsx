@@ -16,7 +16,40 @@ import {
   Clock,
   DollarSign,
   Star,
-  ChevronRight
+  ChevronRight,
+  X,
+  Image as ImageIcon,
+  FileText,
+  History,
+  Sparkles,
+  TrendingUpIcon,
+  Coins,
+  Download,
+  Share2,
+  Grid3x3,
+  Layout,
+  LineChart,
+  Move,
+  Pen,
+  Type,
+  Circle,
+  Square,
+  Triangle,
+  Minus,
+  Plus,
+  RotateCcw,
+  Save,
+  Eye,
+  Layers,
+  Settings,
+  Info,
+  Check,
+  Gauge,
+  Award,
+  Brain,
+  Bookmark,
+  BookmarkPlus,
+  RefreshCcw
 } from 'lucide-react';
 import formattedTimeframe, { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
@@ -199,6 +232,23 @@ export function LiveTrading() {
   const [riskPercent, setRiskPercent] = useState("2");
   const [entryPrice, setEntryPrice] = useState("");
   const [stopLossPrice, setStopLossPrice] = useState("");
+
+  // Manual AI Confirmation State
+  const [uploadedChartImage, setUploadedChartImage] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [selectedDrawingTool, setSelectedDrawingTool] = useState<string | null>(null);
+  const [chartLayout, setChartLayout] = useState<'single' | 'split' | 'quad'>('single');
+  const [manualAnalysisLoading, setManualAnalysisLoading] = useState(false);
+  const [manualAnalysisError, setManualAnalysisError] = useState<string | null>(null);
+  const [manualAnalysisResult, setManualAnalysisResult] = useState<any | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
+  const [favoriteTemplates, setFavoriteTemplates] = useState<string[]>([]);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [estimatedTokens, setEstimatedTokens] = useState(0);
+  const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
 
   // Save last successful analysis to localStorage
   // Find this function:
@@ -596,6 +646,141 @@ const saveLastAnalysis = (params: {
 
   const marketOpen = isMarketOpen();
 
+  // Manual AI Confirmation Helper Functions
+  const handleFileUpload = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedChartImage(reader.result as string);
+        setUploadedFileName(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const removeUploadedImage = () => {
+    setUploadedChartImage(null);
+    setUploadedFileName("");
+  };
+
+  const toggleVoiceRecording = () => {
+    setIsRecording(!isRecording);
+    // In a real implementation, this would start/stop voice recording
+  };
+
+  const applyTemplate = (templateType: string) => {
+    const templates = {
+      technical: "Analyze the current technical setup for this chart. Identify key support and resistance levels, trend direction, and potential entry/exit points based on price action and indicators.",
+      sentiment: "What is the current market sentiment for this pair? Analyze recent price movements, volume patterns, and potential market-moving factors that could impact the trade.",
+      risk: "Evaluate the risk/reward ratio for entering a position here. What stop loss and take profit levels would you recommend? Calculate optimal position sizing for 2% account risk.",
+      multi: "Provide a comprehensive multi-timeframe analysis. Check the higher timeframe trend, current timeframe setup, and lower timeframe entry confirmation. Include key levels and trade plan."
+    };
+    setAnalysisText(templates[templateType as keyof typeof templates] || "");
+    setSelectedTemplate(templateType);
+  };
+
+  const toggleFavoriteTemplate = (templateName: string) => {
+    if (favoriteTemplates.includes(templateName)) {
+      setFavoriteTemplates(favoriteTemplates.filter(t => t !== templateName));
+    } else {
+      setFavoriteTemplates([...favoriteTemplates, templateName]);
+    }
+  };
+
+  const runManualAnalysis = async () => {
+    if (!analysisText.trim() && !uploadedChartImage) {
+      setManualAnalysisError("Please provide either text analysis or upload a chart image.");
+      return;
+    }
+
+    setManualAnalysisLoading(true);
+    setManualAnalysisError(null);
+
+    try {
+      // TODO: Backend Integration Required
+      // Replace this mock implementation with actual API call to backend
+      // API should accept: { text: analysisText, image: uploadedChartImage, pair: selectedPair }
+      // Expected response format matches manualAnalysisResult structure below
+      
+      // Simulated API call for demo purposes
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock result - REPLACE WITH REAL API RESPONSE
+      setManualAnalysisResult({
+        consensus: "BUY",
+        confidence: 89,
+        entryPrice: "1.0847",
+        stopLoss: "1.0820",
+        takeProfit: "1.0875",
+        riskReward: "1:1.04",
+        positionSize: "2%",
+        models: [
+          {
+            name: "GPT-4 Omni",
+            confidence: 87,
+            signal: "BUY",
+            analysis: "Strong bullish momentum identified with breakout above key resistance. RSI divergence suggests continuation."
+          },
+          {
+            name: "Claude 3.5 Sonnet",
+            confidence: 91,
+            signal: "BUY",
+            analysis: "Market structure supports bullish bias. Clean break of previous high with strong volume confirmation."
+          }
+        ]
+      });
+
+      // Add to history
+      setAnalysisHistory(prev => [{
+        timestamp: new Date().toISOString(),
+        pair: selectedPair,
+        text: analysisText,
+        hasImage: !!uploadedChartImage,
+        result: "BUY"
+      }, ...prev.slice(0, 4)]);
+
+    } catch (error) {
+      setManualAnalysisError("Failed to analyze. Please try again.");
+    } finally {
+      setManualAnalysisLoading(false);
+    }
+  };
+
+  const exportAnalysis = () => {
+    // Export analysis as PDF/image - would be implemented with a library
+    console.log("Exporting analysis...");
+  };
+
+  const shareAnalysis = () => {
+    // Share analysis link - would generate a shareable link
+    console.log("Sharing analysis...");
+  };
+
+  // Estimate tokens based on text length
+  useEffect(() => {
+    const textTokens = Math.ceil(analysisText.length / 4);
+    const imageTokens = uploadedChartImage ? 1000 : 0; // Rough estimate
+    setEstimatedTokens(textTokens + imageTokens);
+  }, [analysisText, uploadedChartImage]);
+
   return (
     <TradingLayout>
       {/* Confirmation dialog to add an Active Trade */}
@@ -953,130 +1138,332 @@ const saveLastAnalysis = (params: {
             </div>
           </TabsContent>
 
-          {/* Manual AI Confirmation Tab */}
-          <TabsContent value="manual" className='flex-1 min-h-0 flex flex-col'>
-            <div className="grid grid-cols-12 gap-6 min-h-[800px]">
-              {/* Left Panel - Analysis Input */}
-              <div className="col-span-12 lg:col-span-3 space-y-6">
-                <Card className="p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Activity className="h-5 w-5 text-primary" />
+          {/* Manual AI Confirmation Tab - REDESIGNED */}
+          <TabsContent value="manual" className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+            {/* Top Action Bar */}
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Estimated Cost: <span className="text-primary">{estimatedTokens} tokens</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">≈ ${(estimatedTokens * 0.00002).toFixed(4)}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
+                  className="gap-2"
+                >
+                  <Info className="h-4 w-4" />
+                  Shortcuts
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={runManualAnalysis}
+                  disabled={manualAnalysisLoading || (!analysisText.trim() && !uploadedChartImage)}
+                  className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 gap-2"
+                >
+                  {manualAnalysisLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4" />
+                      Run Analysis
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0 overflow-hidden">
+              {/* Left Panel - Enhanced Analysis Input */}
+              <div className="col-span-12 lg:col-span-3 space-y-4 overflow-y-auto">
+                {/* Chart Upload */}
+                <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10">
+                        <ImageIcon className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Chart Upload</h4>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">Analysis Input</h3>
+                    <Badge variant="outline" className="text-xs">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Vision AI
+                    </Badge>
                   </div>
                   
-                  {/* Upload Chart Section */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4 text-muted-foreground" />
-                        <h4 className="text-sm font-medium text-foreground">Upload Chart</h4>
-                      </div>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10">
-                        <Lock className="h-3 w-3 text-primary" />
-                        <span className="text-xs text-primary font-medium">Pro</span>
-                      </div>
-                    </div>
-                    <div className="rounded-lg border-2 border-dashed border-border/40 bg-muted/20 p-6 text-center opacity-60">
-                      <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground mb-1">Drop chart screenshot here</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG, WebP up to 10MB</p>
-                    </div>
-                  </div>
-
-                  {/* Text Analysis Section */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-foreground" />
-                        <h4 className="text-sm font-medium text-foreground">Text Analysis</h4>
-                      </div>
-                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                        <Mic className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      <Textarea
-                        placeholder="Describe the market situation, ask specific questions, or paste trading analysis..."
-                          className="min-h-[120px] resize-none rounded-xl border-border/30 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-300"
-                        value={analysisText}
-                        onChange={(e) => setAnalysisText(e.target.value)}
+                  {!uploadedChartImage ? (
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      className={`relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer ${
+                        isDragging 
+                          ? 'border-primary bg-primary/10 scale-105' 
+                          : 'border-border/40 bg-muted/20 hover:border-primary/50 hover:bg-muted/30'
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">{analysisText.length}/2000</span>
-                        <Select>
-                          <SelectTrigger className="w-[140px] h-8">
-                            <SelectValue placeholder="Template" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="technical">Technical Analysis</SelectItem>
-                            <SelectItem value="sentiment">Market Sentiment</SelectItem>
-                            <SelectItem value="risk">Risk Management</SelectItem>
-                            <SelectItem value="multi">Multi-timeframe</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="p-8 text-center">
+                        <Upload className="h-10 w-10 text-primary mx-auto mb-3" />
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          {isDragging ? 'Drop here' : 'Drop chart screenshot'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          or click to browse
+                        </p>
+                        <Badge variant="secondary" className="text-xs">
+                          PNG, JPG, WebP • Max 10MB
+                        </Badge>
                       </div>
                     </div>
+                  ) : (
+                    <div className="relative rounded-xl overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                      <img 
+                        src={uploadedChartImage} 
+                        alt="Uploaded chart" 
+                        className="w-full h-32 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                        <p className="text-xs font-medium text-white truncate">
+                          {uploadedFileName}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={removeUploadedImage}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Text Analysis */}
+                <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-500/10">
+                        <FileText className="h-4 w-4 text-purple-500" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Text Analysis</h4>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={isRecording ? "default" : "outline"}
+                      onClick={toggleVoiceRecording}
+                      className={`h-8 w-8 p-0 ${isRecording ? 'animate-pulse bg-red-500' : ''}`}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
                   </div>
 
-                  {/* Analysis Type Section */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-foreground" />
-                        <h4 className="text-sm font-medium text-foreground">Analysis Type</h4>
-                      </div>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10">
-                        <Lock className="h-3 w-3 text-primary" />
-                        <span className="text-xs text-primary font-medium">Pro</span>
-                      </div>
+                  <Textarea
+                    placeholder="Describe the market, ask questions, or paste your analysis..."
+                    className="min-h-[140px] resize-none rounded-xl border-border/30 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-300 mb-3"
+                    value={analysisText}
+                    onChange={(e) => setAnalysisText(e.target.value)}
+                    maxLength={2000}
+                  />
+
+                  <div className="flex justify-between items-center text-xs mb-3">
+                    <span className={`font-medium ${analysisText.length > 1800 ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                      {analysisText.length}/2000 characters
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {Math.ceil(analysisText.length / 4)} tokens
+                    </Badge>
+                  </div>
+
+                  {/* Quick Templates */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground">Quick Templates</p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs"
+                        onClick={() => setAnalysisText('')}
+                      >
+                        Clear
+                      </Button>
                     </div>
-                    <div className="grid grid-cols-1 gap-2 opacity-60">
-                      <Button variant="outline" className="justify-start h-auto p-3 pointer-events-none">
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Text Only</p>
-                          <p className="text-xs text-muted-foreground">Standard text analysis</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="justify-start h-auto p-3 pointer-events-none">
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Image Only</p>
-                          <p className="text-xs text-muted-foreground">Chart screenshot analysis</p>
-                        </div>
-                      </Button>
-                      <Button className="justify-start h-auto p-3 bg-primary pointer-events-none">
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-white">Text + Image</p>
-                          <p className="text-xs text-white/90">Combined analysis</p>
-                        </div>
-                      </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'technical', name: 'Technical', icon: LineChart },
+                        { id: 'sentiment', name: 'Sentiment', icon: TrendingUpIcon },
+                        { id: 'risk', name: 'Risk', icon: Target },
+                        { id: 'multi', name: 'Multi-TF', icon: Layers }
+                      ].map((template) => (
+                        <Button
+                          key={template.id}
+                          size="sm"
+                          variant={selectedTemplate === template.id ? "default" : "outline"}
+                          onClick={() => applyTemplate(template.id)}
+                          className="h-9 text-xs gap-1.5 relative group"
+                        >
+                          <template.icon className="h-3.5 w-3.5" />
+                          {template.name}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavoriteTemplate(template.id);
+                            }}
+                            className={`absolute -top-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                              favoriteTemplates.includes(template.id) ? 'bg-yellow-500' : 'bg-muted'
+                            }`}
+                          >
+                            <Star className={`h-2.5 w-2.5 ${favoriteTemplates.includes(template.id) ? 'fill-white text-white' : 'text-muted-foreground'}`} />
+                          </button>
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 </Card>
+
+                {/* Analysis History */}
+                {analysisHistory.length > 0 && (
+                  <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-green-500/10">
+                        <History className="h-4 w-4 text-green-500" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-foreground">Recent Analyses</h4>
+                    </div>
+                    <div className="space-y-2">
+                      {analysisHistory.slice(0, 3).map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border border-border/20"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-foreground">{item.pair}</span>
+                            <Badge variant={item.result === 'BUY' ? 'default' : 'destructive'} className="text-xs h-5">
+                              {item.result}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{item.text.substring(0, 50)}...</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.timestamp).toLocaleTimeString()}
+                            </span>
+                            {item.hasImage && (
+                              <ImageIcon className="h-3 w-3 text-primary ml-auto" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
               </div>
 
-              {/* Center Panel - Interactive Chart */}
-              <div className="col-span-12 lg:col-span-6">
-                <Card className="h-full p-6">
-                  <div className="flex items-center justify-between mb-6">
+              {/* Center Panel - Advanced Interactive Chart */}
+              <div className="col-span-12 lg:col-span-6 flex flex-col overflow-hidden">
+                <Card className="flex-1 p-5 bg-gradient-to-br from-card to-card/50 border-border/30 overflow-hidden flex flex-col">
+                  {/* Chart Header */}
+                  <div className="flex items-center justify-between mb-4 flex-shrink-0">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Activity className="h-5 w-5 text-primary" />
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                        <LineChart className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-foreground">Interactive Chart</h3>
-                        <p className="text-sm text-muted-foreground">Annotate and analyze with drawing tools</p>
+                        <p className="text-xs text-muted-foreground">Professional analysis tools</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline">Screenshot</Button>
-                      <Button size="sm" variant="outline">Annotate</Button>
+
+                    {/* Chart Layout Switcher */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50">
+                        {[
+                          { id: 'single' as const, icon: Square },
+                          { id: 'split' as const, icon: Layout },
+                          { id: 'quad' as const, icon: Grid3x3 }
+                        ].map((layout) => (
+                          <Button
+                            key={layout.id}
+                            size="sm"
+                            variant={chartLayout === layout.id ? "default" : "ghost"}
+                            onClick={() => setChartLayout(layout.id)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <layout.icon className="h-3.5 w-3.5" />
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  
+
+                  {/* Drawing Tools Toolbar */}
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/20 flex-shrink-0 overflow-x-auto">
+                    <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/30">
+                      {[
+                        { id: 'move', icon: Move, label: 'Move' },
+                        { id: 'line', icon: Minus, label: 'Trend Line' },
+                        { id: 'horizontal', icon: Minus, label: 'Horizontal' },
+                        { id: 'rectangle', icon: Square, label: 'Rectangle' },
+                        { id: 'circle', icon: Circle, label: 'Circle' },
+                        { id: 'text', icon: Type, label: 'Text' },
+                        { id: 'pen', icon: Pen, label: 'Draw' }
+                      ].map((tool) => (
+                        <Button
+                          key={tool.id}
+                          size="sm"
+                          variant={selectedDrawingTool === tool.id ? "default" : "ghost"}
+                          onClick={() => setSelectedDrawingTool(tool.id)}
+                          className="h-8 w-8 p-0"
+                          title={tool.label}
+                        >
+                          <tool.icon className="h-3.5 w-3.5" />
+                        </Button>
+                      ))}
+                    </div>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
+                        <Download className="h-3.5 w-3.5" />
+                        Save
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Undo
+                      </Button>
+                    </div>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Settings className="h-3 w-3" />
+                        Indicators
+                      </Badge>
+                    </div>
+                  </div>
+
                   {/* Chart Container */}
-                  <div className="h-[600px] rounded-lg overflow-hidden border border-border/20">
+                  <div className="flex-1 rounded-lg overflow-hidden border border-border/20 bg-black/20">
                     <TradingViewWidget
                       symbol={selectedPair}
                       interval={selectedTimeframe.replace('M', '')}
@@ -1085,113 +1472,236 @@ const saveLastAnalysis = (params: {
                       hideSideToolbar={false}
                     />
                   </div>
+
+                  {/* Quick Timeframe Switcher */}
+                  <div className="flex items-center gap-2 mt-3 flex-shrink-0">
+                    <p className="text-xs font-medium text-muted-foreground">Timeframe:</p>
+                    <div className="flex items-center gap-1">
+                      {['1m', '5m', '15m', '1H', '4H', '1D', '1W'].map((tf) => (
+                        <Button
+                          key={tf}
+                          size="sm"
+                          variant={selectedTimeframe === tf ? "default" : "outline"}
+                          onClick={() => setSelectedTimeframe(tf)}
+                          className="h-7 px-2 text-xs"
+                        >
+                          {tf}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </Card>
               </div>
 
-              {/* Right Panel - AI Analysis Results and News */}
-              <div className="col-span-12 lg:col-span-3 space-y-6">
+              {/* Right Panel - Enhanced AI Results & Trading News */}
+              <div className="col-span-12 lg:col-span-3 space-y-4 overflow-y-auto">
+                {/* AI Analysis Results */}
+                <Card className="p-5 bg-gradient-to-br from-card to-card/50 border-border/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-green-500/10">
+                      <Brain className="h-4 w-4 text-green-500" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-foreground">AI Analysis</h4>
+                  </div>
+
+                  {manualAnalysisLoading ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Analyzing market...</p>
+                          <p className="text-xs text-muted-foreground">Processing with AI models</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {['GPT-4', 'Claude', 'Gemini'].map((model) => (
+                          <div key={model} className="h-12 rounded-lg bg-muted/20 animate-pulse" />
+                        ))}
+                      </div>
+                    </div>
+                  ) : manualAnalysisError ? (
+                    <div className="text-center py-6">
+                      <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-foreground mb-1">Analysis Failed</p>
+                      <p className="text-xs text-muted-foreground mb-4">{manualAnalysisError}</p>
+                      <Button size="sm" onClick={runManualAnalysis} variant="outline">
+                        <RefreshCcw className="h-3 w-3 mr-2" />
+                        Retry
+                      </Button>
+                    </div>
+                  ) : manualAnalysisResult ? (
+                    <div className="space-y-4">
+                      {/* Model Responses */}
+                      <div className="space-y-3">
+                        {manualAnalysisResult.models.map((model: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/30 transition-colors"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Award className="h-3.5 w-3.5 text-primary" />
+                                <span className="text-sm font-semibold text-foreground">{model.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Gauge className="h-3 w-3 text-primary" />
+                                <span className="text-xs font-medium text-foreground">{model.confidence}%</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-foreground/80 mb-2 line-clamp-3">{model.analysis}</p>
+                            <Badge 
+                              variant={model.signal === 'BUY' ? 'default' : 'destructive'}
+                              className="text-xs"
+                            >
+                              {model.signal} Signal
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Consensus Card */}
+                      <div className={`p-4 rounded-xl bg-gradient-to-br border-2 ${
+                        manualAnalysisResult.consensus === 'BUY' 
+                          ? 'from-green-500/10 to-green-500/5 border-green-500/30' 
+                          : 'from-red-500/10 to-red-500/5 border-red-500/30'
+                      }`}>
+                        <div className="text-center mb-4">
+                          <Badge 
+                            className={`text-lg px-4 py-2 mb-2 ${
+                              manualAnalysisResult.consensus === 'BUY' 
+                                ? 'bg-green-500 hover:bg-green-600' 
+                                : 'bg-red-500 hover:bg-red-600'
+                            } text-white`}
+                          >
+                            {manualAnalysisResult.consensus}
+                          </Badge>
+                          <div className="flex items-center justify-center gap-2">
+                            <Gauge className="h-4 w-4 text-foreground" />
+                            <span className="text-sm font-semibold text-foreground">
+                              {manualAnalysisResult.confidence}% Consensus
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-foreground/70">Entry Price:</span>
+                            <span className="font-semibold text-foreground">{manualAnalysisResult.entryPrice}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-foreground/70">Stop Loss:</span>
+                            <span className="font-semibold text-red-500">{manualAnalysisResult.stopLoss}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-foreground/70">Take Profit:</span>
+                            <span className="font-semibold text-green-500">{manualAnalysisResult.takeProfit}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-foreground/70">R:R Ratio:</span>
+                            <span className="font-semibold text-foreground">{manualAnalysisResult.riskReward}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-foreground/70">Position Size:</span>
+                            <span className="font-semibold text-foreground">{manualAnalysisResult.positionSize}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            onClick={exportAnalysis}
+                            variant="outline"
+                            className="gap-1.5"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Export
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={shareAnalysis}
+                            variant="outline"
+                            className="gap-1.5"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                            Share
+                          </Button>
+                        </div>
+
+                        <Button className={`w-full mt-3 ${
+                          manualAnalysisResult.consensus === 'BUY' 
+                            ? 'bg-green-500 hover:bg-green-600' 
+                            : 'bg-red-500 hover:bg-red-600'
+                        } text-white gap-2`}>
+                          <Target className="h-4 w-4" />
+                          Execute Trade
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-4 rounded-2xl w-fit mx-auto mb-3">
+                        <Brain className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground mb-2">Ready to Analyze</p>
+                      <p className="text-xs text-muted-foreground">
+                        Add text or upload a chart to get started
+                      </p>
+                    </div>
+                  )}
+                </Card>
+
                 {/* Market News */}
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden bg-gradient-to-br from-card to-card/50 border-border/30">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-accent/10">
-                        <Activity className="h-4 w-4 text-accent" />
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10">
+                        <Activity className="h-4 w-4 text-blue-500" />
                       </div>
-                      <CardTitle className="text-lg font-semibold text-foreground">Market News</CardTitle>
+                      <CardTitle className="text-sm font-semibold text-foreground">Trading News</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
                     <TradingTips horizontalLayout={false} showPagination={true} />
                   </CardContent>
                 </Card>
-                
-                {/* AI Analysis Results */}
-                <Card className="overflow-hidden">
-                  <Accordion type="single" collapsible defaultValue="ai-analysis" className="w-full">
-                    <AccordionItem value="ai-analysis" className="border-0">
-                      <div className="px-6 py-4">
-                        <AccordionTrigger className="hover:no-underline p-0">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                              <Zap className="h-4 w-4 text-primary" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground">AI Analysis Results</h3>
-                          </div>
-                        </AccordionTrigger>
-                      </div>
-                      <AccordionContent className="px-6 pb-6 pt-2">
-                        {/* Individual Model Responses */}
-                        <div className="space-y-4 mb-6">
-                          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-foreground">GPT-4 Omni</span>
-                              <div className="flex items-center space-x-1">
-                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                <span className="text-xs text-foreground">87%</span>
-                              </div>
-                            </div>
-                            <p className="text-xs text-foreground/80 mb-2">
-                              Strong bullish momentum identified with breakout above key resistance. RSI divergence suggests continuation.
-                            </p>
-                            <Badge className="bg-green-500 text-white text-xs">BUY Signal</Badge>
-                          </div>
-                          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-foreground">Claude 3.5 Sonnet</span>
-                              <div className="flex items-center space-x-1">
-                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                <span className="text-xs text-foreground">91%</span>
-                              </div>
-                            </div>
-                            <p className="text-xs text-foreground/80 mb-2">
-                              Market structure supports bullish bias. Clean break of previous high with strong volume confirmation.
-                            </p>
-                            <Badge className="bg-green-500 text-white text-xs">BUY Signal</Badge>
-                          </div>
-                        </div>
-                        
-                        {/* Consensus Recommendation */}
-                        <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                          <div className="text-center mb-4">
-                            <Badge className="bg-green-500 text-white text-lg px-4 py-2 mb-2">BUY</Badge>
-                            <div className="flex items-center justify-center space-x-1">
-                              <div className="h-3 w-3 rounded-full bg-green-500" />
-                              <span className="text-sm font-medium text-foreground">89% Confidence</span>
-                            </div>
-                          </div>
-                          <div className="space-y-3">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground/80">Entry Price:</span>
-                              <span className="font-medium text-foreground">1.0847</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground/80">Stop Loss:</span>
-                              <span className="font-medium text-red-500">1.0820</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground/80">Take Profit:</span>
-                              <span className="font-medium text-green-500">1.0875</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground/80">Risk/Reward:</span>
-                              <span className="font-medium text-foreground">1:1.04</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-foreground/80">Position Size:</span>
-                              <span className="font-medium text-foreground">2% of account</span>
-                            </div>
-                          </div>
-                          <Button className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white">
-                            <Target className="h-4 w-4 mr-2" />
-                            Execute Trade
-                          </Button>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </Card>
               </div>
             </div>
+
+            {/* Keyboard Shortcuts Modal */}
+            {showKeyboardShortcuts && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h3>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setShowKeyboardShortcuts(false)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { key: 'Ctrl + Enter', action: 'Run Analysis' },
+                      { key: 'Ctrl + U', action: 'Upload Chart' },
+                      { key: 'Ctrl + M', action: 'Toggle Mic' },
+                      { key: 'Ctrl + K', action: 'Clear Text' },
+                      { key: 'Ctrl + S', action: 'Save Template' }
+                    ].map((shortcut) => (
+                      <div
+                        key={shortcut.key}
+                        className="flex items-center justify-between p-2 rounded-lg bg-muted/20"
+                      >
+                        <span className="text-sm text-foreground">{shortcut.action}</span>
+                        <Badge variant="outline" className="text-xs font-mono">{shortcut.key}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
         </Tabs>
