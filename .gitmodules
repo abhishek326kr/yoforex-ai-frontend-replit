@@ -1,0 +1,3 @@
+[submodule "yoforexbackend"]
+	path = yoforexbackend
+	url = https://github.com/YoForex005/yoforexbackend.git
