@@ -8,7 +8,15 @@ import {
   Mic,
   Loader2,
   AlertCircle,
-  Lock
+  Lock,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Calculator,
+  Clock,
+  DollarSign,
+  Star,
+  ChevronRight
 } from 'lucide-react';
 import formattedTimeframe, { fetchTradingAnalysis, type Timeframe, type TradingStrategy } from '@/lib/api/analysis';
 import { Badge } from '@/components/ui/badge';
@@ -62,17 +70,23 @@ import { AnalysisDisplay } from '@/components/AnalysisDisplay';
 
 // Technical Analysis Card Component
 const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, children, showRunNew = false }: TechnicalAnalysisCardProps) => (
-  <Card className="p-4 bg-gradient-glass backdrop-blur-sm border-border/20 mt-4">
-    <div className="flex items-center justify-between mb-3">
-      <h3 className="text-lg font-semibold text-foreground">Market Analysis</h3>
+  <Card className="p-6 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30 shadow-lg">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/20">
+          <Zap className="h-5 w-5 text-primary" />
+        </div>
+        <h3 className="text-xl font-semibold text-foreground">Market Analysis</h3>
+      </div>
       <div className="flex items-center gap-2">
         {analysis.hasRun && !analysis.loading && (
-          <Button size="sm" variant="outline" onClick={onRunAnalysis} disabled={disabled}>
+          <Button size="sm" variant="outline" onClick={onRunAnalysis} disabled={disabled} className="font-medium">
             Retry Analysis
           </Button>
         )}
         {showRunNew && !analysis.loading && (
-          <Button size="sm" onClick={onRunAnalysis} disabled={disabled} className="bg-primary/80 hover:bg-primary">
+          <Button size="lg" onClick={onRunAnalysis} disabled={disabled} className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md font-semibold">
+            <Zap className="h-4 w-4 mr-2" />
             Run New Analysis
           </Button>
         )}
@@ -84,20 +98,20 @@ const TechnicalAnalysisCard = ({ analysis, onRunAnalysis, disabled = false, chil
         <span className="text-lg">Analyzing market data...</span>
       </div>
     ) : !analysis.hasRun ? (
-      <div className="flex flex-col items-center p-6 text-center">
-        <div className="bg-muted/20 p-4 rounded-full mb-4">
-          <Zap className="h-8 w-8 text-primary" />
+      <div className="flex flex-col items-center p-10 text-center">
+        <div className="bg-gradient-to-br from-primary/20 to-primary/10 p-6 rounded-2xl mb-6">
+          <Zap className="h-12 w-12 text-primary" />
         </div>
-        <h4 className="text-lg font-medium mb-2">Run Market Analysis</h4>
-        <p className="text-muted-foreground text-sm mb-6 max-w-md">
+        <h4 className="text-2xl font-semibold mb-3 text-foreground">Run Market Analysis</h4>
+        <p className="text-muted-foreground text-base mb-8 max-w-md leading-relaxed">
           Get detailed technical analysis, trade signals, and risk assessment for the selected currency pair.
         </p>
         <Button 
           onClick={onRunAnalysis}
-          className="bg-gradient-primary hover:bg-primary-hover px-6 py-5 text-base"
+          className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
           disabled={disabled}
         >
-          <Zap className="h-5 w-5 mr-2" />
+          <Zap className="h-6 w-6 mr-2" />
           Run AI Analysis
         </Button>
       </div>
@@ -179,6 +193,12 @@ export function LiveTrading() {
   const isDailyLocked = !!(billing && typeof billing.daily_cap === 'number' && typeof billing.daily_credits_spent === 'number' && billing.daily_credits_spent >= billing.daily_cap);
   const STORAGE_KEY = 'live_trading_last_analysis_v1';
   // const ANALYSIS_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  // Trading Tools Calculator State
+  const [accountSize, setAccountSize] = useState("10000");
+  const [riskPercent, setRiskPercent] = useState("2");
+  const [entryPrice, setEntryPrice] = useState("");
+  const [stopLossPrice, setStopLossPrice] = useState("");
 
   // Save last successful analysis to localStorage
   // Find this function:
@@ -528,6 +548,54 @@ const saveLastAnalysis = (params: {
     }
   };
 
+  // Calculate position size for Trading Tools
+  const calculatePositionSize = () => {
+    const account = parseFloat(accountSize);
+    const risk = parseFloat(riskPercent);
+    const entry = parseFloat(entryPrice);
+    const stopLoss = parseFloat(stopLossPrice);
+
+    if (isNaN(account) || isNaN(risk) || isNaN(entry) || isNaN(stopLoss) || entry === 0 || stopLoss === 0) {
+      return { units: 0, riskAmount: 0, pipRisk: 0, riskReward: 0 };
+    }
+
+    const riskAmount = (account * risk) / 100;
+    const pipRisk = Math.abs(entry - stopLoss);
+    const units = pipRisk > 0 ? Math.floor(riskAmount / pipRisk) : 0;
+
+    return {
+      units,
+      riskAmount,
+      pipRisk,
+      riskReward: 0
+    };
+  };
+
+  const positionCalc = calculatePositionSize();
+
+  // Quick Pairs Data
+  const quickPairs = [
+    { symbol: "EUR/USD", icon: DollarSign, color: "text-blue-500" },
+    { symbol: "GBP/USD", icon: DollarSign, color: "text-green-500" },
+    { symbol: "USD/JPY", icon: DollarSign, color: "text-red-500" },
+    { symbol: "BTC/USD", icon: TrendingUp, color: "text-yellow-500" },
+    { symbol: "ETH/USD", icon: TrendingUp, color: "text-purple-500" },
+  ];
+
+  // Check if market is open (simplified - forex is open weekdays)
+  const isMarketOpen = () => {
+    const now = new Date();
+    const day = now.getUTCDay();
+    const hour = now.getUTCHours();
+    // Forex market is open from Sunday 22:00 UTC to Friday 22:00 UTC
+    if (day === 0 && hour < 22) return false; // Sunday before 22:00
+    if (day === 6) return false; // Saturday
+    if (day === 5 && hour >= 22) return false; // Friday after 22:00
+    return true;
+  };
+
+  const marketOpen = isMarketOpen();
+
   return (
     <TradingLayout>
       {/* Confirmation dialog to add an Active Trade */}
@@ -547,17 +615,110 @@ const saveLastAnalysis = (params: {
       />
       <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-y-auto">
         {/* Header */}
-        <div className="relative z-10 my-4 sm:my-5 flex-shrink-0">
+        <div className="relative z-10 my-6 flex-shrink-0">
           {/* First line: title + powered by (stack on mobile, inline on >=sm) */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 mb-2 sm:mb-3">
-            <h1 className="text-4xl font-bold text-foreground">Live Trading</h1>
+          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-3">
+            <h1 className="text-5xl font-bold text-foreground bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Live Trading
+            </h1>
             <div className="flex items-center gap-2 text-muted-foreground mt-1 sm:mt-0">
               <span className="text-sm opacity-75">powered by</span>
-              <img src="/yoforexai.png" alt="YoforexAI.com" className='h-6 sm:h-7 w-auto align-baseline inline-block relative z-10'/>
+              <img src="/yoforexai.png" alt="YoforexAI.com" className='h-7 sm:h-8 w-auto align-baseline inline-block relative z-10'/>
             </div>
           </div>
           {/* Second line: tagline */}
-          <p className="text-muted-foreground text-sm sm:text-base">AI-powered forex analysis and automated trading</p>
+          <p className="text-muted-foreground text-base">Professional AI-powered trading platform</p>
+        </div>
+
+        {/* Quick Pairs Bar & Market Status */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          {/* Quick Pairs Favorites Bar */}
+          <Card className="flex-1 p-4 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30">
+            <div className="flex items-center gap-3 mb-3">
+              <Star className="h-5 w-5 text-yellow-500" />
+              <h3 className="font-semibold text-foreground">Quick Access</h3>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-primary">
+              {quickPairs.map((pair) => {
+                const Icon = pair.icon;
+                const isSelected = selectedPair === pair.symbol;
+                return (
+                  <button
+                    key={pair.symbol}
+                    onClick={() => setSelectedPair(pair.symbol)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap
+                      transition-all duration-200 border-2
+                      ${isSelected 
+                        ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-105' 
+                        : 'bg-card/50 text-foreground border-border/40 hover:border-primary/50 hover:bg-card/80'
+                      }
+                    `}
+                  >
+                    <Icon className={`h-4 w-4 ${isSelected ? 'text-primary-foreground' : pair.color}`} />
+                    <span className="text-sm font-semibold">{pair.symbol}</span>
+                    {isSelected && <ChevronRight className="h-4 w-4" />}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Market Status */}
+          <Card className="p-4 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30 lg:w-48">
+            <div className="flex items-center gap-3 mb-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Market</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`h-3 w-3 rounded-full animate-pulse ${marketOpen ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`text-sm font-semibold ${marketOpen ? 'text-green-500' : 'text-red-500'}`}>
+                {marketOpen ? 'Open' : 'Closed'}
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Quick Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="p-5 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/20">
+                  <TrendingUp className="h-5 w-5 text-green-500" />
+                </div>
+                <h3 className="text-sm font-medium text-muted-foreground">Daily P&L</h3>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-green-500">+$427.50</p>
+            <p className="text-xs text-muted-foreground mt-1">+4.28% today</p>
+          </Card>
+
+          <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                </div>
+                <h3 className="text-sm font-medium text-muted-foreground">Win Rate</h3>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-blue-500">68.4%</p>
+            <p className="text-xs text-muted-foreground mt-1">Last 30 trades</p>
+          </Card>
+
+          <Card className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-purple-500/20">
+                  <Activity className="h-5 w-5 text-purple-500" />
+                </div>
+                <h3 className="text-sm font-medium text-muted-foreground">Total Trades</h3>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-purple-500">47</p>
+            <p className="text-xs text-muted-foreground mt-1">This month</p>
+          </Card>
         </div>
 
         <Tabs defaultValue="automated" className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -568,10 +729,124 @@ const saveLastAnalysis = (params: {
 
           {/* Automated Trading Tab */}
           <TabsContent value="automated" className="flex-1 min-h-0 overflow-y-auto">
-            <div className="grid grid-cols-12 gap-4 p-1">
+            <div className="grid grid-cols-12 gap-6 p-1">
               {/* Left Panel - Market Selection & AI Config */}
-              <div className="col-span-12 lg:col-span-3 flex flex-col space-y-4">
+              <div className="col-span-12 lg:col-span-3 flex flex-col space-y-5">
                 
+                {/* Trading Tools Calculator - NEW */}
+                <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30 shadow-lg">
+                  <Accordion type="single" collapsible defaultValue="trading-tools">
+                    <AccordionItem value="trading-tools" className="border-0">
+                      <div className="bg-gradient-to-r from-primary/10 to-transparent px-5 py-4">
+                        <AccordionTrigger className="hover:no-underline p-0">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/20">
+                              <Calculator className="h-5 w-5 text-primary" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-foreground">Trading Tools</h3>
+                          </div>
+                        </AccordionTrigger>
+                      </div>
+                      <AccordionContent className="px-5 pb-5 pt-2">
+                        <div className="space-y-4">
+                          {/* Position Size Calculator */}
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                              <Calculator className="h-4 w-4" />
+                              Position Size Calculator
+                            </h4>
+                            
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Account Size ($)</label>
+                                <input
+                                  type="number"
+                                  value={accountSize}
+                                  onChange={(e) => setAccountSize(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-md border border-border/40 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                  placeholder="10000"
+                                />
+                              </div>
+                              
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Risk (%)</label>
+                                <input
+                                  type="number"
+                                  value={riskPercent}
+                                  onChange={(e) => setRiskPercent(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-md border border-border/40 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                  placeholder="2"
+                                  step="0.1"
+                                />
+                              </div>
+                              
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Entry Price</label>
+                                <input
+                                  type="number"
+                                  value={entryPrice}
+                                  onChange={(e) => setEntryPrice(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-md border border-border/40 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                  placeholder="1.0850"
+                                  step="0.0001"
+                                />
+                              </div>
+                              
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Stop Loss</label>
+                                <input
+                                  type="number"
+                                  value={stopLossPrice}
+                                  onChange={(e) => setStopLossPrice(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-md border border-border/40 bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                  placeholder="1.0820"
+                                  step="0.0001"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Results */}
+                            <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Position Size:</span>
+                                <span className="font-semibold text-foreground">{positionCalc.units.toLocaleString()} units</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Risk Amount:</span>
+                                <span className="font-semibold text-red-500">${positionCalc.riskAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Pip Risk:</span>
+                                <span className="font-semibold text-foreground">{positionCalc.pipRisk.toFixed(5)}</span>
+                              </div>
+                            </div>
+
+                            {/* Quick Risk/Reward Display */}
+                            <div className="mt-4 pt-4 border-t border-border/20">
+                              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                <BarChart3 className="h-4 w-4" />
+                                Risk/Reward Ratio
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 rounded-full bg-red-500/20">
+                                  <div className="h-full w-1/3 rounded-full bg-red-500" />
+                                </div>
+                                <span className="text-sm font-semibold text-foreground">1:2</span>
+                                <div className="flex-1 h-2 rounded-full bg-green-500/20">
+                                  <div className="h-full w-2/3 rounded-full bg-green-500" />
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-2 text-center">
+                                Risk $100 to make $200
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </Card>
+
                 {/* Market Selection */}
                 <MarketSelection 
                   selectedPair={selectedPair}
@@ -584,22 +859,24 @@ const saveLastAnalysis = (params: {
                   onTimeframeSelect={setSelectedTimeframe}
                 />
 
-                
-
                 {/* Strategy Selection Accordion */}
-                <Accordion type="single" collapsible className="border rounded-lg overflow-hidden">
-                  <AccordionItem value="strategy" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 text-left font-medium flex justify-between items-center w-full hover:bg-secondary/30 transition-colors">
-                      <span>Strategy Selection</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <StrategySelection 
-                        selectedStrategy={selectedStrategy}
-                        onStrategySelect={handleStrategySelect}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                <Card className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30">
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="strategy" className="border-0">
+                      <div className="bg-gradient-to-r from-primary/10 to-transparent px-5 py-4">
+                        <AccordionTrigger className="hover:no-underline p-0">
+                          <h3 className="text-lg font-semibold text-foreground">Strategy Selection</h3>
+                        </AccordionTrigger>
+                      </div>
+                      <AccordionContent className="px-5 pb-5">
+                        <StrategySelection 
+                          selectedStrategy={selectedStrategy}
+                          onStrategySelect={handleStrategySelect}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </Card>
 
                 {/* Multi-Provider AI Analysis */}
                 <AIMultiPanel
@@ -612,21 +889,34 @@ const saveLastAnalysis = (params: {
               </div>
 
               {/* Center Panel - Trading Chart and Analysis */}
-              <div className="col-span-12 lg:col-span-6 flex flex-col space-y-4">
-                <div className="h-[600px]">
-                  <TradingChart 
-                    selectedPair={selectedPair}
-                    selectedTimeframe={selectedTimeframe}
-                    onCandleDataUpdate={handleCandleDataUpdate}
-                  />
-                </div>
+              <div className="col-span-12 lg:col-span-6 flex flex-col space-y-6">
+                <Card className="h-[600px] p-6 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-border/30 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/20">
+                        <Activity className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">{selectedPair}</h3>
+                        <p className="text-xs text-muted-foreground">{selectedTimeframe} Chart</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-[calc(100%-4rem)]">
+                    <TradingChart 
+                      selectedPair={selectedPair}
+                      selectedTimeframe={selectedTimeframe}
+                      onCandleDataUpdate={handleCandleDataUpdate}
+                    />
+                  </div>
+                </Card>
                 
                 {/* Market Analysis Card - Expanded to fill space */}
                 <div className="flex-1 min-h-[400px]">
                   {isDailyLocked && (
-                    <div className="mb-3 p-3 rounded-md border border-border/30 bg-muted/20 flex items-center gap-2 text-sm">
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                      <span>
+                    <div className="mb-4 p-4 rounded-lg border border-border/30 bg-muted/20 flex items-center gap-3 text-sm shadow-sm">
+                      <Lock className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-medium">
                         Daily analysis limit reached. Please try again in 24 hours.
                       </span>
                     </div>
@@ -643,16 +933,15 @@ const saveLastAnalysis = (params: {
                     }
                   />
                   {/* AI Providers Results moved under Market Analysis */}
-                  <div className="mt-4">
+                  <div className="mt-6">
                     <AIMultiResults result={multiResult} />
                   </div>
                 </div>
               </div>
 
               {/* Right Panel - Live Signals & Positions */}
-              <div className="col-span-12 lg:col-span-3 flex flex-col space-y-4">
+              <div className="col-span-12 lg:col-span-3 flex flex-col space-y-5">
                 <LiveSignals />
-                {/* <ActivePositions/> */}
                 <TradingTips/>
               </div>
             </div>
