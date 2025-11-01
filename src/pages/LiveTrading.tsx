@@ -630,15 +630,15 @@ const saveLastAnalysis = (params: {
           <p className="text-muted-foreground text-base">Professional AI-powered trading platform</p>
         </div>
 
-        {/* Quick Pairs Bar & Market Status */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        {/* Quick Pairs Bar & Market Status - Compact Design */}
+        <div className="flex flex-col lg:flex-row gap-3 mb-4">
           {/* Quick Pairs Favorites Bar */}
-          <Card className="flex-1 p-4 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30">
-            <div className="flex items-center gap-3 mb-3">
-              <Star className="h-5 w-5 text-yellow-500" />
-              <h3 className="font-semibold text-foreground">Quick Access</h3>
+          <Card className="flex-1 p-2.5 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <h3 className="text-sm font-semibold text-foreground">Quick Access</h3>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-primary">
+            <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-primary">
               {quickPairs.map((pair) => {
                 const Icon = pair.icon;
                 const isSelected = selectedPair === pair.symbol;
@@ -647,17 +647,17 @@ const saveLastAnalysis = (params: {
                     key={pair.symbol}
                     onClick={() => setSelectedPair(pair.symbol)}
                     className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap
-                      transition-all duration-200 border-2
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium whitespace-nowrap text-xs
+                      transition-all duration-200 border
                       ${isSelected 
-                        ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-105' 
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md' 
                         : 'bg-card/50 text-foreground border-border/40 hover:border-primary/50 hover:bg-card/80'
                       }
                     `}
                   >
-                    <Icon className={`h-4 w-4 ${isSelected ? 'text-primary-foreground' : pair.color}`} />
-                    <span className="text-sm font-semibold">{pair.symbol}</span>
-                    {isSelected && <ChevronRight className="h-4 w-4" />}
+                    <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-primary-foreground' : pair.color}`} />
+                    <span className="font-semibold">{pair.symbol}</span>
+                    {isSelected && <ChevronRight className="h-3 w-3" />}
                   </button>
                 );
               })}
@@ -665,59 +665,65 @@ const saveLastAnalysis = (params: {
           </Card>
 
           {/* Market Status */}
-          <Card className="p-4 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30 lg:w-48">
-            <div className="flex items-center gap-3 mb-2">
-              <Clock className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Market</h3>
+          <Card className="p-2.5 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/30 lg:w-40">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Clock className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Market</h3>
             </div>
             <div className="flex items-center gap-2">
-              <div className={`h-3 w-3 rounded-full animate-pulse ${marketOpen ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className={`text-sm font-semibold ${marketOpen ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`h-2.5 w-2.5 rounded-full animate-pulse ${marketOpen ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`text-xs font-semibold ${marketOpen ? 'text-green-500' : 'text-red-500'}`}>
                 {marketOpen ? 'Open' : 'Closed'}
               </span>
             </div>
           </Card>
         </div>
 
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="p-5 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
+        {/* Quick Stats Cards - Compact Design */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+          <Card className="p-3 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-green-500/20">
-                  <TrendingUp className="h-5 w-5 text-green-500" />
+                <div className="p-1.5 rounded-md bg-green-500/20">
+                  <TrendingUp className="h-4 w-4 text-green-500" />
                 </div>
-                <h3 className="text-sm font-medium text-muted-foreground">Daily P&L</h3>
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground">Daily P&L</h3>
+                  <p className="text-lg font-bold text-green-500">+$427.50</p>
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground">+4.28%</p>
             </div>
-            <p className="text-3xl font-bold text-green-500">+$427.50</p>
-            <p className="text-xs text-muted-foreground mt-1">+4.28% today</p>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
+          <Card className="p-3 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue-500/20">
-                  <BarChart3 className="h-5 w-5 text-blue-500" />
+                <div className="p-1.5 rounded-md bg-blue-500/20">
+                  <BarChart3 className="h-4 w-4 text-blue-500" />
                 </div>
-                <h3 className="text-sm font-medium text-muted-foreground">Win Rate</h3>
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground">Win Rate</h3>
+                  <p className="text-lg font-bold text-blue-500">68.4%</p>
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground">30 trades</p>
             </div>
-            <p className="text-3xl font-bold text-blue-500">68.4%</p>
-            <p className="text-xs text-muted-foreground mt-1">Last 30 trades</p>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
+          <Card className="p-3 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-purple-500/20">
-                  <Activity className="h-5 w-5 text-purple-500" />
+                <div className="p-1.5 rounded-md bg-purple-500/20">
+                  <Activity className="h-4 w-4 text-purple-500" />
                 </div>
-                <h3 className="text-sm font-medium text-muted-foreground">Total Trades</h3>
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground">Total Trades</h3>
+                  <p className="text-lg font-bold text-purple-500">47</p>
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground">Month</p>
             </div>
-            <p className="text-3xl font-bold text-purple-500">47</p>
-            <p className="text-xs text-muted-foreground mt-1">This month</p>
           </Card>
         </div>
 
