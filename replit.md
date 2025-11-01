@@ -1,178 +1,53 @@
-# YoForex AI - Trading Platform
+# YoForex AI - Trading Platform Documentation
 
 ## Overview
-
-YoForex AI is a comprehensive AI-powered forex and crypto trading platform that provides real-time market analysis, trading signals, and portfolio management tools. The platform combines modern web technologies with AI-driven insights to help traders make informed decisions across multiple asset classes including forex pairs, cryptocurrencies, indices, and commodities.
-
-## Deployment
-
-**Current Platform:** Replit  
-**Previous Platform:** Vercel (migrated November 2025)
-
-### Running on Replit
-- Development server runs on port 5000 bound to 0.0.0.0 for Replit compatibility
-- Hot Module Replacement (HMR) configured for secure WebSocket over wss:// protocol
-- Uses `REPLIT_DEV_DOMAIN` environment variable for proper preview domain routing
-- All environment variables (API keys, Cloudinary config) stored in Replit Secrets
-
-### Environment Variables Required
-- `VITE_PUBLIC_API_BASE_URL` - Backend API URL
-- `VITE_CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name for image uploads
-- `VITE_CLOUDINARY_UPLOAD_PRESET` - Cloudinary upload preset
-- `VITE_CLOUDINARY_FOLDER` - Optional folder path in Cloudinary
+YoForex AI is a comprehensive AI-powered forex and crypto trading platform providing real-time market analysis, trading signals, and portfolio management. It leverages modern web technologies with AI-driven insights to assist traders across various asset classes including forex, cryptocurrencies, indices, and commodities. The platform aims to empower traders with informed decision-making tools and a robust trading ecosystem.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
+The frontend is a Single Page Application (SPA) built with React 18, TypeScript, and Vite. It utilizes Shadcn/ui (Radix UI) and Tailwind CSS for a responsive, mobile-first design, and Wouter for client-side routing. State management is handled by TanStack Query and React Context API. The codebase follows a component-based architecture with clear separation of concerns in `src/` for components, pages, utilities, and hooks.
 
-**Framework & Build System**
-- React 18 with TypeScript for type-safe component development
-- Vite as the build tool and development server for fast HMR and optimized production builds
-- Wouter for lightweight client-side routing instead of React Router
+### Backend Integration Architecture
+The frontend communicates with a FastAPI backend located at `https://backend.axiontrust.com`. An Axios-based API client (`src/lib/api/client.ts`) manages all API calls, including interceptors for JWT token attachment, automatic retry logic, and error parsing.
 
-**UI Component System**
-- Shadcn/ui component library built on Radix UI primitives for accessible, customizable components
-- Tailwind CSS for utility-first styling with custom trading theme
-- Glass morphism design system with dark theme optimized for trading interfaces
-- Framer Motion for smooth animations and transitions
-- Custom CSS variables for theming (`--primary`, `--background`, `--card`, etc.)
+### Core Architectural Decisions
+- **API-First Design**: Business logic is primarily backend-driven.
+- **TypeScript**: Ensures full type safety across the application.
+- **Component-Based**: Promotes modularity and reusability of UI elements.
+- **Responsive Design**: Prioritizes mobile experience with adaptable layouts.
 
-**State Management**
-- TanStack Query (React Query) for server state management and data fetching
-- Context API for authentication state (`AuthProvider`)
-- Context API for active trades management (`ActiveTradesProvider`)
-- Local storage for user preferences, profiles, and cached data
+### UI/UX Decisions
+The platform uses Shadcn/ui (Radix UI) and Tailwind CSS for a consistent, modern, and highly customizable user interface. Key layout components like `TradingLayout`, `TradingSidebar`, and `TradingHeader` ensure a cohesive user experience with features like live price tracking, navigation, and user-specific information displays. Core trading components like `MarketOverview`, `TradeExecution`, and `AIMultiPanel` provide specialized functionality.
 
-**Authentication Flow**
-- JWT-based authentication with access tokens stored in localStorage
-- Protected and public route components for route guards
-- Auto-logout on token expiration with cross-tab synchronization
-- Session storage for redirect paths after authentication
+### Feature Specifications
+- **AI-Powered Trading Analysis**: Supports multiple AI providers (OpenAI, Claude, Gemini, DeepSeek, Mistral, Cohere, xAI) across various trading strategies (e.g., Breakout, ICT, SMC, Fibonacci) and timeframes (M1 to Monthly).
+- **Real-Time Market Data**: Integrates TradingView for advanced charting, 100+ technical indicators, and real-time price feeds for Forex, Cryptocurrencies, Indices, and Commodities.
+- **Trade Management**: Offers features for trade execution tracking, real-time P&L, risk management, trade journaling, and performance analytics.
+- **Billing & Subscriptions**: Includes Free, Pro, and Max plans with different credit limits. Integrates Cashfree (for INR payments) and CoinPayments (for 50+ cryptocurrencies).
+- **Community Features**: Provides a forum system with discussion categories, rich text editing, interaction features (likes, comments), and a support ticket system with priority levels and attachments.
 
-**Key Design Patterns**
-- Protected routes require authentication before rendering
-- Public routes redirect authenticated users away
-- Profile data cached in localStorage with `profileStorage` utility
-- Theme provider supports dark/light/system modes with localStorage persistence
-
-### Data Flow & API Integration
-
-**API Client Architecture**
-- Centralized API configuration in `src/config/api.ts`
-- Backend base URL configurable via `VITE_PUBLIC_API_BASE_URL` environment variable
-- Axios-based API client with interceptors for authentication headers
-- Development proxy configuration in Vite for `/api`, `/prices`, `/analysis` routes
-
-**Backend Integration Points**
-- Trading analysis: `https://backend.axiontrust.com/analysis/*`
-- User authentication: `/auth/*` endpoints
-- Billing & subscriptions: `/billing/*` endpoints
-- Forum & community: `/forum/*` endpoints
-- Support tickets: `/support/*` endpoints
-- Live price data: `/prices/*` endpoints
-
-**Real-time Data**
-- TradingView widgets for live charts and price tickers
-- Polling mechanisms for price updates and market data
-- WebSocket-ready architecture (not currently implemented)
-
-### Feature Modules
-
-**Trading Features**
-- Multi-timeframe chart analysis (1M to 1MO intervals)
-- Multiple trading strategies (Breakout, Fibonacci, ICT, SMC, etc.)
-- AI-powered signal generation with multiple AI models (GPT, Claude, Gemini, etc.)
-- Active trade tracking with P&L calculations
-- Trade execution simulation and paper trading
-- Trading journal for performance tracking
-
-**AI Analysis System**
-- Multi-provider AI analysis (OpenAI, Claude, Gemini, DeepSeek, Mistral, Cohere, xAI)
-- Strategy-based analysis with confidence scoring
-- Technical indicator integration (RSI, MACD, Moving Averages)
-- Tiered access to AI models based on subscription plan
-
-**Billing & Subscription**
-- Cashfree payment integration for INR payments
-- CoinPayments integration for cryptocurrency payments
-- Three-tier subscription model (Free, Pro, Max)
-- Credit-based usage system with daily and monthly caps
-- Invoice generation and transaction history
-- Automatic plan upgrades and downgrades
-
-**Community Features**
-- Forum system with categories and posts
-- Rich text editor for post creation (TipTap)
-- Support ticket system with file attachments
-- User profiles and avatars
-
-### Pricing & Localization
-
-**Currency Handling**
-- Dynamic pricing based on user's phone country code
-- USD as base currency with INR conversion (1 USD = 92 INR)
-- Country detection from phone dial code
-- Automatic currency symbol and formatting
-
-### Performance Optimizations
-
-**Caching Strategy**
-- Profile data cached in localStorage
-- Billing summary cached with deduplication to prevent API spam
-- Query client with 5-minute stale time for data freshness
-- Event-based cache invalidation for billing updates
-
-**Code Splitting**
-- Route-based code splitting via dynamic imports
-- Lazy loading of heavy components (charts, editors)
-- Tree-shaking enabled in production builds
+### System Design Choices
+- **Authentication**: JWT-based with access tokens stored in localStorage, automatic token refresh, and protected routes. Supports email/password, WhatsApp OTP, and email OTP verification for signup/login.
+- **Security**: HTTPS for all API calls, 24-hour JWT token expiry, rate limiting, input validation, and secure handling of sensitive data and environment variables.
 
 ## External Dependencies
 
-### Payment Processors
-- **Cashfree Payments**: Indian payment gateway for INR transactions (sandbox/production modes)
-- **CoinPayments**: Cryptocurrency payment processor for global payments
-
-### Third-Party Services
-- **TradingView**: Chart widgets and market data visualization
-- **Cloudinary**: Image hosting for user avatars and forum attachments
-- **Google Analytics**: User analytics and tracking (GA tracking ID: G-E0XL4GJHBW)
-
-### AI Model Providers
-- OpenAI (GPT models)
-- Anthropic Claude
-- Google Gemini
-- DeepSeek
-- Mistral AI
-- Cohere
-- xAI (Grok)
-
-### Backend API
-- **Primary Backend**: `https://backend.axiontrust.com`
-- Endpoints for authentication, trading analysis, billing, forum, and support
-- RESTful API architecture with JWT authentication
-- No database directly accessed from frontend
-
-### UI & Design Libraries
-- Radix UI primitives (accordion, dialog, dropdown, etc.)
-- Lucide React icons
-- FontAwesome icons
-- Recharts for data visualization
-- React Toastify for notifications
-
-### Development Tools
-- ESLint for code quality
-- TypeScript compiler for type checking
-- PostCSS with Autoprefixer for CSS processing
-- Vercel for deployment (configured in vercel.json)
-
-### Environment Variables Required
-- `VITE_PUBLIC_API_BASE_URL`: Backend API base URL
-- `VITE_CASHFREE_ENV`: Cashfree environment (sandbox/production)
-- `VITE_CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name
-- `VITE_CLOUDINARY_UPLOAD_PRESET`: Cloudinary upload preset
-- `VITE_CLOUDINARY_FOLDER`: Optional folder for uploads
+- **Backend API**: FastAPI (Python) hosted at `https://backend.axiontrust.com`
+- **Real-time Data & Charting**: TradingView Widgets
+- **AI Providers**: OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Mistral AI, Cohere, xAI
+- **Payment Gateways**:
+    - Cashfree (for INR payments, credit/debit cards, UPI, net banking)
+    - CoinPayments (for cryptocurrency payments: BTC, ETH, USDT, BNB, etc.)
+- **UI Framework**: Shadcn/ui (Radix UI)
+- **Styling**: Tailwind CSS
+- **State Management**: TanStack Query
+- **Routing**: Wouter
+- **Image Uploads**: Cloudinary
+- **Notifications**: react-toastify
+- **Charting Library**: Recharts
+- **Form Management**: react-hook-form
+- **Rich Text Editor**: TipTap
