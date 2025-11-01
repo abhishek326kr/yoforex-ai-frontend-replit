@@ -10,7 +10,26 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-The YoForex AI frontend is a Single Page Application (SPA) built with React 18, TypeScript, and Vite. It uses Shadcn/ui (based on Radix UI) and Tailwind CSS for a responsive, component-based UI, with state management handled by TanStack Query and React Context API, and Wouter for routing. The frontend communicates with a FastAPI (Python) backend via an API-first design, utilizing Axios for communication with interceptors for JWT, retries, and error parsing.
+YoForex AI is a full-stack application with both frontend and backend running locally on Replit:
+
+**Frontend (Port 5000):**
+- Single Page Application (SPA) built with React 18, TypeScript, and Vite
+- Shadcn/ui (based on Radix UI) and Tailwind CSS for responsive, component-based UI
+- State management with TanStack Query and React Context API
+- Wouter for client-side routing
+- Axios for API communication with JWT interceptors, retries, and error parsing
+
+**Backend (Port 8000):**
+- FastAPI (Python 3.11) REST API
+- JWT-based authentication with bcrypt password hashing
+- CORS enabled for Replit development environment
+- Mock AI analysis services (GPT-4, Claude, Gemini, Perplexity)
+- Comprehensive endpoint coverage:
+  - `/auth/*` - Authentication (signup, login, profile)
+  - `/trading/*` - Trading analysis (automated & manual AI confirmation)
+  - `/market/*` - Market data (pairs, news, real-time data)
+  - `/user/*` - User management (settings, billing, subscription)
+- Structured with clean architecture: endpoints, schemas, services, core config
 
 ### UI/UX Decisions
 -   Modern, consistent, and highly customizable design system using Shadcn/ui and Tailwind CSS.
@@ -32,17 +51,44 @@ The YoForex AI frontend is a Single Page Application (SPA) built with React 18, 
 -   **Component-Based Architecture:** Promotes modularity, reusability, and maintainability.
 -   **TypeScript:** Enforces type safety.
 
+## Backend Structure
+
+```
+backend/
+├── app/
+│   ├── api/
+│   │   └── endpoints/
+│   │       ├── auth.py         # Authentication endpoints
+│   │       ├── trading.py      # Trading analysis endpoints
+│   │       ├── market.py       # Market data endpoints
+│   │       └── user.py         # User management endpoints
+│   ├── core/
+│   │   ├── config.py           # Settings & configuration
+│   │   └── security.py         # JWT & password utilities
+│   ├── schemas/
+│   │   ├── user.py             # User/auth schemas
+│   │   ├── trading.py          # Trading schemas
+│   │   └── billing.py          # Billing schemas
+│   ├── services/
+│   │   ├── ai_service.py       # AI analysis logic (mock)
+│   │   └── market_service.py   # Market data logic (mock)
+│   └── main.py                 # FastAPI app initialization
+├── requirements.txt             # Python dependencies
+└── run.py                       # Server entry point
+```
+
 ## External Dependencies
 
--   **Backend API:** FastAPI (Python) hosted at `https://backend.yoforexai.com`.
--   **Real-time Data & Charting:** TradingView Widgets.
--   **AI Providers:** OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Mistral, Cohere, xAI.
--   **Image Uploads:** Cloudinary.
--   **Payment Gateways:** Cashfree (INR) and CoinPayments (cryptocurrency).
--   **State Management:** TanStack Query.
--   **UI Library:** Radix UI (via Shadcn/ui).
--   **Styling:** Tailwind CSS.
--   **Notifications:** react-toastify.
+-   **Backend Framework:** FastAPI with Uvicorn (local, port 8000)
+-   **Real-time Data & Charting:** TradingView Widgets
+-   **AI Providers (for production):** OpenAI, Anthropic Claude, Google Gemini, Perplexity (currently mock)
+-   **Image Uploads:** Cloudinary
+-   **Payment Gateways:** Cashfree (INR) and CoinPayments (cryptocurrency)
+-   **State Management:** TanStack Query
+-   **UI Library:** Radix UI (via Shadcn/ui)
+-   **Styling:** Tailwind CSS
+-   **Notifications:** react-toastify
+-   **Backend Libraries:** python-jose (JWT), bcrypt (password hashing), httpx (HTTP client)
 -   **Rich Text Editor:** TipTap.
 -   **HTTP Client:** Axios.
 -   **Routing:** Wouter.
