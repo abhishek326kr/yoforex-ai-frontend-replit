@@ -79,7 +79,8 @@ export default defineConfig(({ command, mode }) => {
         }
       },
       server: {
-        port: 3000,
+        host: '0.0.0.0',
+        port: 5000,
         strictPort: true,
         proxy: {
           '/api': {
@@ -119,7 +120,8 @@ export default defineConfig(({ command, mode }) => {
         }
       },
       preview: {
-        port: 3000,
+        host: '0.0.0.0',
+        port: 5000,
         strictPort: true,
         cors: {
           origin: true,
@@ -139,10 +141,11 @@ export default defineConfig(({ command, mode }) => {
       }
     },
     server: {
-      port: 3000,
+      host: '0.0.0.0',
+      port: 5000,
       strictPort: true,
       proxy: devProxy,
-      open: true,
+      open: false,
       historyApiFallback: {
         disableDotRule: true,
         index: '/',
